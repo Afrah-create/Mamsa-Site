@@ -135,8 +135,9 @@ a:hover {
 
 .nav-logo {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 }
 
 .logo {
@@ -152,6 +153,61 @@ a:hover {
     color: var(--primary-color);
 }
 
+/* Header Logo Placeholders */
+.logos-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+    margin-bottom: 8px;
+}
+
+.logo-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.logo-placeholder:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logo-image {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.logo-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.association-name {
+    text-align: left;
+    margin-top: 2px;
+}
+
+.association-name h1 {
+    font-family: var(--font-primary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    margin: 0;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
 .nav-menu {
     display: flex;
 }
@@ -159,15 +215,18 @@ a:hover {
 .nav-list {
     display: flex;
     list-style: none;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    flex-wrap: nowrap;
 }
 
 .nav-link {
     font-weight: 500;
     color: var(--dark-gray);
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--border-radius-sm);
     transition: all var(--transition-fast);
+    font-size: 0.875rem;
+    white-space: nowrap;
 }
 
 .nav-link:hover,

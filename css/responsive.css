@@ -614,7 +614,210 @@
         padding: 12px 20px;
     }
     
-    /* Service Sections */
+    /* Admin Login Responsive Styles */
+@media (max-width: 768px) {
+    .login-wrapper {
+        padding: 16px;
+    }
+    
+    .login-container {
+        max-width: 100%;
+    }
+    
+    .login-card {
+        padding: 32px 24px;
+        border-radius: 12px;
+    }
+    
+    .logo-icon {
+        width: 56px;
+        height: 56px;
+    }
+    
+    .logo-icon i {
+        font-size: 24px;
+    }
+    
+    .logo-text h1 {
+        font-size: 24px;
+    }
+    
+    .logo-text p {
+        font-size: 13px;
+    }
+    
+    .login-form {
+        gap: 20px;
+    }
+    
+    .form-input {
+        padding: 14px 14px 14px 44px;
+        font-size: 16px;
+    }
+    
+    .input-icon {
+        left: 14px;
+        font-size: 14px;
+    }
+    
+    .password-toggle {
+        right: 14px;
+        font-size: 14px;
+    }
+    
+    .login-button {
+        padding: 14px 20px;
+        font-size: 15px;
+    }
+    
+    .credentials-info {
+        padding: 12px;
+    }
+    
+    .credentials-info p {
+        font-size: 12px;
+    }
+    
+    .back-link {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-wrapper {
+        padding: 12px;
+    }
+    
+    .login-card {
+        padding: 24px 20px;
+    }
+    
+    .logo-icon {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .logo-icon i {
+        font-size: 20px;
+    }
+    
+    .logo-text h1 {
+        font-size: 20px;
+    }
+    
+    .logo-text p {
+        font-size: 12px;
+    }
+    
+    .login-form {
+        gap: 18px;
+    }
+    
+    .form-input {
+        padding: 12px 12px 12px 40px;
+        font-size: 15px;
+    }
+    
+    .input-icon {
+        left: 12px;
+        font-size: 13px;
+    }
+    
+    .password-toggle {
+        right: 12px;
+        font-size: 13px;
+    }
+    
+    .login-button {
+        padding: 12px 18px;
+        font-size: 14px;
+    }
+    
+    .credentials-info {
+        padding: 10px;
+    }
+    
+    .credentials-info p {
+        font-size: 11px;
+    }
+    
+    .back-link {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+}
+
+/* Header Logo Responsive Styles */
+@media (max-width: 768px) {
+    .logos-container {
+        gap: 10px;
+        margin-bottom: 4px;
+    }
+    
+    .logo-placeholder {
+        padding: 4px 8px;
+        gap: 6px;
+    }
+    
+    .logo-image {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .logo-label {
+        font-size: 9px;
+    }
+    
+    .association-name h1 {
+        font-size: 0.7rem;
+    }
+    
+    .nav-list {
+        gap: var(--spacing-xs);
+    }
+    
+    .nav-link {
+        padding: var(--spacing-xs);
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .logos-container {
+        gap: 8px;
+        margin-bottom: 3px;
+    }
+    
+    .logo-placeholder {
+        padding: 3px 6px;
+        gap: 4px;
+    }
+    
+    .logo-image {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .logo-label {
+        font-size: 8px;
+    }
+    
+    .association-name h1 {
+        font-size: 0.65rem;
+    }
+    
+    .nav-list {
+        gap: 2px;
+    }
+    
+    .nav-link {
+        padding: 2px 4px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Service Sections */
     .service-section {
         padding: var(--spacing-xl) 0;
     }
