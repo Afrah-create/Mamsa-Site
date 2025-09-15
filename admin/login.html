@@ -71,29 +71,16 @@
             background: #f1f5f9;
         }
 
-        .association-logo .logo-icon {
+        .logo-image {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            object-fit: contain;
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
-        .makerere-logo .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logo-icon i {
-            font-size: 18px;
-            color: #ffffff;
+        
+        .association-logo .logo-image {
+            width: 44px;
+            height: 44px;
         }
 
         .logo-label {
@@ -101,26 +88,6 @@
             font-weight: 500;
             color: #64748b;
             text-align: center;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .divider-line {
-            width: 20px;
-            height: 1px;
-            background: #e2e8f0;
-        }
-
-        .divider-text {
-            font-size: 11px;
-            color: #94a3b8;
-            font-weight: 500;
-            white-space: nowrap;
         }
 
         .header-content {
@@ -327,26 +294,18 @@
                 min-width: 100px;
             }
             
-            .association-logo .logo-icon,
-            .makerere-logo .logo-icon {
+            .logo-image {
                 width: 32px;
                 height: 32px;
             }
             
-            .logo-icon i {
-                font-size: 14px;
+            .association-logo .logo-image {
+                width: 36px;
+                height: 36px;
             }
             
             .logo-label {
                 font-size: 10px;
-            }
-            
-            .divider-text {
-                font-size: 10px;
-            }
-            
-            .divider-line {
-                width: 15px;
             }
             
             .login-title {
@@ -378,24 +337,14 @@
         <div class="login-header">
             <div class="logos-container">
                 <div class="logo-placeholder association-logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
+                    <img src="../images/mamsa-logo.png" alt="Madi Makerere Students Association Logo" class="logo-image">
                     <div class="logo-text">
-                        <span class="logo-label">Association Logo</span>
+                        <span class="logo-label">MAMSA</span>
                     </div>
-                </div>
-                
-                <div class="divider">
-                    <div class="divider-line"></div>
-                    <div class="divider-text">in partnership with</div>
-                    <div class="divider-line"></div>
                 </div>
                 
                 <div class="logo-placeholder makerere-logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-university"></i>
-                    </div>
+                    <img src="../images/Mak_Logo.png" alt="Makerere University Logo" class="logo-image">
                     <div class="logo-text">
                         <span class="logo-label">Makerere University</span>
                     </div>

@@ -34,6 +34,8 @@ function initializeApp() {
     initializeForms();
     initializeAnimations();
     initializePageSpecificFeatures();
+    initializeFAQ();
+    initializeEventCategories();
     
     // Check if user is on admin page
     if (currentPage.includes('admin')) {
@@ -246,9 +248,17 @@ function initializeNavigation() {
     const navMenu = document.getElementById('nav-menu');
     
     if (navToggle && navMenu) {
-        navToggle.addEventListener('click', function() {
+        navToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
             navMenu.classList.toggle('active');
             navToggle.classList.toggle('active');
+            
+            // Prevent body scroll when menu is open
+            if (navMenu.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         });
         
         // Close menu when clicking on a link
@@ -257,6 +267,7 @@ function initializeNavigation() {
             link.addEventListener('click', function() {
                 navMenu.classList.remove('active');
                 navToggle.classList.remove('active');
+                document.body.style.overflow = '';
             });
         });
         
@@ -265,6 +276,16 @@ function initializeNavigation() {
             if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
                 navMenu.classList.remove('active');
                 navToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+        
+        // Close menu on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                navMenu.classList.remove('active');
+                navToggle.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
     }
@@ -1290,4 +1311,77 @@ function registerForEvent(eventId) {
 function initializeAdminFeatures() {
     // This will be implemented in admin.js
     console.log('Admin features will be initialized by admin.js');
+}
+
+// Initialize FAQ functionality
+function initializeFAQ() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        
+        if (question) {
+            question.addEventListener('click', function() {
+                toggleFAQ(item);
+            });
+        }
+    });
+}
+
+// Initialize Event Categories
+function initializeEventCategories() {
+    const categoryCards = document.querySelectorAll('.category-card');
+    
+    categoryCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+            filterEventsByCategory(category);
+        });
+        
+        // Add hover effects
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+// Filter events by category
+function filterEventsByCategory(category) {
+    // This function would filter events based on the selected category
+    console.log(`Filtering events by category: ${category}`);
+    
+    // For now, just show a message
+    const eventGrid = document.getElementById('upcoming-events-grid');
+    if (eventGrid) {
+        eventGrid.innerHTML = `
+            <div class="no-events-message">
+                <i class="fas fa-filter"></i>
+                <h3>Filtering by ${category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+                <p>Events in this category will be displayed here.</p>
+            </div>
+        `;
+    }
+}
+
+// Toggle FAQ item
+function toggleFAQ(item) {
+    const isActive = item.classList.contains('active');
+    
+    // Close all other FAQ items
+    document.querySelectorAll('.faq-item').forEach(otherItem => {
+        if (otherItem !== item) {
+            otherItem.classList.remove('active');
+        }
+    });
+    
+    // Toggle current item
+    if (isActive) {
+        item.classList.remove('active');
+    } else {
+        item.classList.add('active');
+    }
 }
