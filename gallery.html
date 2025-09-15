@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Madi Makerere University Students Association</title>
+    <meta name="description" content="Explore our photo gallery showcasing events, campus life, and memorable moments from the Madi Makerere University Students Association.">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <img src="images/logo.png" alt="Madi Makerere University Students Association Logo" class="logo">
+                    <span class="logo-text">Madi Makerere</span>
+                </div>
+                
+                <div class="nav-menu" id="nav-menu">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="about.html" class="nav-link">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="leadership.html" class="nav-link">Leadership</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="events.html" class="nav-link">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="news.html" class="nav-link">News</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="gallery.html" class="nav-link active">Gallery</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="services.html" class="nav-link">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="contact.html" class="nav-link">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="nav-toggle" id="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1 class="page-title">Photo Gallery</h1>
+            <p class="page-subtitle">Capturing memories and moments from our community</p>
+        </div>
+    </section>
+
+    <!-- Gallery Filters -->
+    <section class="gallery-filters">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">All Photos</button>
+                <button class="filter-tab" data-filter="events">Events</button>
+                <button class="filter-tab" data-filter="campus">Campus Life</button>
+                <button class="filter-tab" data-filter="leadership">Leadership</button>
+                <button class="filter-tab" data-filter="cultural">Cultural</button>
+                <button class="filter-tab" data-filter="sports">Sports</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Gallery -->
+    <section class="featured-gallery">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Featured Photos</h2>
+                <p class="section-subtitle">Highlights from our recent activities</p>
+            </div>
+            
+            <div class="featured-grid" id="featured-gallery">
+                <!-- Featured photos will be loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Gallery -->
+    <section class="main-gallery">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Photo Collection</h2>
+                <div class="gallery-controls">
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="masonry">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+                    <div class="gallery-sort">
+                        <select id="gallery-sort">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="popular">Most Popular</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Gallery photos will be loaded dynamically -->
+            </div>
+            
+            <div class="load-more-container">
+                <button class="btn btn-outline" id="load-more-photos">Load More Photos</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Categories -->
+    <section class="photo-categories">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Browse by Category</h2>
+                <p class="section-subtitle">Explore photos organized by different themes</p>
+            </div>
+            
+            <div class="categories-grid">
+                <div class="category-card" data-category="events">
+                    <div class="category-image">
+                        <img src="images/gallery/events-thumb.jpg" alt="Events">
+                        <div class="category-overlay">
+                            <h3>Events</h3>
+                            <p>Photos from our various events and activities</p>
+                            <span class="photo-count">50+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category-card" data-category="campus">
+                    <div class="category-image">
+                        <img src="images/gallery/campus-thumb.jpg" alt="Campus Life">
+                        <div class="category-overlay">
+                            <h3>Campus Life</h3>
+                            <p>Daily life and activities on campus</p>
+                            <span class="photo-count">30+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category-card" data-category="leadership">
+                    <div class="category-image">
+                        <img src="images/gallery/leadership-thumb.jpg" alt="Leadership">
+                        <div class="category-overlay">
+                            <h3>Leadership</h3>
+                            <p>Leadership team photos and activities</p>
+                            <span class="photo-count">25+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category-card" data-category="cultural">
+                    <div class="category-image">
+                        <img src="images/gallery/cultural-thumb.jpg" alt="Cultural">
+                        <div class="category-overlay">
+                            <h3>Cultural</h3>
+                            <p>Cultural celebrations and traditions</p>
+                            <span class="photo-count">40+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category-card" data-category="sports">
+                    <div class="category-image">
+                        <img src="images/gallery/sports-thumb.jpg" alt="Sports">
+                        <div class="category-overlay">
+                            <h3>Sports</h3>
+                            <p>Sports activities and competitions</p>
+                            <span class="photo-count">35+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="category-card" data-category="community">
+                    <div class="category-image">
+                        <img src="images/gallery/community-thumb.jpg" alt="Community">
+                        <div class="category-overlay">
+                            <h3>Community</h3>
+                            <p>Community service and outreach</p>
+                            <span class="photo-count">20+ Photos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Upload -->
+    <section class="photo-upload">
+        <div class="container">
+            <div class="upload-content">
+                <div class="upload-text">
+                    <h2>Share Your Photos</h2>
+                    <p>Have photos from our events or activities? Share them with the community and help us build our gallery.</p>
+                    <div class="upload-guidelines">
+                        <h3>Upload Guidelines:</h3>
+                        <ul>
+                            <li>Photos should be related to association activities</li>
+                            <li>High quality images preferred (minimum 800px width)</li>
+                            <li>Include a brief description for each photo</li>
+                            <li>Respect privacy and get permission before sharing</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="upload-form">
+                    <h3>Upload Photos</h3>
+                    <form id="photo-upload-form">
+                        <div class="form-group">
+                            <input type="file" id="photo-files" multiple accept="image/*" required>
+                            <label for="photo-files" class="file-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                Choose Photos
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="photo-title" placeholder="Photo Title" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="photo-description" placeholder="Photo Description" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <select id="photo-category" required>
+                                <option value="">Select Category</option>
+                                <option value="events">Events</option>
+                                <option value="campus">Campus Life</option>
+                                <option value="leadership">Leadership</option>
+                                <option value="cultural">Cultural</option>
+                                <option value="sports">Sports</option>
+                                <option value="community">Community</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="photographer-name" placeholder="Photographer Name">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload Photos</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightbox-modal">
+        <div class="lightbox-content">
+            <button class="lightbox-close" id="lightbox-close">
+                <i class="fas fa-times"></i>
+            </button>
+            <button class="lightbox-prev" id="lightbox-prev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="lightbox-next" id="lightbox-next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="lightbox-image-container">
+                <img id="lightbox-image" src="" alt="">
+            </div>
+            <div class="lightbox-info">
+                <h3 id="lightbox-title"></h3>
+                <p id="lightbox-description"></p>
+                <div class="lightbox-meta">
+                    <span id="lightbox-date"></span>
+                    <span id="lightbox-category"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="images/logo.png" alt="Madi Makerere University Students Association Logo" class="footer-logo-img">
+                        <span class="footer-logo-text">Madi Makerere</span>
+                    </div>
+                    <p class="footer-description">Connecting students, fostering community, and promoting excellence in education and leadership.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="leadership.html">Leadership</a></li>
+                        <li><a href="events.html">Events</a></li>
+                        <li><a href="news.html">News</a></li>
+                        <li><a href="services.html">Services</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Contact Info</h3>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Makerere University, Kampala, Uganda</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>+256 700 000 000</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>info@madimakerere.org</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Office Hours</h3>
+                    <div class="office-hours">
+                        <div class="hours-item">
+                            <span class="day">Monday - Friday</span>
+                            <span class="time">8:00 AM - 5:00 PM</span>
+                        </div>
+                        <div class="hours-item">
+                            <span class="day">Saturday</span>
+                            <span class="time">9:00 AM - 2:00 PM</span>
+                        </div>
+                        <div class="hours-item">
+                            <span class="day">Sunday</span>
+                            <span class="time">Closed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; <span class="footer-year">2024</span> Madi Makerere University Students Association. All rights reserved.</p>
+                    <div class="footer-bottom-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="admin/login.html">Admin Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script src="js/main.js"></script>
+</body>
+</html>

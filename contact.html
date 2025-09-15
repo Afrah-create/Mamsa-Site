@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Madi Makerere University Students Association</title>
+    <meta name="description" content="Get in touch with the Madi Makerere University Students Association. Find our contact information, office hours, and send us a message.">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <img src="images/logo.png" alt="Madi Makerere University Students Association Logo" class="logo">
+                    <span class="logo-text">Madi Makerere</span>
+                </div>
+                
+                <div class="nav-menu" id="nav-menu">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="about.html" class="nav-link">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="leadership.html" class="nav-link">Leadership</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="events.html" class="nav-link">Events</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="news.html" class="nav-link">News</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="gallery.html" class="nav-link">Gallery</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="services.html" class="nav-link">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="contact.html" class="nav-link active">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="nav-toggle" id="nav-toggle">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1 class="page-title">Contact Us</h1>
+            <p class="page-subtitle">Get in touch with us - we'd love to hear from you</p>
+        </div>
+    </section>
+
+    <!-- Contact Information -->
+    <section class="contact-info-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3>Our Location</h3>
+                    <p>Makerere University<br>
+                    Kampala, Uganda<br>
+                    East Africa</p>
+                    <a href="#" class="contact-link">Get Directions</a>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>Phone Numbers</h3>
+                    <p>Main Office: +256 700 000 000<br>
+                    President: +256 700 000 001<br>
+                    Secretary: +256 700 000 002</p>
+                    <a href="tel:+256700000000" class="contact-link">Call Now</a>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Email Addresses</h3>
+                    <p>General: info@madimakerere.org<br>
+                    President: president@madimakerere.org<br>
+                    Secretary: secretary@madimakerere.org</p>
+                    <a href="mailto:info@madimakerere.org" class="contact-link">Send Email</a>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Office Hours</h3>
+                    <p>Monday - Friday: 8:00 AM - 5:00 PM<br>
+                    Saturday: 9:00 AM - 2:00 PM<br>
+                    Sunday: Closed</p>
+                    <a href="#" class="contact-link">View Schedule</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Form and Map -->
+    <section class="contact-form-map">
+        <div class="container">
+            <div class="contact-content">
+                <div class="contact-form-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Send Us a Message</h2>
+                        <p class="section-subtitle">We'll get back to you as soon as possible</p>
+                    </div>
+                    
+                    <form class="contact-form" id="contact-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="contact-name" placeholder="Your Full Name" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" id="contact-email" placeholder="Email Address" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <input type="text" id="contact-phone" placeholder="Phone Number">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="contact-student-id" placeholder="Student ID (if applicable)">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <select id="contact-subject" required>
+                                <option value="">Select Subject</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="membership">Membership</option>
+                                <option value="events">Events</option>
+                                <option value="services">Services</option>
+                                <option value="leadership">Leadership</option>
+                                <option value="complaint">Complaint</option>
+                                <option value="suggestion">Suggestion</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <textarea id="contact-message" placeholder="Your Message" rows="6" required></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="contact-newsletter">
+                                <span class="checkmark"></span>
+                                Subscribe to our newsletter for updates
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+                
+                <div class="map-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Find Us</h2>
+                        <p class="section-subtitle">Visit our office at Makerere University</p>
+                    </div>
+                    
+                    <div class="map-container">
+                        <div class="map-placeholder">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <h3>Interactive Map</h3>
+                            <p>Makerere University Campus<br>
+                            Kampala, Uganda</p>
+                            <a href="https://maps.google.com" target="_blank" class="btn btn-outline">Open in Google Maps</a>
+                        </div>
+                    </div>
+                    
+                    <div class="map-info">
+                        <h4>Getting Here</h4>
+                        <ul>
+                            <li><i class="fas fa-bus"></i> Take any bus to Makerere University</li>
+                            <li><i class="fas fa-car"></i> Parking available at the main gate</li>
+                            <li><i class="fas fa-walking"></i> 5-minute walk from the main gate</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Media -->
+    <section class="social-media-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Connect With Us</h2>
+                <p class="section-subtitle">Follow us on social media for updates and news</p>
+            </div>
+            
+            <div class="social-grid">
+                <div class="social-card">
+                    <div class="social-icon facebook">
+                        <i class="fab fa-facebook"></i>
+                    </div>
+                    <h3>Facebook</h3>
+                    <p>Follow us for news, events, and community updates</p>
+                    <a href="#" class="social-link">@MadiMakerere</a>
+                </div>
+                
+                <div class="social-card">
+                    <div class="social-icon twitter">
+                        <i class="fab fa-twitter"></i>
+                    </div>
+                    <h3>Twitter</h3>
+                    <p>Get real-time updates and announcements</p>
+                    <a href="#" class="social-link">@MadiMakerere</a>
+                </div>
+                
+                <div class="social-card">
+                    <div class="social-icon instagram">
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                    <h3>Instagram</h3>
+                    <p>See photos and stories from our events</p>
+                    <a href="#" class="social-link">@MadiMakerere</a>
+                </div>
+                
+                <div class="social-card">
+                    <div class="social-icon linkedin">
+                        <i class="fab fa-linkedin"></i>
+                    </div>
+                    <h3>LinkedIn</h3>
+                    <p>Connect with alumni and professional networks</p>
+                    <a href="#" class="social-link">Madi Makerere Association</a>
+                </div>
+                
+                <div class="social-card">
+                    <div class="social-icon whatsapp">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <h3>WhatsApp</h3>
+                    <p>Join our group chat for quick updates</p>
+                    <a href="#" class="social-link">+256 700 000 000</a>
+                </div>
+                
+                <div class="social-card">
+                    <div class="social-icon youtube">
+                        <i class="fab fa-youtube"></i>
+                    </div>
+                    <h3>YouTube</h3>
+                    <p>Watch videos from our events and activities</p>
+                    <a href="#" class="social-link">Madi Makerere Channel</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-subtitle">Find answers to common questions</p>
+            </div>
+            
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How do I become a member?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>To become a member, simply visit our office during office hours, fill out the membership form, and pay the annual membership fee. You can also contact us through our website or social media for more information.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What services do you offer?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer academic support, student welfare services, career guidance, social activities, and student advocacy. Visit our services page for detailed information about each service.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How can I get involved in leadership?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We hold annual elections for leadership positions. You can also join various committees and departments. Contact our leadership team or visit our leadership page for more information about available opportunities.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Do you offer financial assistance?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we provide information about scholarships, bursaries, and other financial aid opportunities. We also offer emergency financial support for members in need. Contact our welfare department for more information.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How often do you hold events?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We organize events throughout the academic year, including cultural celebrations, academic workshops, sports tournaments, and social gatherings. Check our events page for the latest schedule.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="images/logo.png" alt="Madi Makerere University Students Association Logo" class="footer-logo-img">
+                        <span class="footer-logo-text">Madi Makerere</span>
+                    </div>
+                    <p class="footer-description">Connecting students, fostering community, and promoting excellence in education and leadership.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="leadership.html">Leadership</a></li>
+                        <li><a href="events.html">Events</a></li>
+                        <li><a href="news.html">News</a></li>
+                        <li><a href="services.html">Services</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Contact Info</h3>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Makerere University, Kampala, Uganda</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <span>+256 700 000 000</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>info@madimakerere.org</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3 class="footer-title">Office Hours</h3>
+                    <div class="office-hours">
+                        <div class="hours-item">
+                            <span class="day">Monday - Friday</span>
+                            <span class="time">8:00 AM - 5:00 PM</span>
+                        </div>
+                        <div class="hours-item">
+                            <span class="day">Saturday</span>
+                            <span class="time">9:00 AM - 2:00 PM</span>
+                        </div>
+                        <div class="hours-item">
+                            <span class="day">Sunday</span>
+                            <span class="time">Closed</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; <span class="footer-year">2024</span> Madi Makerere University Students Association. All rights reserved.</p>
+                    <div class="footer-bottom-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="admin/login.html">Admin Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script src="js/main.js"></script>
+</body>
+</html>

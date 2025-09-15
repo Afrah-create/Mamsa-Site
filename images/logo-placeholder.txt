@@ -1,0 +1,20 @@
+# Madi Makerere University Students Association - Website
+
+This is a placeholder file for the logo image. In a real implementation, this would be replaced with the actual logo file (logo.png).
+
+## Logo Specifications:
+- Format: PNG with transparent background
+- Size: 200x200 pixels (for high resolution displays)
+- Colors: Makerere University colors (maroon #800020 and gold #FFD700)
+- Design: Should include university symbols and association name
+
+## Usage:
+The logo is used in:
+- Website header/navigation
+- Footer
+- Admin panel
+- Social media sharing
+- Print materials
+
+## File Location:
+images/logo.png
