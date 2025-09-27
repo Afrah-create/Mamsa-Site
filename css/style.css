@@ -333,13 +333,57 @@ a:hover {
 
 /* Page Header */
 .page-header {
-    background: linear-gradient(rgba(46, 125, 50, 0.8), rgba(27, 94, 32, 0.8)), 
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
                 url('images/page-header-bg.jpg') center/cover no-repeat;
     background-color: var(--primary-color); /* Fallback color */
     color: var(--white);
     padding: 120px 0 80px;
     text-align: center;
     position: relative;
+    background-attachment: fixed;
+}
+
+/* Page-specific header backgrounds */
+.page-header.about-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/about-us.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.leadership-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/leadership.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.events-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/events.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.news-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/about-us.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.gallery-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/gallery.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.services-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/services.jpg') center/cover no-repeat;
+    background-attachment: fixed;
+}
+
+.page-header.contact-header {
+    background: linear-gradient(rgba(46, 125, 50, 0.7), rgba(27, 94, 32, 0.8)), 
+                url('images/header-sections/contact-us.jpg') center/cover no-repeat;
+    background-attachment: fixed;
 }
 
 /* Ensure text is readable over background image */
@@ -4249,11 +4293,14 @@ a:hover {
 .faq-answer {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
 }
 
 .faq-item.active .faq-answer {
-    max-height: 500px;
+    max-height: 1000px;
+    opacity: 1;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease 0.1s;
 }
 
 .faq-answer-content {

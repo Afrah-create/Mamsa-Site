@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Madi Makerere Students Association</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-header-content">
+            <div class="admin-logo">
+                <img src="../images/mamsa-logo.png" alt="MAMSA Logo" class="logo-image">
+                <img src="../images/Mak_Logo.png" alt="Makerere University Logo" class="logo-image">
+            </div>
+            <div class="admin-title">
+                <h1>Admin Dashboard</h1>
+                <p>Madi Makerere Students Association</p>
+            </div>
+            <div class="admin-user">
+                <div class="user-info">
+                    <span id="user-name">Admin User</span>
+                    <span id="user-role">Administrator</span>
+                </div>
+                <button class="btn btn-outline" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <nav class="admin-nav">
+        <div class="admin-nav-content">
+            <ul class="admin-nav-list">
+                <li><a href="#dashboard" class="admin-nav-link active">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a></li>
+                <li><a href="#content" class="admin-nav-link">
+                    <i class="fas fa-edit"></i> Content Management
+                </a></li>
+                <li><a href="#users" class="admin-nav-link">
+                    <i class="fas fa-users"></i> User Management
+                </a></li>
+                <li><a href="#analytics" class="admin-nav-link">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </a></li>
+                <li><a href="#settings" class="admin-nav-link">
+                    <i class="fas fa-cog"></i> Settings
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Admin Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- Dashboard Overview -->
+            <section id="dashboard-section" class="admin-section active">
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <p>Welcome to the admin panel</p>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="news-count">0</h3>
+                            <p>News Articles</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="events-count">0</h3>
+                            <p>Upcoming Events</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="leadership-count">0</h3>
+                            <p>Leadership Team</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="gallery-count">0</h3>
+                            <p>Gallery Images</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-actions">
+                    <div class="action-card">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="adminContentManager.showNewsForm()">
+                                <i class="fas fa-plus"></i> Add News Article
+                            </button>
+                            <button class="btn btn-primary" onclick="adminContentManager.showEventForm()">
+                                <i class="fas fa-plus"></i> Add Event
+                            </button>
+                            <button class="btn btn-primary" onclick="adminContentManager.showLeadershipForm()">
+                                <i class="fas fa-plus"></i> Add Leadership Member
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="action-card">
+                        <h3>Recent Activity</h3>
+                        <div id="recent-activity" class="activity-list">
+                            <div class="activity-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span>No recent activity</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Content Management Section -->
+            <section id="content-section" class="admin-section">
+                <div id="admin-content">
+                    <!-- Content will be loaded dynamically by admin-content-manager.js -->
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section id="users-section" class="admin-section">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <p>Manage admin users and permissions</p>
+                </div>
+                
+                <div class="users-management">
+                    <div class="users-list">
+                        <h3>Admin Users</h3>
+                        <div id="users-list" class="content-list">
+                            <!-- Users will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <div class="user-form">
+                        <h3>Add New User</h3>
+                        <form id="user-form">
+                            <div class="form-group">
+                                <label for="user-email">Email</label>
+                                <input type="email" id="user-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="user-role">Role</label>
+                                <select id="user-role" required>
+                                    <option value="admin">Administrator</option>
+                                    <option value="editor">Editor</option>
+                                    <option value="contributor">Contributor</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="user-name">Full Name</label>
+                                <input type="text" id="user-name" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="admin-section">
+                <div class="section-header">
+                    <h2>Analytics</h2>
+                    <p>Website performance and user statistics</p>
+                </div>
+                
+                <div class="analytics-content">
+                    <div class="analytics-card">
+                        <h3>Page Views</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Analytics data will be displayed here</p>
+                        </div>
+                    </div>
+                    
+                    <div class="analytics-card">
+                        <h3>Popular Content</h3>
+                        <div class="popular-content">
+                            <div class="content-item">
+                                <span>Most viewed news article</span>
+                                <span class="views">0 views</span>
+                            </div>
+                            <div class="content-item">
+                                <span>Most popular event</span>
+                                <span class="views">0 registrations</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="admin-section">
+                <div class="section-header">
+                    <h2>System Settings</h2>
+                    <p>Configure website settings and preferences</p>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-card">
+                        <h3>General Settings</h3>
+                        <form id="system-settings-form">
+                            <div class="form-group">
+                                <label for="site-name">Site Name</label>
+                                <input type="text" id="site-name" value="Madi Makerere Students Association">
+                            </div>
+                            <div class="form-group">
+                                <label for="site-description">Site Description</label>
+                                <textarea id="site-description" rows="3">Connecting students, fostering community, and promoting excellence in education and leadership.</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="maintenance-mode">
+                                    <input type="checkbox" id="maintenance-mode">
+                                    Enable Maintenance Mode
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Settings
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="settings-card">
+                        <h3>Backup & Restore</h3>
+                        <div class="backup-actions">
+                            <button class="btn btn-outline" id="export-data">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                            <button class="btn btn-outline" id="import-data">
+                                <i class="fas fa-upload"></i> Import Data
+                            </button>
+                            <input type="file" id="import-file" accept=".json" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="admin-footer-content">
+            <p>&copy; <span id="current-year"></span> Madi Makerere Students Association. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="../index.html">View Website</a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBx0SpQdpijzJTo7Qx6uEaaBH53V3gp9aU",
+            authDomain: "mamsa-2e7ef.firebaseapp.com",
+            projectId: "mamsa-2e7ef",
+            storageBucket: "mamsa-2e7ef.firebasestorage.app",
+            messagingSenderId: "827186522983",
+            appId: "1:827186522983:web:79f6640c2529e5d0c19dc2",
+            measurementId: "G-ZQPLHJ29CY"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const analytics = getAnalytics(app);
+
+        // Make Firebase available globally
+        window.firebase = { app, auth, db, storage, analytics };
+    </script>
+
+    <!-- Admin Scripts -->
+    <script type="module" src="../js/auth-service.js"></script>
+    <script type="module" src="../js/firebase-content-service.js"></script>
+    <script type="module" src="../js/admin-content-manager.js"></script>
+    <script type="module" src="../js/firebase-admin.js"></script>
+</body>
+</html>

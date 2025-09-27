@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Hub - Madi Makerere Students Association</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-body">
+    <!-- Admin Header -->
+    <header class="admin-header">
+        <div class="admin-header-content">
+            <div class="admin-logo">
+                <img src="../images/mamsa-logo.png" alt="MAMSA Logo" class="logo-image">
+                <img src="../images/Mak_Logo.png" alt="Makerere University Logo" class="logo-image">
+            </div>
+            <div class="admin-title">
+                <h1>Admin Hub</h1>
+                <p>Madi Makerere Students Association</p>
+            </div>
+            <div class="admin-user">
+                <div class="user-info">
+                    <span id="user-name">Admin User</span>
+                    <span id="user-role">Administrator</span>
+                </div>
+                <button class="btn btn-outline" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Main Content -->
+    <main class="admin-main">
+        <div class="admin-container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h2>Welcome to the Admin Hub</h2>
+                    <p>Manage your website content, users, and analytics from this central dashboard</p>
+                </div>
+            </section>
+
+            <!-- Admin Modules Grid -->
+            <section class="admin-modules">
+                <div class="modules-grid">
+                    <!-- Dashboard Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Dashboard</h3>
+                            <p>Overview of website statistics and recent activity</p>
+                            <div class="module-stats">
+                                <span class="stat-item">12 News Articles</span>
+                                <span class="stat-item">8 Events</span>
+                                <span class="stat-item">6 Leadership Members</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="admin-complete.html" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Open Dashboard
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Content Management Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Content Management</h3>
+                            <p>Manage news, events, leadership, and gallery content</p>
+                            <div class="module-features">
+                                <span class="feature-item">News Articles</span>
+                                <span class="feature-item">Events</span>
+                                <span class="feature-item">Leadership</span>
+                                <span class="feature-item">Gallery</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="content-management.html" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Manage Content
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Analytics</h3>
+                            <p>Monitor website performance and user engagement</p>
+                            <div class="module-stats">
+                                <span class="stat-item">1,234 Page Views</span>
+                                <span class="stat-item">856 Visitors</span>
+                                <span class="stat-item">2.5m Avg. Session</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="analytics.html" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> View Analytics
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- User Management Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>User Management</h3>
+                            <p>Manage admin users and permissions</p>
+                            <div class="module-features">
+                                <span class="feature-item">Add Users</span>
+                                <span class="feature-item">Role Management</span>
+                                <span class="feature-item">Permissions</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="admin-complete.html#users" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Manage Users
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Settings Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Settings</h3>
+                            <p>Configure website settings and preferences</p>
+                            <div class="module-features">
+                                <span class="feature-item">General Settings</span>
+                                <span class="feature-item">Contact Info</span>
+                                <span class="feature-item">Social Media</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="admin-complete.html#settings" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Configure Settings
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Backup Module -->
+                    <div class="module-card">
+                        <div class="module-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="module-content">
+                            <h3>Backup & Restore</h3>
+                            <p>Export and import website data</p>
+                            <div class="module-features">
+                                <span class="feature-item">Export Data</span>
+                                <span class="feature-item">Import Data</span>
+                                <span class="feature-item">Backup Status</span>
+                            </div>
+                        </div>
+                        <div class="module-actions">
+                            <a href="admin-complete.html#backup" class="btn btn-primary">
+                                <i class="fas fa-arrow-right"></i> Manage Backups
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions">
+                <div class="section-header">
+                    <h2>Quick Actions</h2>
+                    <p>Common tasks you can perform quickly</p>
+                </div>
+                
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="window.location.href='content-management.html'">
+                        <i class="fas fa-plus"></i>
+                        <span>Add News Article</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="window.location.href='content-management.html'">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Add Event</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="window.location.href='content-management.html'">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Add Leadership Member</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="window.location.href='content-management.html'">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload Image</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="window.open('../index.html', '_blank')">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Preview Website</span>
+                    </button>
+                    
+                    <button class="action-btn" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        <span>Export Data</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- System Status -->
+            <section class="system-status">
+                <div class="section-header">
+                    <h2>System Status</h2>
+                    <p>Current system health and status</p>
+                </div>
+                
+                <div class="status-grid">
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Firebase Connection</h3>
+                            <span class="status-indicator online">Online</span>
+                            <p>Connected to Firebase</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-sync"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Content Sync</h3>
+                            <span class="status-indicator online">Synced</span>
+                            <p>Last sync: 2 minutes ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Security</h3>
+                            <span class="status-indicator online">Secure</span>
+                            <p>All systems secure</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <div class="status-content">
+                            <h3>Storage</h3>
+                            <span class="status-indicator warning">75% Used</span>
+                            <p>2.1 GB of 2.8 GB used</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Admin Footer -->
+    <footer class="admin-footer">
+        <div class="admin-footer-content">
+            <p>&copy; <span id="current-year"></span> Madi Makerere Students Association. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="../index.html">View Website</a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBx0SpQdpijzJTo7Qx6uEaaBH53V3gp9aU",
+            authDomain: "mamsa-2e7ef.firebaseapp.com",
+            projectId: "mamsa-2e7ef",
+            storageBucket: "mamsa-2e7ef.firebasestorage.app",
+            messagingSenderId: "827186522983",
+            appId: "1:827186522983:web:79f6640c2529e5d0c19dc2",
+            measurementId: "G-ZQPLHJ29CY"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const analytics = getAnalytics(app);
+
+        // Make Firebase available globally
+        window.firebase = { app, auth, db, storage, analytics };
+    </script>
+
+    <!-- Admin Scripts -->
+    <script type="module" src="../js/auth-service.js"></script>
+    <script type="module" src="../js/firebase-content-service.js"></script>
+    <script type="module" src="../js/admin-content-manager.js"></script>
+    <script type="module" src="../js/firebase-admin.js"></script>
+
+    <script>
+        // Set current year
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Export data function
+        async function exportData() {
+            try {
+                const { contentService } = await import('../js/firebase-content-service.js');
+                
+                const data = {
+                    news: await contentService.getNewsArticles(1000),
+                    events: await contentService.getEvents(1000),
+                    leadership: await contentService.getLeadershipTeam(),
+                    gallery: await contentService.getGalleryImages(1000),
+                    exportDate: new Date().toISOString()
+                };
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mamsa-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showNotification('Data exported successfully!', 'success');
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showNotification('Failed to export data', 'error');
+            }
+        }
+
+        // Show notification function
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

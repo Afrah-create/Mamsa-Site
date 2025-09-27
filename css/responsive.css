@@ -1010,6 +1010,30 @@
         justify-content: center;
     }
     
+    /* Page Header Mobile Optimization */
+    .page-header {
+        padding: 80px 0 60px;
+        background-attachment: scroll; /* Fixed attachment can cause issues on mobile */
+    }
+    
+    .page-header.about-header,
+    .page-header.leadership-header,
+    .page-header.events-header,
+    .page-header.news-header,
+    .page-header.gallery-header,
+    .page-header.services-header,
+    .page-header.contact-header {
+        background-attachment: scroll;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .page-subtitle {
+        font-size: 0.9rem;
+    }
+
     /* Enhanced Mobile Navigation */
     .nav-menu {
         top: 70px;
@@ -1695,41 +1719,40 @@
         font-size: 0.7rem;
     }
     
-    /* FAQ */
+    /* FAQ - Mobile specific adjustments */
     .faq-container {
         display: flex;
         flex-direction: column;
         gap: var(--spacing-md);
     }
     
-    .faq-item {
-        background-color: var(--white);
-        border-radius: var(--border-radius-md);
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }
-    
     .faq-question {
-        padding: var(--spacing-lg);
-        background-color: var(--light-gray);
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: var(--spacing-md);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
     }
     
-    .faq-question h3 {
-        margin: 0;
-        font-size: 1.125rem;
+    .faq-content h3 {
+        font-size: 1rem;
     }
     
-    .faq-answer {
-        padding: 0 var(--spacing-lg) var(--spacing-lg);
-        display: none;
+    .faq-content p {
+        font-size: 0.85rem;
     }
     
-    .faq-item.active .faq-answer {
-        display: block;
+    .faq-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .faq-toggle {
+        width: 32px;
+        height: 32px;
+        position: absolute;
+        top: var(--spacing-md);
+        right: var(--spacing-md);
     }
     
     /* Gallery Page */

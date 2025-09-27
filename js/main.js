@@ -9,6 +9,14 @@ let isAdminLoggedIn = false;
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     updateFooterYear();
+    
+    // Fallback FAQ initialization after a short delay to ensure DOM is ready
+    setTimeout(function() {
+        const faqItems = document.querySelectorAll('.faq-item');
+        if (faqItems.length > 0) {
+            initializeFAQ();
+        }
+    }, 100);
 });
 
 // Update footer year dynamically
@@ -34,12 +42,58 @@ function initializeApp() {
     initializeForms();
     initializeAnimations();
     initializePageSpecificFeatures();
-    initializeFAQ();
     initializeEventCategories();
+    
+    // Initialize Firebase content synchronization
+    initializeFirebaseSync();
     
     // Check if user is on admin page
     if (currentPage.includes('admin')) {
         initializeAdminFeatures();
+    }
+}
+
+// Initialize Firebase content synchronization
+async function initializeFirebaseSync() {
+    try {
+        // Check if Firebase is available
+        if (typeof window.firebase !== 'undefined') {
+            // Import content synchronizer dynamically
+            const { contentSynchronizer } = await import('./content-synchronizer.js');
+            
+            // Initialize content synchronizer
+            await contentSynchronizer.initializeWebsiteSync();
+            
+            // Listen for content updates
+            window.addEventListener('contentUpdated', (event) => {
+                const { type, data } = event.detail;
+                console.log(`Content updated: ${type}`, data);
+                
+                // Update specific sections based on content type
+                switch (type) {
+                    case 'news':
+                        contentSynchronizer.updateNewsSection(data);
+                        break;
+                    case 'events':
+                        contentSynchronizer.updateEventsSection(data);
+                        break;
+                    case 'leadership':
+                        contentSynchronizer.updateLeadershipSection(data);
+                        break;
+                    case 'gallery':
+                        contentSynchronizer.updateGallerySection(data);
+                        break;
+                }
+            });
+            
+            console.log('Firebase content synchronization initialized');
+        } else {
+            console.log('Firebase not available, using static content');
+        }
+    } catch (error) {
+        console.error('Error initializing Firebase sync:', error);
+        // Fallback to static content loading
+        console.log('Falling back to static content loading');
     }
 }
 
@@ -1125,23 +1179,80 @@ function initializeServiceTabs() {
 function initializeFAQ() {
     const faqItems = document.querySelectorAll('.faq-item');
     
-    faqItems.forEach(item => {
+    // Check if already initialized
+    if (faqItems.length > 0 && faqItems[0].dataset.faqInitialized) {
+        return;
+    }
+    
+    faqItems.forEach((item, index) => {
         const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const toggle = item.querySelector('.faq-toggle i');
         
-        if (question) {
-            question.addEventListener('click', function() {
+        // Mark as initialized
+        item.dataset.faqInitialized = 'true';
+        
+        if (question && answer) {
+            question.addEventListener('click', function(e) {
+                e.preventDefault();
+                
                 // Close other FAQ items
                 faqItems.forEach(otherItem => {
-                    if (otherItem !== item) {
+                    if (otherItem !== item && otherItem.classList.contains('active')) {
                         otherItem.classList.remove('active');
+                        const otherAnswer = otherItem.querySelector('.faq-answer');
+                        const otherToggle = otherItem.querySelector('.faq-toggle i');
+                        if (otherAnswer) {
+                            otherAnswer.style.maxHeight = '0';
+                            otherAnswer.style.opacity = '0';
+                        }
+                        if (otherToggle) {
+                            otherToggle.style.transform = 'rotate(0deg)';
+                        }
                     }
                 });
                 
                 // Toggle current item
-                item.classList.toggle('active');
+                const isActive = item.classList.contains('active');
+                
+                if (isActive) {
+                    item.classList.remove('active');
+                    answer.style.maxHeight = '0';
+                    answer.style.opacity = '0';
+                } else {
+                    item.classList.add('active');
+                    // Set max-height to scrollHeight for smooth animation
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                    answer.style.opacity = '1';
+                }
+                
+                // Animate the toggle icon
+                if (toggle) {
+                    if (isActive) {
+                        toggle.style.transform = 'rotate(0deg)';
+                    } else {
+                        toggle.style.transform = 'rotate(180deg)';
+                    }
+                }
             });
         }
     });
+    
+    // Initialize all FAQ answers to be closed
+    faqItems.forEach(item => {
+        const answer = item.querySelector('.faq-answer');
+        if (answer) {
+            answer.style.maxHeight = '0';
+            answer.style.opacity = '0';
+            answer.style.overflow = 'hidden';
+            answer.style.transition = 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease';
+        }
+    });
+    
+    // Add keyboard support for accessibility
+    addFAQKeyboardSupport();
+    
+    // FAQ initialization complete - ready for user interaction
 }
 
 // Form handlers
@@ -1313,20 +1424,6 @@ function initializeAdminFeatures() {
     console.log('Admin features will be initialized by admin.js');
 }
 
-// Initialize FAQ functionality
-function initializeFAQ() {
-    const faqItems = document.querySelectorAll('.faq-item');
-    
-    faqItems.forEach(item => {
-        const question = item.querySelector('.faq-question');
-        
-        if (question) {
-            question.addEventListener('click', function() {
-                toggleFAQ(item);
-            });
-        }
-    });
-}
 
 // Initialize Event Categories
 function initializeEventCategories() {
@@ -1367,21 +1464,62 @@ function filterEventsByCategory(category) {
     }
 }
 
-// Toggle FAQ item
-function toggleFAQ(item) {
-    const isActive = item.classList.contains('active');
+// Debug FAQ functionality
+function debugFAQ() {
+    console.log('=== FAQ Debug Information ===');
+    const faqItems = document.querySelectorAll('.faq-item');
+    console.log(`Found ${faqItems.length} FAQ items`);
     
-    // Close all other FAQ items
-    document.querySelectorAll('.faq-item').forEach(otherItem => {
-        if (otherItem !== item) {
-            otherItem.classList.remove('active');
+    faqItems.forEach((item, index) => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        const toggle = item.querySelector('.faq-toggle i');
+        
+        console.log(`FAQ Item ${index + 1}:`);
+        console.log(`  - Question element: ${question ? 'Found' : 'Missing'}`);
+        console.log(`  - Answer element: ${answer ? 'Found' : 'Missing'}`);
+        console.log(`  - Toggle element: ${toggle ? 'Found' : 'Missing'}`);
+        console.log(`  - Is active: ${item.classList.contains('active')}`);
+        
+        if (answer) {
+            console.log(`  - Answer max-height: ${answer.style.maxHeight || 'not set'}`);
+            console.log(`  - Answer opacity: ${answer.style.opacity || 'not set'}`);
         }
     });
+    console.log('=== End FAQ Debug ===');
+}
+
+// Enhanced FAQ functionality with keyboard support
+function addFAQKeyboardSupport() {
+    const faqItems = document.querySelectorAll('.faq-item');
     
-    // Toggle current item
-    if (isActive) {
-        item.classList.remove('active');
-    } else {
-        item.classList.add('active');
-    }
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        
+        if (question) {
+            // Add keyboard navigation support
+            question.setAttribute('tabindex', '0');
+            question.setAttribute('role', 'button');
+            question.setAttribute('aria-expanded', 'false');
+            
+            question.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    question.click();
+                }
+            });
+            
+            // Update aria-expanded when item is toggled
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const isActive = item.classList.contains('active');
+                        question.setAttribute('aria-expanded', isActive.toString());
+                    }
+                });
+            });
+            
+            observer.observe(item, { attributes: true });
+        }
+    });
 }

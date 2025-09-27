@@ -4,187 +4,191 @@ import {
     signOut, 
     onAuthStateChanged,
     createUserWithEmailAndPassword,
-    updateProfile,
-    sendPasswordResetEmail
+    updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { auth, db, COLLECTIONS, USER_ROLES } from './firebase-config.js';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db, USER_ROLES } from '../firebase-config.js';
 
 class AuthService {
     constructor() {
         this.currentUser = null;
-        this.userRole = null;
-        this.init();
+        this.isInitialized = false;
+        this.setupAuthListener();
     }
 
-    init() {
-        // Listen for authentication state changes
+    setupAuthListener() {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 this.currentUser = user;
-                await this.loadUserRole(user.uid);
-                this.onAuthStateChange(true, user);
+                // Get user role from Firestore
+                const userRole = await this.getUserRole(user.uid);
+                this.currentUser.role = userRole;
             } else {
                 this.currentUser = null;
-                this.userRole = null;
-                this.onAuthStateChange(false, null);
             }
+            this.isInitialized = true;
         });
-    }
-
-    async loadUserRole(uid) {
-        try {
-            const userDoc = await getDoc(doc(db, COLLECTIONS.USERS, uid));
-            if (userDoc.exists()) {
-                this.userRole = userDoc.data().role;
-            } else {
-                this.userRole = USER_ROLES.CONTRIBUTOR; // Default role
-            }
-        } catch (error) {
-            console.error('Error loading user role:', error);
-            this.userRole = USER_ROLES.CONTRIBUTOR;
-        }
     }
 
     async signIn(email, password) {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
+            const userRole = await this.getUserRole(userCredential.user.uid);
             
-            // Log login activity
-            await this.logActivity('login', user.uid);
-            
-            return { success: true, user };
+            return {
+                success: true,
+                user: {
+                    ...userCredential.user,
+                    role: userRole
+                }
+            };
         } catch (error) {
             console.error('Sign in error:', error);
-            return { success: false, error: error.message };
+            return {
+                success: false,
+                error: this.getErrorMessage(error.code)
+            };
         }
     }
 
     async signUp(email, password, userData) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
+            
             // Update user profile
-            await updateProfile(user, {
-                displayName: userData.displayName || userData.name
+            await updateProfile(userCredential.user, {
+                displayName: userData.name
             });
 
-            // Create user document in Firestore
-            await setDoc(doc(db, COLLECTIONS.USERS, user.uid), {
-                email: user.email,
-                displayName: userData.displayName || userData.name,
+            // Save user data to Firestore
+            await setDoc(doc(db, 'users', userCredential.user.uid), {
+                name: userData.name,
+                email: userData.email,
                 role: userData.role || USER_ROLES.CONTRIBUTOR,
                 createdAt: new Date(),
-                lastLogin: new Date(),
-                isActive: true
+                updatedAt: new Date()
             });
 
-            // Log registration activity
-            await this.logActivity('register', user.uid);
-
-            return { success: true, user };
+            return {
+                success: true,
+                user: userCredential.user
+            };
         } catch (error) {
             console.error('Sign up error:', error);
-            return { success: false, error: error.message };
+            return {
+                success: false,
+                error: this.getErrorMessage(error.code)
+            };
         }
     }
 
     async signOut() {
         try {
-            if (this.currentUser) {
-                await this.logActivity('logout', this.currentUser.uid);
-            }
             await signOut(auth);
             return { success: true };
         } catch (error) {
             console.error('Sign out error:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    async resetPassword(email) {
-        try {
-            await sendPasswordResetEmail(auth, email);
-            return { success: true };
-        } catch (error) {
-            console.error('Password reset error:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    async updateUserProfile(uid, updates) {
-        try {
-            await updateDoc(doc(db, COLLECTIONS.USERS, uid), {
-                ...updates,
-                updatedAt: new Date()
-            });
-            return { success: true };
-        } catch (error) {
-            console.error('Profile update error:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    async logActivity(action, uid) {
-        try {
-            const activityDoc = {
-                action,
-                userId: uid,
-                timestamp: new Date(),
-                userAgent: navigator.userAgent,
-                ip: await this.getClientIP()
+            return {
+                success: false,
+                error: error.message
             };
-            
-            // Store activity log (you might want to create a separate collection for this)
-            await setDoc(doc(db, 'activity_logs', `${Date.now()}_${uid}`), activityDoc);
-        } catch (error) {
-            console.error('Activity logging error:', error);
         }
     }
 
-    async getClientIP() {
+    async getCurrentUser() {
+        if (!this.isInitialized) {
+            // Wait for auth state to be initialized
+            return new Promise((resolve) => {
+                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                    unsubscribe();
+                    resolve(user);
+                });
+            });
+        }
+        return this.currentUser;
+    }
+
+    async getUserRole(uid) {
         try {
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            return data.ip;
+            const userDoc = await getDoc(doc(db, 'users', uid));
+            if (userDoc.exists()) {
+                return userDoc.data().role || USER_ROLES.CONTRIBUTOR;
+            }
+            return USER_ROLES.CONTRIBUTOR;
         } catch (error) {
-            return 'unknown';
+            console.error('Error getting user role:', error);
+            return USER_ROLES.CONTRIBUTOR;
         }
     }
 
-    // Permission checking methods
-    canEdit() {
-        return this.userRole === USER_ROLES.ADMIN || this.userRole === USER_ROLES.EDITOR;
+    async updateUserRole(uid, role) {
+        try {
+            await setDoc(doc(db, 'users', uid), {
+                role: role,
+                updatedAt: new Date()
+            }, { merge: true });
+            return { success: true };
+        } catch (error) {
+            console.error('Error updating user role:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
     }
 
-    canDelete() {
-        return this.userRole === USER_ROLES.ADMIN;
+    isAuthenticated() {
+        return this.currentUser !== null;
     }
 
-    canManageUsers() {
-        return this.userRole === USER_ROLES.ADMIN;
-    }
-
-    canAccessAdmin() {
-        return this.userRole === USER_ROLES.ADMIN || this.userRole === USER_ROLES.EDITOR;
-    }
-
-    // Callback for auth state changes
-    onAuthStateChange(isAuthenticated, user) {
-        // Override this method in your app to handle auth state changes
-        console.log('Auth state changed:', isAuthenticated, user);
-    }
-
-    // Get current user info
-    getCurrentUser() {
-        return {
-            user: this.currentUser,
-            role: this.userRole,
-            isAuthenticated: !!this.currentUser
+    hasRole(requiredRole) {
+        if (!this.currentUser) return false;
+        
+        const roleHierarchy = {
+            [USER_ROLES.CONTRIBUTOR]: 1,
+            [USER_ROLES.EDITOR]: 2,
+            [USER_ROLES.ADMIN]: 3
         };
+
+        const userRoleLevel = roleHierarchy[this.currentUser.role] || 0;
+        const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+
+        return userRoleLevel >= requiredRoleLevel;
+    }
+
+    getErrorMessage(errorCode) {
+        const errorMessages = {
+            'auth/user-not-found': 'No user found with this email address.',
+            'auth/wrong-password': 'Incorrect password.',
+            'auth/invalid-email': 'Invalid email address.',
+            'auth/user-disabled': 'This user account has been disabled.',
+            'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+            'auth/email-already-in-use': 'An account with this email already exists.',
+            'auth/weak-password': 'Password should be at least 6 characters.',
+            'auth/network-request-failed': 'Network error. Please check your connection.',
+            'auth/invalid-credential': 'Invalid email or password.'
+        };
+
+        return errorMessages[errorCode] || 'An error occurred. Please try again.';
+    }
+
+    // Check if user can perform action
+    canPerformAction(action) {
+        if (!this.isAuthenticated()) return false;
+
+        const permissions = {
+            'view_content': [USER_ROLES.CONTRIBUTOR, USER_ROLES.EDITOR, USER_ROLES.ADMIN],
+            'edit_content': [USER_ROLES.EDITOR, USER_ROLES.ADMIN],
+            'delete_content': [USER_ROLES.ADMIN],
+            'manage_users': [USER_ROLES.ADMIN],
+            'manage_settings': [USER_ROLES.ADMIN]
+        };
+
+        const allowedRoles = permissions[action] || [];
+        return allowedRoles.includes(this.currentUser.role);
     }
 }
 
-export default new AuthService();
+// Export singleton instance
+export const authService = new AuthService();
+export default authService;
