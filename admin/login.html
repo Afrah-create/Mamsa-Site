@@ -3,463 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Madi Makerere University Students Association</title>
-    <meta name="description" content="Admin login for the Madi Makerere University Students Association content management system.">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
+    <title>MAMSA Admin Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            width: 100%;
-            max-width: 380px;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 32px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-
-        .logos-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .logo-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            padding: 16px;
-            background: #f8fafc;
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            min-width: 120px;
-            transition: all 0.2s ease;
-        }
-
-        .logo-placeholder:hover {
-            border-color: #3b82f6;
-            background: #f1f5f9;
-        }
-
-        .logo-image {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            border-radius: 8px;
-        }
-        
-        .association-logo .logo-image {
-            width: 44px;
-            height: 44px;
-        }
-
-        .logo-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #64748b;
-            text-align: center;
-        }
-
-        .header-content {
-            text-align: center;
-        }
-
-        .login-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-
-        .login-subtitle {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-            color: #1f2937;
-            background: #ffffff;
-            transition: all 0.2s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-input::placeholder {
-            color: #9ca3af;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6b7280;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 4px;
-            transition: color 0.2s ease;
-        }
-
-        .password-toggle:hover {
-            color: #3b82f6;
-        }
-
-        .form-options {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 8px 0;
-        }
-
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #374151;
-        }
-
-        .checkbox-input {
-            width: 16px;
-            height: 16px;
-            accent-color: #3b82f6;
-        }
-
-        .login-button {
-            width: 100%;
-            padding: 12px 16px;
-            background: #3b82f6;
-            color: #ffffff;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .login-button:hover {
-            background: #2563eb;
-        }
-
-        .login-button:active {
-            transform: translateY(1px);
-        }
-
-        .login-error {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 8px;
-            color: #dc2626;
-            font-size: 13px;
-        }
-
-        .login-footer {
-            margin-top: 24px;
-            text-align: center;
-        }
-
-        .credentials-info {
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 16px;
-        }
-
-        .credentials-info p {
-            margin: 2px 0;
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        .credentials-info strong {
-            color: #374151;
-            font-weight: 600;
-        }
-
-        .credentials-info code {
-            background: #e2e8f0;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 11px;
-            color: #3b82f6;
-            font-weight: 600;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #6b7280;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .back-link:hover {
-            color: #3b82f6;
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 16px;
-            }
-            
-            .login-container {
-                padding: 24px;
-            }
-            
-            .logos-container {
-                gap: 12px;
-                margin-bottom: 20px;
-            }
-            
-            .logo-placeholder {
-                padding: 12px;
-                min-width: 100px;
-            }
-            
-            .logo-image {
-                width: 32px;
-                height: 32px;
-            }
-            
-            .association-logo .logo-image {
-                width: 36px;
-                height: 36px;
-            }
-            
-            .logo-label {
-                font-size: 10px;
-            }
-            
-            .login-title {
-                font-size: 20px;
-            }
-            
-            .login-subtitle {
-                font-size: 13px;
-            }
-            
-            .login-form {
-                gap: 16px;
-            }
-            
-            .form-input {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
-            
-            .login-button {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="login-page">
+    <!-- Background Pattern -->
+    <div class="login-bg-pattern"></div>
+    
     <div class="login-container">
-        <div class="login-header">
-            <div class="logos-container">
-                <div class="logo-placeholder association-logo">
-                    <img src="../images/mamsa-logo.png" alt="Madi Makerere Students Association Logo" class="logo-image">
-                    <div class="logo-text">
-                        <span class="logo-label">MAMSA</span>
+        <!-- Left Side - Branding -->
+        <div class="login-branding">
+            <div class="branding-content">
+                <div class="brand-logo">
+                    <div class="logo-text-container">
+                        <div class="logo-circle">
+                            <img src="images/mamsa-logo.JPG" alt="MAMSA Logo">
+                        </div>
+                        <div class="logo-text">
+                            <h1>MAMSA Admin</h1>
+                            <p class="brand-subtitle">Administrative Portal</p>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="logo-placeholder makerere-logo">
-                    <img src="../images/Mak_Logo.png" alt="Makerere University Logo" class="logo-image">
-                    <div class="logo-text">
-                        <span class="logo-label">Makerere University</span>
+                <div class="brand-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Secure Access</h3>
+                            <p>Enterprise-grade security for your admin panel</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Full Control</h3>
+                            <p>Manage all aspects of your website content</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h3>Analytics</h3>
+                            <p>Track performance and user engagement</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="header-content">
-                <h1 class="login-title">Admin Portal</h1>
-                <p class="login-subtitle">Madi Makerere University Students Association</p>
             </div>
         </div>
-        
-        <form class="login-form" id="admin-login-form">
-            <div class="form-group">
-                <label for="username" class="form-label">Username</label>
-                <div class="input-wrapper">
-                    <input type="text" id="username" name="username" class="form-input" placeholder="Enter your username" required>
+
+        <!-- Right Side - Login Form -->
+        <div class="login-form-section">
+            <div class="form-container">
+                <div class="form-header">
+                    <h2>Welcome Back</h2>
+                    <p>Please sign in to your admin account</p>
                 </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="password" class="form-label">Password</label>
-                <div class="input-wrapper">
-                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password" required>
-                    <button type="button" class="password-toggle" id="password-toggle">
+
+                <form class="login-form" id="login-form">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="form-input"
+                                required 
+                                placeholder="admin@madimakerere.org"
+                                autocomplete="email"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-wrapper">
+                            <div class="input-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-input"
+                                required 
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                            >
+                            <i class="fas fa-eye password-toggle" id="password-toggle" aria-label="Toggle password visibility"></i>
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn" id="login-btn">
+                        <span class="btn-text">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Sign In to Admin Panel
+                        </span>
+                        <span class="btn-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            Authenticating...
+                        </span>
                     </button>
+
+                    <div class="form-options">
+                        <label class="remember-me">
+                            <input type="checkbox" id="remember-me" name="remember">
+                            <span class="checkmark"></span>
+                            <span class="remember-text">Remember me for 30 days</span>
+                        </label>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                    </div>
+
+                   
+                </form>
+
+                <div class="form-footer">
+                    <div class="security-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <span>This is a secure admin area. All activities are logged.</span>
+                    </div>
+                    <div class="copyright">
+                        <p>&copy; 2024 Madi Makerere University Students Association</p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="form-options">
-                <label class="checkbox-wrapper">
-                    <input type="checkbox" id="remember-me" class="checkbox-input">
-                    <span>Remember me</span>
-                </label>
-            </div>
-            
-            <button type="submit" class="login-button">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>Sign In</span>
-            </button>
-            
-            <div class="login-error" id="login-error" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span id="error-message">Invalid username or password</span>
-            </div>
-        </form>
-        
+        </div>
     </div>
 
-    <!-- JavaScript Files -->
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "your-api-key-here",
-            authDomain: "madi-makerere-students.firebaseapp.com",
-            projectId: "madi-makerere-students",
-            storageBucket: "madi-makerere-students.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abcdef123456"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        window.auth = getAuth(app);
-    </script>
-    
-    <!-- Auth Service -->
-    <script type="module" src="../js/auth-service.js"></script>
-    <script type="module" src="../js/firebase-admin.js"></script>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <p>Initializing admin panel...</p>
+        </div>
+    </div>
 
-    <script>
-        // Password toggle functionality
-        document.getElementById('password-toggle').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            const icon = this.querySelector('i');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                passwordInput.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
+    <!-- Notification Container -->
+    <div class="notification-container" id="notification-container"></div>
 
-        // Login form handling
-        document.getElementById('admin-login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('login-error');
-            
-            // Simple authentication (replace with Firebase auth)
-            if (username === 'admin' && password === 'admin123') {
-                localStorage.setItem('adminLoggedIn', 'true');
-                localStorage.setItem('adminUser', JSON.stringify({
-                    name: 'Administrator',
-                    username: username,
-                    loginTime: new Date().toISOString()
-                }));
-                
-                window.location.href = 'admin.html';
-            } else {
-                errorDiv.style.display = 'flex';
-                setTimeout(() => {
-                    errorDiv.style.display = 'none';
-                }, 5000);
-            }
-        });
-    </script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/login.js"></script>
 </body>
 </html>
