@@ -405,30 +405,38 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                       <p className="text-xs text-gray-500">{user?.email || 'admin@mamsa.org'}</p>
                     </div>
                     <div className="py-2">
-                      <a 
-                        href="/profile"
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer no-underline"
-                        style={{ pointerEvents: 'auto', textDecoration: 'none' }}
-                        onClick={() => {
-                          console.log('Profile Settings link clicked');
+                      <button 
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Profile Settings clicked - router:', router);
+                          console.log('Current pathname:', pathname);
                           setShowProfile(false);
-                          // Let the default navigation happen
+                          setTimeout(() => {
+                            router.push('/profile');
+                            console.log('Navigation triggered to /profile');
+                          }, 100);
                         }}
                       >
                         Profile Settings
-                      </a>
-                      <a 
-                        href="/profile"
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer no-underline"
-                        style={{ pointerEvents: 'auto', textDecoration: 'none' }}
-                        onClick={() => {
-                          console.log('Account Settings link clicked');
+                      </button>
+                      <button 
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Account Settings clicked - router:', router);
+                          console.log('Current pathname:', pathname);
                           setShowProfile(false);
-                          // Let the default navigation happen
+                          setTimeout(() => {
+                            router.push('/profile');
+                            console.log('Navigation triggered to /profile');
+                          }, 100);
                         }}
                       >
                         Account Settings
-                      </a>
+                      </button>
                       <button 
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
                         onClick={(e) => {
@@ -440,6 +448,19 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                         }}
                       >
                         Help & Support
+                      </button>
+                      <button 
+                        className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer border-0 bg-transparent"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('TEST BUTTON clicked');
+                          alert('Test button works! Navigation should work too.');
+                          setShowProfile(false);
+                          router.push('/dashboard');
+                        }}
+                      >
+                        🧪 Test Navigation
                       </button>
                     </div>
                     <div className="border-t border-gray-200 py-2">
