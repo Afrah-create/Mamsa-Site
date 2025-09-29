@@ -28,6 +28,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [currentYear, setCurrentYear] = useState(2025);
   const [notifications, setNotifications] = useState([
     { id: 1, title: 'New article published', time: '2 min ago', unread: true },
     { id: 2, title: 'Event registration deadline', time: '1 hour ago', unread: true },
@@ -157,6 +158,11 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       setProfile(fallbackProfile);
     }
   }, [user?.id, supabase, user?.email, user?.user_metadata]);
+
+  // Set current year on client side to avoid hydration mismatch
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   useEffect(() => {
     loadProfile();
@@ -306,7 +312,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                 </svg>
               </a>
             </div>
-            <p className="text-xs text-green-300 mt-2">© 2024 MAMSA. All rights reserved.</p>
+            <p className="text-xs text-green-300 mt-2">© {currentYear} MAMSA. All rights reserved.</p>
           </div>
         </div>
       </div>

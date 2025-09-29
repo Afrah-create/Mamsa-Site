@@ -34,10 +34,97 @@ export default function NewsPage() {
   
   const supabase = createClient();
 
+  // Function to seed initial news data
+  const seedInitialNews = async () => {
+    try {
+      console.log('Seeding initial news data...');
+      
+      const initialNews = [
+        {
+          title: "Welcome to MAMSA News Portal",
+          content: "Welcome to the MAMSA News Portal! This is your central hub for all the latest updates, announcements, and news from the Madi Makerere University Students Association.\n\nHere you'll find information about upcoming events, leadership updates, community initiatives, and much more. We're committed to keeping you informed and engaged with all the exciting developments happening within our community.",
+          author: "MAMSA Editorial Team",
+          status: "published",
+          featured_image: "/api/placeholder/400/200",
+          excerpt: "Welcome to the MAMSA News Portal - your central hub for all the latest updates and announcements.",
+          tags: ["welcome", "announcement", "portal"],
+          created_by: user?.id
+        },
+        {
+          title: "Getting Started with MAMSA",
+          content: "New to MAMSA? Here's everything you need to know to get started and make the most of your membership.\n\nMAMSA offers numerous opportunities for personal and professional development, networking, and community engagement. From academic support to leadership development programs, we're here to help you succeed throughout your university journey.\n\nMake sure to check out our upcoming events and consider joining one of our many committees or interest groups.",
+          author: "MAMSA Admin",
+          status: "published",
+          featured_image: "/api/placeholder/400/200",
+          excerpt: "Everything you need to know to get started with MAMSA and make the most of your membership.",
+          tags: ["getting-started", "membership", "guide"],
+          created_by: user?.id
+        }
+      ];
+
+      const { data, error } = await supabase
+        .from('news_articles')
+        .insert(initialNews)
+        .select();
+
+      if (error) {
+        console.error('Error seeding initial news:', error);
+        return;
+      }
+
+      console.log('Successfully seeded initial news data:', data);
+      // Only set news if we don't already have data
+      setNews(prev => prev.length > 0 ? prev : data);
+    } catch (error) {
+      console.error('Failed to seed initial news:', error);
+    }
+  };
+
   useEffect(() => {
     checkAuth();
     loadNews();
   }, []);
+
+  // Set up real-time subscription for news articles
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('news_articles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'news_articles'
+        },
+        (payload) => {
+          console.log('News articles change received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setNews(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new.id);
+              if (!exists) {
+                return [payload.new as NewsItem, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setNews(prev => prev.map(item => 
+              item.id === payload.new.id ? payload.new as NewsItem : item
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setNews(prev => prev.filter(item => item.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
 
   const checkAuth = async () => {
     try {
@@ -68,62 +155,62 @@ export default function NewsPage() {
 
   const loadNews = async () => {
     try {
-      // Static data for demonstration
-      const staticNews: NewsItem[] = [
-        {
-          id: 1,
-          title: "MAMSA Annual Conference 2024: A Resounding Success",
-          content: "The MAMSA Annual Conference 2024 was held last weekend at the Makerere University Main Hall, bringing together over 500 students from various departments. The conference featured keynote speeches from industry leaders, panel discussions on current issues, and networking opportunities for students.\n\nThe theme 'Building Tomorrow's Leaders Today' resonated throughout the event, with speakers emphasizing the importance of student leadership and community engagement. Highlights included a presentation on sustainable development goals and a workshop on digital literacy in education.",
-          author: "Dr. Sarah Johnson",
-          published_at: "2024-03-15T10:00:00Z",
-          created_at: "2024-03-15T09:00:00Z",
-          status: "published",
-          featured_image: "/api/placeholder/400/200",
-          excerpt: "Over 500 students attended the successful MAMSA Annual Conference 2024, featuring leadership development and networking opportunities.",
-          tags: ["conference", "leadership", "networking", "2024"]
-        },
-        {
-          id: 2,
-          title: "New Student Support Services Launch",
-          content: "MAMSA is excited to announce the launch of new student support services designed to help members throughout their academic journey. These services include academic tutoring, career counseling, mental health support, and financial aid guidance.\n\nThe services are available to all registered MAMSA members and can be accessed through our online portal or by visiting the MAMSA office. We encourage all students to take advantage of these resources to enhance their university experience.",
-          author: "John Mwesigwa",
-          published_at: "2024-03-10T14:30:00Z",
-          created_at: "2024-03-10T14:00:00Z",
-          status: "published",
-          featured_image: "/api/placeholder/400/200",
-          excerpt: "New comprehensive student support services are now available to all MAMSA members.",
-          tags: ["services", "support", "students", "announcement"]
-        },
-        {
-          id: 3,
-          title: "Upcoming Leadership Workshop Series",
-          content: "Join us for our upcoming Leadership Workshop Series starting next month. This comprehensive program is designed to develop essential leadership skills for students.\n\nWorkshop topics include:\n• Effective Communication\n• Team Building and Management\n• Decision Making and Problem Solving\n• Public Speaking and Presentation Skills\n• Conflict Resolution\n\nRegistration is now open and spaces are limited. Don't miss this opportunity to develop your leadership potential.",
-          author: "Mary Nakato",
-          published_at: "2024-03-05T11:15:00Z",
-          created_at: "2024-03-05T11:00:00Z",
-          status: "published",
-          featured_image: "/api/placeholder/400/200",
-          excerpt: "Register now for the comprehensive Leadership Workshop Series starting next month.",
-          tags: ["workshop", "leadership", "training", "registration"]
-        },
-        {
-          id: 4,
-          title: "Draft: Community Outreach Program Update",
-          content: "This is a draft article about our community outreach program. We are working on expanding our community engagement initiatives to include more volunteer opportunities and partnerships with local organizations.\n\nThe program aims to connect students with meaningful community service opportunities while developing practical skills and making a positive impact in our communities.",
-          author: "David Kato",
-          published_at: "",
-          created_at: "2024-03-12T16:45:00Z",
-          status: "draft",
-          excerpt: "Draft article about expanding community outreach programs and volunteer opportunities.",
-          tags: ["community", "outreach", "volunteer", "draft"]
-        }
-      ];
+      setLoading(true);
+      console.log('Loading news from database...');
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setNews(staticNews);
+      const { data, error } = await supabase
+        .from('news_articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading news:', error);
+        
+        // If table doesn't exist or has issues, fall back to static data
+        console.log('Falling back to static data...');
+        const staticNews: NewsItem[] = [
+          {
+            id: 1,
+            title: "MAMSA Annual Conference 2024: A Resounding Success",
+            content: "The MAMSA Annual Conference 2024 was held last weekend at the Makerere University Main Hall, bringing together over 500 students from various departments. The conference featured keynote speeches from industry leaders, panel discussions on current issues, and networking opportunities for students.\n\nThe theme 'Building Tomorrow's Leaders Today' resonated throughout the event, with speakers emphasizing the importance of student leadership and community engagement. Highlights included a presentation on sustainable development goals and a workshop on digital literacy in education.",
+            author: "Dr. Sarah Johnson",
+            published_at: "2024-03-15T10:00:00Z",
+            created_at: "2024-03-15T09:00:00Z",
+            status: "published",
+            featured_image: "/api/placeholder/400/200",
+            excerpt: "Over 500 students attended the successful MAMSA Annual Conference 2024, featuring leadership development and networking opportunities.",
+            tags: ["conference", "leadership", "networking", "2024"]
+          },
+          {
+            id: 2,
+            title: "New Student Support Services Launch",
+            content: "MAMSA is excited to announce the launch of new student support services designed to help members throughout their academic journey. These services include academic tutoring, career counseling, mental health support, and financial aid guidance.\n\nThe services are available to all registered MAMSA members and can be accessed through our online portal or by visiting the MAMSA office. We encourage all students to take advantage of these resources to enhance their university experience.",
+            author: "John Mwesigwa",
+            published_at: "2024-03-10T14:30:00Z",
+            created_at: "2024-03-10T14:00:00Z",
+            status: "published",
+            featured_image: "/api/placeholder/400/200",
+            excerpt: "New comprehensive student support services are now available to all MAMSA members.",
+            tags: ["services", "support", "students", "announcement"]
+          }
+        ];
+        setNews(staticNews);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('Loaded news from database:', data.length, 'articles');
+        setNews(data);
+      } else {
+        console.log('No news articles found in database');
+        setNews([]);
+        
+        // Optionally seed some initial data
+        await seedInitialNews();
+      }
     } catch (error) {
       console.error('Failed to load news:', error);
+      setNews([]);
     } finally {
       setLoading(false);
     }
@@ -146,47 +233,131 @@ export default function NewsPage() {
 
   const handleSaveNews = async (newsData: Omit<NewsItem, 'id' | 'created_at'>) => {
     try {
+      console.log('Saving news article:', newsData);
+      
       if (editingItem) {
         // Update existing item
-        const updatedItem: NewsItem = {
-          ...editingItem,
-          ...newsData,
-          published_at: newsData.status === 'published' ? new Date().toISOString() : editingItem.published_at
+        console.log('Updating existing article with ID:', editingItem.id);
+        
+        const updateData = {
+          title: newsData.title,
+          content: newsData.content,
+          author: newsData.author,
+          status: newsData.status,
+          featured_image: newsData.featured_image,
+          excerpt: newsData.excerpt,
+          tags: newsData.tags,
+          published_at: newsData.status === 'published' ? new Date().toISOString() : editingItem.published_at,
+          updated_at: new Date().toISOString()
         };
-        setNews(prev => prev.map(item => item.id === editingItem.id ? updatedItem : item));
+
+        const { data, error } = await supabase
+          .from('news_articles')
+          .update(updateData)
+          .eq('id', editingItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating news article:', error);
+          throw error;
+        }
+
+        console.log('Successfully updated news article:', data);
+        
+        // Update local state
+        setNews(prev => prev.map(item => item.id === editingItem.id ? data : item));
       } else {
         // Create new item
-        const newItem: NewsItem = {
-          id: Date.now(), // Simple ID generation for demo
-          ...newsData,
-          created_at: new Date().toISOString(),
-          published_at: newsData.status === 'published' ? new Date().toISOString() : ''
+        console.log('Creating new article...');
+        
+        const insertData = {
+          title: newsData.title,
+          content: newsData.content,
+          author: newsData.author,
+          status: newsData.status,
+          featured_image: newsData.featured_image,
+          excerpt: newsData.excerpt,
+          tags: newsData.tags,
+          published_at: newsData.status === 'published' ? new Date().toISOString() : null,
+          created_by: user?.id
         };
-        setNews(prev => [newItem, ...prev]);
+
+        const { data, error } = await supabase
+          .from('news_articles')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating news article:', error);
+          throw error;
+        }
+
+        console.log('Successfully created news article:', data);
+        
+        // Update local state
+        setNews(prev => [data, ...prev]);
       }
+      
+      setShowModal(false);
     } catch (error) {
       console.error('Failed to save news:', error);
+      // You could add a toast notification here to show the error to the user
+      alert('Failed to save news article. Please try again.');
     }
   };
 
   const confirmDelete = async () => {
     if (itemToDelete) {
       try {
+        console.log('Deleting news article with ID:', itemToDelete.id);
+        
+        const { error } = await supabase
+          .from('news_articles')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) {
+          console.error('Error deleting news article:', error);
+          throw error;
+        }
+
+        console.log('Successfully deleted news article');
+        
+        // Update local state
         setNews(prev => prev.filter(item => item.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
       } catch (error) {
         console.error('Failed to delete news:', error);
+        alert('Failed to delete news article. Please try again.');
       }
     }
   };
 
   const handleBulkDelete = async () => {
     try {
+      console.log('Bulk deleting news articles:', selectedItems);
+      
+      const { error } = await supabase
+        .from('news_articles')
+        .delete()
+        .in('id', selectedItems);
+
+      if (error) {
+        console.error('Error bulk deleting news articles:', error);
+        throw error;
+      }
+
+      console.log('Successfully bulk deleted news articles');
+      
+      // Update local state
       setNews(prev => prev.filter(item => !selectedItems.includes(item.id)));
       setSelectedItems([]);
     } catch (error) {
       console.error('Failed to delete selected items:', error);
+      alert('Failed to delete selected articles. Please try again.');
     }
   };
 
@@ -206,14 +377,19 @@ export default function NewsPage() {
     );
   };
 
-  // Filter news based on search and status
-  const filteredNews = news.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Remove duplicates and filter news based on search and status
+  const filteredNews = news
+    .filter((item, index, self) => 
+      // Remove duplicates based on id and title combination
+      index === self.findIndex(t => t.id === item.id && t.title === item.title)
+    )
+    .filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           item.author.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -308,81 +484,220 @@ export default function NewsPage() {
                   <span className="text-sm text-gray-500">Select all ({filteredNews.length} items)</span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredNews.map((item) => (
-                  <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={() => handleSelectItem(item.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900">{item.title}</h3>
-                            <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                              {item.excerpt || item.content}
-                            </p>
-                            
-                            {/* Tags */}
-                            {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {item.tags.map((tag, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            
-                            <div className="mt-2 flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 gap-1 sm:gap-2">
-                              <span>By {item.author}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                              <span className="hidden sm:inline">•</span>
-                              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(item.status)}`}>
-                                {item.status}
-                              </span>
-                            </div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {filteredNews.map((item, index) => (
+                  <div key={`${item.id}-${index}`} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    {/* Article Header */}
+                    <div className="p-6 pb-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.includes(item.id)}
+                              onChange={() => handleSelectItem(item.id)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <h3 className="text-xl font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+                              {item.title}
+                            </h3>
                           </div>
-                          
-                          {/* Featured Image */}
-                          {item.featured_image && (
-                            <div className="ml-4 flex-shrink-0">
-                              <img
-                                src={item.featured_image}
-                                alt="Featured"
-                                className="h-16 w-16 object-cover rounded-lg"
-                              />
-                            </div>
-                          )}
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
+                            item.status === 'published' ? 'bg-green-100 text-green-800 border-green-200' :
+                            item.status === 'draft' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                            'bg-gray-100 text-gray-800 border-gray-200'
+                          }`}>
+                            {item.status === 'published' && '📰 Published'}
+                            {item.status === 'draft' && '📝 Draft'}
+                            {item.status === 'archived' && '📁 Archived'}
+                          </span>
+                        </div>
+                        
+                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEditNews(item)}
+                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Article"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteNews(item)}
+                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Article"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                       
-                      <div className="flex space-x-2 lg:ml-4">
-                        <button 
-                          onClick={() => handleEditNews(item)}
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteNews(item)}
-                          className="text-red-600 hover:text-red-900 text-sm font-medium px-3 py-1 rounded hover:bg-red-50 transition-colors"
-                        >
-                          Delete
-                        </button>
+                      <p className="text-gray-600 mb-4 leading-relaxed line-clamp-3">
+                        {item.excerpt || item.content}
+                      </p>
+                    </div>
+
+                    {/* Featured Image Section */}
+                    {item.featured_image && (
+                      <div className="px-6 pb-4">
+                        <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100">
+                          <img
+                            src={item.featured_image}
+                            alt={item.title}
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Article Meta Information */}
+                    <div className="px-6 pb-4">
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center mb-1">
+                            <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Author</span>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{item.author}</p>
+                        </div>
+                        
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center mb-1">
+                            <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Created</span>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {new Date(item.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Article Footer */}
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.published_at && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Published
+                            </span>
+                          )}
+                          {!item.published_at && item.status === 'draft' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Draft
+                            </span>
+                          )}
+                        </div>
+                        
+                        {item.tags && item.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {item.tags.slice(0, 3).map((tag, index) => (
+                              <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                                #{tag}
+                              </span>
+                            ))}
+                            {item.tags.length > 3 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
+                                +{item.tags.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
                 </div>
+
+                {/* News Statistics */}
+                {filteredNews.length > 0 && (
+                  <div className="mt-8 pt-6 border-t border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">News Statistics</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-2xl font-bold text-blue-700">
+                              {filteredNews.filter(n => n.status === 'published').length}
+                            </div>
+                            <div className="text-sm font-medium text-blue-600">Published</div>
+                          </div>
+                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl border border-yellow-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-2xl font-bold text-yellow-700">
+                              {filteredNews.filter(n => n.status === 'draft').length}
+                            </div>
+                            <div className="text-sm font-medium text-yellow-600">Drafts</div>
+                          </div>
+                          <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-2xl font-bold text-gray-700">
+                              {filteredNews.filter(n => n.status === 'archived').length}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">Archived</div>
+                          </div>
+                          <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h1.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293h9.172a1 1 0 00.707-.293l1.414-1.414A1 1 0 0018.414 4H19a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-2xl font-bold text-green-700">
+                              {filteredNews.length}
+                            </div>
+                            <div className="text-sm font-medium text-green-600">Total</div>
+                          </div>
+                          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
