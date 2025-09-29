@@ -1,219 +1,272 @@
-# Madi Makerere University Students Association (MAMSA)
+# MAMSA Admin Panel
 
-## Project Structure for Separate Hosting
+A modern, responsive admin panel for the Madi Makerere University Students Association (MAMSA), built with Next.js and Supabase.
 
-This repository contains the official website for the Madi Makerere University Students Association, organized for separate hosting of the public website and admin panel.
+## 🚀 Features
+
+### 📊 Dashboard
+- Overview statistics and metrics
+- Recent activity tracking
+- Quick access to key functions
+- Real-time data updates
+
+### 📰 News Management
+- Create, edit, and delete news articles
+- Rich text editing capabilities
+- Featured image uploads
+- Article status management (Draft, Published, Archived)
+- Tag-based categorization
+- Real-time updates
+
+### 🎉 Events Management
+- Comprehensive event creation and editing
+- Event status tracking (Upcoming, Ongoing, Completed, Cancelled)
+- Capacity management and registration requirements
+- Organizer and contact information
+- Event tags and categories
+
+### 👥 Leadership Management
+- Team member profiles
+- Position and department management
+- Bio and contact information
+- Social media links
+- Profile image management
+
+### 🖼️ Gallery Management
+- Image upload and organization
+- Category-based filtering
+- Photo metadata management
+- Status and featured image controls
+
+### 👤 User Management
+- Admin user creation and management
+- Role-based permissions
+- User profile management
+- Activity tracking
+
+### ⚙️ Profile Settings
+- Personal information management
+- Profile picture uploads
+- Password change functionality
+- Account settings
+
+## 🛠️ Technology Stack
+
+- **Framework**: Next.js 15.5.4 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Real-time**: Supabase Realtime
+- **Storage**: Base64 encoding for images
+- **Icons**: Heroicons (SVG)
+- **Deployment**: Ready for Vercel/Netlify
+
+## 📁 Project Structure
 
 ```
-mamsa/
-├── 📁 admin/                    # Admin panel (host separately)
-│   ├── *.html                   # Admin interface pages
-│   ├── css/                     # Admin stylesheets
-│   ├── js/                      # Admin JavaScript files
-│   ├── data/                    # Content data (duplicate for admin)
-│   └── images/                  # All images (duplicate for admin)
-├── 📁 user_site/               # Public website (host separately)
-│   ├── *.html                   # Public website pages
-│   ├── css/                     # Website stylesheets
-│   ├── js/                      # Website JavaScript files
-│   ├── data/                    # Content data
-│   └── images/                  # All images
-├── 📄 README.md                # This documentation
-├── 📄 PROJECT_STRUCTURE.md     # Detailed structure guide
-├── 📄 FIREBASE_REMOVAL_SUMMARY.md # Migration documentation
-└── 📄 HEADER_*.md              # Setup guides
+mamsa-admin/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── dashboard/          # Dashboard page
+│   │   ├── news/              # News management
+│   │   ├── events/            # Events management
+│   │   ├── leadership/        # Leadership management
+│   │   ├── gallery/           # Gallery management
+│   │   ├── users/             # User management
+│   │   ├── profile/           # Profile settings
+│   │   ├── login/             # Authentication
+│   │   └── layout.tsx         # Root layout
+│   ├── components/            # Reusable components
+│   │   ├── AdminLayout.tsx    # Main layout wrapper
+│   │   ├── NewsModal.tsx      # News creation/editing
+│   │   ├── EventModal.tsx     # Event creation/editing
+│   │   ├── LeadershipModal.tsx # Leadership management
+│   │   ├── GalleryModal.tsx   # Gallery management
+│   │   ├── UserModal.tsx      # User management
+│   │   ├── ConfirmModal.tsx   # Confirmation dialogs
+│   │   └── ChangePasswordModal.tsx # Password management
+│   └── lib/                   # Utilities and configurations
+│       ├── supabase.ts        # Supabase client (browser)
+│       └── supabase-server.ts # Supabase client (server)
+├── public/                    # Static assets
+├── setup-news-backend.sql     # Database setup script
+├── fix-admin-users-table.sql  # User table fixes
+├── fix-rls-policies.sql       # Security policies
+└── package.json               # Dependencies
 ```
 
-## Separate Hosting Setup
+## 🚀 Getting Started
 
-### 🌐 Public Website (`user_site/`)
-**Host this directory as your main website**
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
 
-- **Entry Point**: `index.html`
-- **URL Structure**: Your main domain (e.g., `mamsa.org`)
-- **Content**: All public-facing pages for students and visitors
-- **Assets**: Complete set of images, CSS, and JavaScript
+### Installation
 
-### ⚙️ Admin Panel (`admin/`)
-**Host this directory as your admin interface**
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd mamsa-admin
+   ```
 
-- **Entry Point**: `login.html`
-- **URL Structure**: Subdomain or path (e.g., `admin.mamsa.org` or `mamsa.org/admin`)
-- **Content**: Administrative interface for content management
-- **Assets**: Complete duplicate of assets for independent operation
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-## Features
+3. **Set up Supabase**
+   - Create a new Supabase project
+   - Run the SQL scripts in your Supabase SQL editor:
+     ```bash
+     # Run these in order:
+     setup-news-backend.sql
+     fix-admin-users-table.sql
+     fix-rls-policies.sql
+     ```
 
-### Public Website (`user_site/`)
-- **Homepage**: Welcome page with latest news, events, and leadership preview
-- **About Us**: Mission, vision, and association information
-- **Leadership**: Team members and organizational structure
-- **Events**: Upcoming and past events with calendar view
-- **News**: Latest announcements and news articles
-- **Gallery**: Photo gallery with filtering and lightbox
-- **Services**: Student support services and resources
-- **Contact**: Contact information and FAQ
+4. **Environment Configuration**
+   Create `.env.local`:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
 
-### Admin Panel (`admin/`)
-- **Dashboard**: Overview of content and statistics
-- **Content Management**: Create, edit, and manage website content
-- **Analytics**: View website statistics and performance
-- **User Management**: Admin user accounts and permissions
-- **Settings**: Website configuration and preferences
+5. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-## Deployment Instructions
+6. **Access the application**
+   Open [http://localhost:3000](http://localhost:3000)
 
-### Option 1: Separate Domains/Subdomains
+## 🔐 Authentication
 
-**Public Website:**
+The admin panel uses Supabase Authentication with:
+- Email/password authentication
+- Row Level Security (RLS) policies
+- Protected routes and middleware
+- Session management
+
+### Default Admin Account
+After setting up the database, create an admin account through Supabase Auth or use the signup functionality.
+
+## 📊 Database Schema
+
+### Core Tables
+- `admin_users` - Admin user profiles and permissions
+- `news_articles` - News articles and content
+- `events` - Event information and management
+- `leadership` - Team member profiles
+- `gallery` - Image gallery management
+
+### Features
+- Real-time subscriptions for live updates
+- Automatic timestamps (created_at, updated_at)
+- Soft delete capabilities
+- Comprehensive RLS policies
+
+## 🎨 UI/UX Features
+
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Dark/Light Theme**: Consistent with modern design standards
+- **Interactive Elements**: Hover effects, transitions, and animations
+- **Modal System**: Intuitive creation and editing interfaces
+- **Bulk Operations**: Select multiple items for batch actions
+- **Search and Filtering**: Find content quickly
+- **Real-time Updates**: See changes instantly across sessions
+
+## 🔧 Development
+
+### Available Scripts
 ```bash
-# Deploy user_site/ to your main domain
-# Example: mamsa.org
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
 ```
 
-**Admin Panel:**
-```bash
-# Deploy admin/ to a subdomain
-# Example: admin.mamsa.org
-```
+### Code Quality
+- TypeScript for type safety
+- ESLint for code quality
+- Tailwind CSS for consistent styling
+- Component-based architecture
 
-### Option 2: Same Domain, Different Paths
+## 🚀 Deployment
 
-**Public Website:**
-```bash
-# Deploy user_site/ to root path
-# Example: mamsa.org/
-```
+### Vercel (Recommended)
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-**Admin Panel:**
-```bash
-# Deploy admin/ to admin path
-# Example: mamsa.org/admin/
-```
+### Netlify
+1. Connect repository to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `.next`
+4. Configure environment variables
 
-### Hosting Services
+### Traditional Hosting
+1. Build the project: `npm run build`
+2. Upload the `.next` folder and `public` folder
+3. Configure your server for Next.js
+4. Set environment variables
 
-**GitHub Pages:**
-- Create separate repositories for each directory
-- Or use GitHub Pages with custom paths
+## 🔒 Security Features
 
-**Netlify:**
-- Deploy each directory as separate sites
-- Configure custom domains for each
+- Row Level Security (RLS) policies
+- Protected API routes
+- Input validation and sanitization
+- Secure authentication flow
+- Environment variable protection
+- CSRF protection
 
-**Vercel:**
-- Deploy each directory as separate projects
-- Link to same GitHub repository with different paths
+## 📈 Performance
 
-**Traditional Hosting:**
-- Upload `user_site/` to public_html
-- Upload `admin/` to admin subdirectory
-- Configure proper access controls for admin
+- Server-side rendering (SSR)
+- Static generation where possible
+- Image optimization
+- Code splitting
+- Lazy loading
+- Real-time subscriptions
 
-## Technology Stack
+## 🧪 Testing
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Styling**: Custom CSS with responsive design
-- **Icons**: Font Awesome
-- **Fonts**: Google Fonts (Inter)
-- **Content**: JSON-based content management
-- **Backend**: Ready for Supabase integration (Firebase removed)
+The application includes:
+- Type safety with TypeScript
+- Error boundaries for graceful failures
+- Comprehensive error handling
+- Fallback mechanisms for data loading
 
-## Admin Access
-
-- **URL**: `/login.html` (within admin directory)
-- **Default Credentials**: 
-  - Username: `admin`
-  - Password: `admin123`
-
-## Content Management
-
-### Current System
-- **Static Content**: Edit files directly in each directory
-- **Dynamic Content**: Modify `data/content.json` in both directories
-- **Images**: Add to appropriate folders in `images/` directory
-- **Synchronization**: Manually sync changes between directories
-
-### Future (Supabase Integration)
-- **Centralized Content**: Single source of truth
-- **Real-time Sync**: Automatic updates across both sites
-- **Admin Interface**: Full content management capabilities
-
-## Local Development
-
-### Public Website
-```bash
-cd user_site
-# Serve locally or open index.html in browser
-python -m http.server 8000
-# Access at: http://localhost:8000
-```
-
-### Admin Panel
-```bash
-cd admin
-# Serve locally or open login.html in browser
-python -m http.server 8001
-# Access at: http://localhost:8001
-```
-
-## Migration Status
-
-### ✅ Completed
-- Firebase integration removed
-- Project restructured for separate hosting
-- All file paths updated for independent operation
-- Duplicate assets created for each directory
-- Admin interface structure in place
-
-### 🔄 Next Steps (Supabase Integration)
-- [ ] Set up Supabase project
-- [ ] Implement centralized authentication
-- [ ] Create shared content management API
-- [ ] Add file storage capabilities
-- [ ] Implement real-time synchronization
-- [ ] Restore full admin functionality
-
-## Benefits of Separate Hosting
-
-### 🔒 Security
-- Admin panel can be hosted with additional security measures
-- Separate access controls and authentication
-- Isolated admin functionality from public site
-
-### 🚀 Performance
-- Each site can be optimized independently
-- Different caching strategies
-- Separate CDN configurations
-
-### 🛠️ Maintenance
-- Independent updates and deployments
-- Separate monitoring and logging
-- Different backup strategies
-
-### 👥 Team Workflow
-- Different teams can work on each site
-- Independent development cycles
-- Separate testing and staging environments
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Make changes to the appropriate directory (`user_site/` or `admin/`)
-3. Test thoroughly in both environments
-4. Submit a pull request
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes
+4. Test thoroughly
+5. Commit your changes: `git commit -m 'Add feature'`
+6. Push to the branch: `git push origin feature-name`
+7. Submit a pull request
 
-## Support
+## 📝 License
 
-For technical support or questions:
-- Check the documentation files in the root directory
-- Review the Firebase removal summary for migration details
-- Contact the development team for advanced issues
+This project is developed for the Madi Makerere University Students Association. All rights reserved.
 
-## License
+## 🆘 Support
 
-This project is for the Madi Makerere University Students Association. All rights reserved.
+For support and questions:
+- Check the documentation in the `/docs` folder
+- Review the SQL setup scripts for database issues
+- Contact the development team
+
+## 🔄 Version History
+
+- **v1.0.0** - Initial release with full admin functionality
+- Complete CRUD operations for all content types
+- Real-time updates and synchronization
+- Responsive design and modern UI
+- Supabase integration with RLS security
 
 ---
 
-**Note**: This project has been restructured for separate hosting and is ready for Supabase integration. Each directory contains all necessary assets for independent operation.
+**Built with ❤️ for MAMSA**

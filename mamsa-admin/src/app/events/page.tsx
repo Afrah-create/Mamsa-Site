@@ -136,6 +136,47 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
+  // Set up real-time subscription for events
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('events_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('Events change received:', payload);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setEvents(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new.id);
+              if (!exists) {
+                return [payload.new as Event, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            setEvents(prev => prev.map(item => 
+              item.id === payload.new.id ? payload.new as Event : item
+            ));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setEvents(prev => prev.filter(item => item.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
+
   const checkAuth = async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -166,10 +207,32 @@ export default function EventsPage() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      // Use static data for demonstration
-      setEvents(staticEvents);
+      console.log('Loading events from database...');
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading events:', error);
+        
+        // If table doesn't exist or has issues, fall back to static data
+        console.log('Falling back to static data...');
+        setEvents(staticEvents);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('Loaded events from database:', data.length, 'events');
+        setEvents(data);
+      } else {
+        console.log('No events found in database');
+        setEvents([]);
+      }
     } catch (error) {
       console.error('Failed to load events:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }
@@ -191,37 +254,171 @@ export default function EventsPage() {
     setShowConfirm(true);
   };
 
-  const handleSaveEvent = (eventData: Omit<Event, 'id' | 'created_at'>) => {
-    if (editingItem) {
-      // Update existing event
-      setEvents(prev => prev.map(event => 
-        event.id === editingItem.id 
-          ? { ...eventData, id: editingItem.id, created_at: editingItem.created_at }
-          : event
-      ));
-    } else {
-      // Create new event
-      const newEvent: Event = {
-        ...eventData,
-        id: Math.max(...events.map(e => e.id), 0) + 1,
-        created_at: new Date().toISOString()
-      };
-      setEvents(prev => [...prev, newEvent]);
+  const handleSaveEvent = async (eventData: Omit<Event, 'id' | 'created_at'>) => {
+    try {
+      console.log('Saving event:', eventData);
+      
+      if (editingItem) {
+        // Update existing event
+        console.log('Updating existing event with ID:', editingItem.id);
+        
+        const updateData = {
+          title: eventData.title,
+          description: eventData.description,
+          date: eventData.date,
+          time: eventData.time,
+          location: eventData.location,
+          status: eventData.status,
+          featured_image: eventData.featured_image,
+          capacity: eventData.capacity,
+          registration_required: eventData.registration_required,
+          registration_deadline: eventData.registration_deadline,
+          organizer: eventData.organizer,
+          contact_email: eventData.contact_email,
+          contact_phone: eventData.contact_phone,
+          tags: eventData.tags,
+          updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+          .from('events')
+          .update(updateData)
+          .eq('id', editingItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating event:', error);
+          alert(`Failed to update event: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from update operation');
+          alert('Failed to update event: No data returned');
+          return;
+        }
+
+        console.log('Successfully updated event:', data);
+        
+        // Update local state
+        setEvents(prev => prev.map(event => event.id === editingItem.id ? data : event));
+      } else {
+        // Create new event
+        console.log('Creating new event...');
+        
+        const insertData = {
+          title: eventData.title,
+          description: eventData.description,
+          date: eventData.date,
+          time: eventData.time,
+          location: eventData.location,
+          status: eventData.status,
+          featured_image: eventData.featured_image,
+          capacity: eventData.capacity,
+          registration_required: eventData.registration_required,
+          registration_deadline: eventData.registration_deadline,
+          organizer: eventData.organizer,
+          contact_email: eventData.contact_email,
+          contact_phone: eventData.contact_phone,
+          tags: eventData.tags,
+          created_by: user?.id
+        };
+
+        const { data, error } = await supabase
+          .from('events')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating event:', error);
+          alert(`Failed to create event: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from create operation');
+          alert('Failed to create event: No data returned');
+          return;
+        }
+
+        console.log('Successfully created event:', data);
+        
+        // Update local state
+        setEvents(prev => [data, ...prev]);
+      }
+      
+      console.log('Closing modal after successful operation');
+      setShowModal(false);
+      
+      // Return success indicator
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save event:', error);
+      // Only show generic error if we haven't already shown a specific error
+      if (error instanceof Error) {
+        alert(`Failed to save event: ${error.message}`);
+      } else {
+        alert('Failed to save event. Please try again.');
+      }
+      
+      // Return error indicator
+      return { success: false, error };
     }
-    setShowModal(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (itemToDelete) {
-      setEvents(prev => prev.filter(event => event.id !== itemToDelete.id));
-      setShowConfirm(false);
-      setItemToDelete(null);
+      try {
+        console.log('Deleting event with ID:', itemToDelete.id);
+        
+        const { error } = await supabase
+          .from('events')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) {
+          console.error('Error deleting event:', error);
+          throw error;
+        }
+
+        console.log('Successfully deleted event');
+        
+        // Update local state
+        setEvents(prev => prev.filter(event => event.id !== itemToDelete.id));
+        setShowConfirm(false);
+        setItemToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete event:', error);
+        alert('Failed to delete event. Please try again.');
+      }
     }
   };
 
-  const handleBulkDelete = () => {
-    setEvents(prev => prev.filter(event => !selectedItems.includes(event.id)));
-    setSelectedItems([]);
+  const handleBulkDelete = async () => {
+    try {
+      console.log('Bulk deleting events:', selectedItems);
+      
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .in('id', selectedItems);
+
+      if (error) {
+        console.error('Error bulk deleting events:', error);
+        throw error;
+      }
+
+      console.log('Successfully bulk deleted events');
+      
+      // Update local state
+      setEvents(prev => prev.filter(event => !selectedItems.includes(event.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to delete selected events:', error);
+      alert('Failed to delete selected events. Please try again.');
+    }
   };
 
   const handleSelectAll = () => {
@@ -361,38 +558,60 @@ export default function EventsPage() {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {filteredEvents.map((event) => (
                   <div key={event.id} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    {/* Event Header */}
-                    <div className="p-6 pb-4">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedItems.includes(event.id)}
-                              onChange={() => handleSelectItem(event.id)}
-                              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                            />
-                            <h3 className="text-xl font-semibold text-gray-900 truncate group-hover:text-green-700 transition-colors">
-                              {event.title}
-                            </h3>
+                    {/* Featured Image Section */}
+                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                      {event.featured_image ? (
+                        <img
+                          src={event.featured_image}
+                          alt={event.title}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            // Fallback for broken images
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = `
+                                <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200">
+                                  <div class="text-center">
+                                    <svg class="mx-auto h-16 w-16 text-green-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-sm font-medium text-green-600 mb-1">Event</p>
+                                    <p class="text-xs text-green-500">No image available</p>
+                                  </div>
+                                </div>
+                              `;
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200">
+                          <div className="text-center">
+                            <svg className="mx-auto h-16 w-16 text-green-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-sm font-medium text-green-600 mb-1">Event</p>
+                            <p className="text-xs text-green-500">No featured image</p>
                           </div>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                            event.status === 'upcoming' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                            event.status === 'ongoing' ? 'bg-green-100 text-green-800 border border-green-200' :
-                            event.status === 'completed' ? 'bg-gray-100 text-gray-800 border border-gray-200' :
-                            'bg-red-100 text-red-800 border border-red-200'
-                          }`}>
-                            {event.status === 'upcoming' && '📅 Upcoming'}
-                            {event.status === 'ongoing' && '🟢 Ongoing'}
-                            {event.status === 'completed' && '✅ Completed'}
-                            {event.status === 'cancelled' && '❌ Cancelled'}
-                          </span>
+                        </div>
+                      )}
+                      
+                      {/* Image overlay with status and actions */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent">
+                        <div className="absolute top-3 left-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(event.id)}
+                            onChange={() => handleSelectItem(event.id)}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          />
                         </div>
                         
-                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <button 
                             onClick={() => handleEditEvent(event)}
-                            className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-white hover:text-green-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
                             title="Edit Event"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -401,7 +620,7 @@ export default function EventsPage() {
                           </button>
                           <button 
                             onClick={() => handleDeleteEvent(event)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-white hover:text-red-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
                             title="Delete Event"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -409,13 +628,33 @@ export default function EventsPage() {
                             </svg>
                           </button>
                         </div>
+                        
+                        <div className="absolute bottom-3 left-3">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm backdrop-blur-sm ${
+                            event.status === 'upcoming' ? 'bg-blue-500/90 text-white' :
+                            event.status === 'ongoing' ? 'bg-green-500/90 text-white' :
+                            event.status === 'completed' ? 'bg-gray-500/90 text-white' :
+                            'bg-red-500/90 text-white'
+                          }`}>
+                            {event.status === 'upcoming' && '📅 Upcoming'}
+                            {event.status === 'ongoing' && '🟢 Ongoing'}
+                            {event.status === 'completed' && '✅ Completed'}
+                            {event.status === 'cancelled' && '❌ Cancelled'}
+                          </span>
+                        </div>
                       </div>
-                      
-                      <p className="text-gray-600 mb-4 leading-relaxed">{event.description}</p>
                     </div>
 
-                    {/* Event Details Grid */}
-                    <div className="px-6 pb-4">
+                    {/* Event Content */}
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
+                          {event.title}
+                        </h3>
+                        <p className="text-gray-600 leading-relaxed line-clamp-3">{event.description}</p>
+                      </div>
+
+                      {/* Event Details Grid */}
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="bg-gray-50 rounded-lg p-3">
                           <div className="flex items-center mb-1">
