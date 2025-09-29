@@ -15,6 +15,7 @@ interface ProfileData {
   bio: string;
   role: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export default function ProfilePage() {
@@ -96,6 +97,9 @@ export default function ProfilePage() {
               user_id: userId,
               email: user?.email || '',
               full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+              avatar_url: '',
+              phone: '',
+              bio: '',
               role: 'admin',
               created_at: new Date().toISOString()
             };
@@ -123,6 +127,9 @@ export default function ProfilePage() {
             user_id: userId,
             email: user?.email || '',
             full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+            avatar_url: '',
+            phone: '',
+            bio: '',
             role: 'admin',
             created_at: new Date().toISOString()
           };
@@ -152,6 +159,9 @@ export default function ProfilePage() {
         user_id: userId,
         email: user?.email || '',
         full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+        avatar_url: '',
+        phone: '',
+        bio: '',
         role: 'admin',
         created_at: new Date().toISOString()
       };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
@@ -20,9 +20,14 @@ interface NewsItem {
   tags?: string[];
 }
 
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new?: NewsItem;
+  old?: { id: number };
+}
+
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
@@ -35,7 +40,7 @@ export default function NewsPage() {
   const supabase = createClient();
 
   // Function to seed initial news data
-  const seedInitialNews = async () => {
+  const seedInitialNews = useCallback(async () => {
     try {
       console.log('Seeding initial news data...');
       
@@ -78,55 +83,9 @@ export default function NewsPage() {
     } catch (error) {
       console.error('Failed to seed initial news:', error);
     }
-  };
+  }, [user?.id, supabase]);
 
-  useEffect(() => {
-    checkAuth();
-    loadNews();
-  }, []);
-
-  // Set up real-time subscription for news articles
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('news_articles_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'news_articles'
-        },
-        (payload) => {
-          console.log('News articles change received:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            setNews(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new.id);
-              if (!exists) {
-                return [payload.new as NewsItem, ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            setNews(prev => prev.map(item => 
-              item.id === payload.new.id ? payload.new as NewsItem : item
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setNews(prev => prev.filter(item => item.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       
@@ -151,11 +110,10 @@ export default function NewsPage() {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
     }
-  };
+  }, [supabase]);
 
-  const loadNews = async () => {
+  const loadNews = useCallback(async () => {
     try {
-      setLoading(true);
       console.log('Loading news from database...');
 
       const { data, error } = await supabase
@@ -211,10 +169,54 @@ export default function NewsPage() {
     } catch (error) {
       console.error('Failed to load news:', error);
       setNews([]);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [supabase, seedInitialNews]);
+
+  useEffect(() => {
+    checkAuth();
+    loadNews();
+  }, [checkAuth, loadNews]);
+
+  // Set up real-time subscription for news articles
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('news_articles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'news_articles'
+        },
+        (payload: RealtimePayload) => {
+          console.log('News articles change received:', payload);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setNews(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new!.id);
+              if (!exists) {
+                return [payload.new as NewsItem, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            setNews(prev => prev.map(item => 
+              item.id === payload.new!.id ? payload.new as NewsItem : item
+            ));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setNews(prev => prev.filter(item => item.id !== payload.old!.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
 
   const handleCreateNews = () => {
     setEditingItem(null);
@@ -416,18 +418,6 @@ export default function NewsPage() {
       return matchesSearch && matchesStatus;
     });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'archived':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <AdminLayout user={user}>
