@@ -125,15 +125,38 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         .single();
 
       if (error) {
-        console.error('Error loading profile:', error);
+        console.error('Error loading profile in AdminLayout:', error);
+        
+        // If no profile exists, create a fallback profile with auth user data
+        if (error.code === 'PGRST116' || error.message.includes('No rows found')) {
+          const fallbackProfile = {
+            id: user.id,
+            user_id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
+            role: 'admin',
+            created_at: new Date().toISOString()
+          };
+          setProfile(fallbackProfile);
+        }
         return;
       }
 
       setProfile(data);
     } catch (error) {
-      console.error('Failed to load profile:', error);
+      console.error('Failed to load profile in AdminLayout:', error);
+      // Create fallback profile even if there's an error
+      const fallbackProfile = {
+        id: user.id,
+        user_id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
+        role: 'admin',
+        created_at: new Date().toISOString()
+      };
+      setProfile(fallbackProfile);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id, supabase, user?.email, user?.user_metadata]);
 
   useEffect(() => {
     loadProfile();
@@ -406,16 +429,16 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                     />
                   ) : (
                     <span className="text-sm font-semibold text-white">
-                      {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
+                      {(profile?.full_name || user?.user_metadata?.full_name || user?.email || 'Admin').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-gray-900">
-                    {profile?.full_name || user?.email?.split('@')[0] || 'Admin'}
+                    {profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.email || 'admin@mamsa.org'}
+                    {profile?.email || user?.email || 'admin@mamsa.org'}
                   </p>
                 </div>
               </div>
