@@ -18,18 +18,25 @@ export default function DashboardPage() {
     totalViews: 0
   });
   
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, type: 'news', action: 'Published new article', title: 'MAMSA Annual Conference 2024', time: '2 hours ago', user: 'Admin' },
-    { id: 2, type: 'event', action: 'Created new event', title: 'Leadership Workshop', time: '4 hours ago', user: 'Admin' },
-    { id: 3, type: 'gallery', action: 'Uploaded image', title: 'Conference Photos', time: '6 hours ago', user: 'Admin' },
-    { id: 4, type: 'leadership', action: 'Updated profile', title: 'Dr. Sarah Johnson', time: '1 day ago', user: 'Admin' },
-  ]);
-  
-  const [upcomingEvents, setUpcomingEvents] = useState([
-    { id: 1, title: 'MAMSA Annual Conference', date: '2024-03-15', location: 'Convention Center', attendees: 150 },
-    { id: 2, title: 'Leadership Workshop', date: '2024-03-20', location: 'Training Hall', attendees: 25 },
-    { id: 3, title: 'Member Meeting', date: '2024-03-25', location: 'Main Hall', attendees: 80 },
-  ]);
+  interface Activity {
+    id: string;
+    type: 'news' | 'event' | 'gallery' | 'leadership';
+    action: string;
+    title: string;
+    time: string;
+    user: string;
+  }
+
+  interface UpcomingEvent {
+    id: number;
+    title: string;
+    date: string;
+    location: string;
+    attendees: number;
+  }
+
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   
   const supabase = createClient();
 
@@ -39,9 +46,11 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    // Load stats after user is set
+    // Load stats and data after user is set
     if (user) {
       loadStats();
+      loadRecentActivity();
+      loadUpcomingEvents();
     }
   }, [user]);
 
@@ -123,11 +132,12 @@ export default function DashboardPage() {
 
   const loadStats = async () => {
     try {
-      const [newsResult, eventsResult, leadershipResult, galleryResult] = await Promise.all([
+      const [newsResult, eventsResult, leadershipResult, galleryResult, usersResult] = await Promise.all([
         supabase.from('news').select('*', { count: 'exact', head: true }),
         supabase.from('events').select('*', { count: 'exact', head: true }),
         supabase.from('leadership').select('*', { count: 'exact', head: true }),
-        supabase.from('gallery').select('*', { count: 'exact', head: true })
+        supabase.from('gallery').select('*', { count: 'exact', head: true }),
+        supabase.from('admin_users').select('*', { count: 'exact', head: true })
       ]);
 
       setStats({
@@ -135,12 +145,131 @@ export default function DashboardPage() {
         events: eventsResult.count || 0,
         leadership: leadershipResult.count || 0,
         gallery: galleryResult.count || 0,
-        totalUsers: 1250, // Mock data
-        totalViews: 15420 // Mock data
+        totalUsers: usersResult.count || 0,
+        totalViews: 15420 // Mock data for now
       });
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
+  };
+
+  const loadRecentActivity = async () => {
+    try {
+      // Get recent items from all tables
+      const [newsData, eventsData, galleryData, leadershipData] = await Promise.all([
+        supabase.from('news').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
+        supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
+        supabase.from('gallery').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
+        supabase.from('leadership').select('id, name, created_at').order('created_at', { ascending: false }).limit(2)
+      ]);
+
+      const activities: Activity[] = [];
+
+      // Process news
+      if (newsData.data) {
+        newsData.data.forEach((item: { id: number; title: string; created_at: string }) => {
+          activities.push({
+            id: `news-${item.id}`,
+            type: 'news' as const,
+            action: 'Published new article',
+            title: item.title,
+            time: formatTimeAgo(item.created_at),
+            user: 'Admin'
+          });
+        });
+      }
+
+      // Process events
+      if (eventsData.data) {
+        eventsData.data.forEach((item: { id: number; title: string; created_at: string }) => {
+          activities.push({
+            id: `event-${item.id}`,
+            type: 'event' as const,
+            action: 'Created new event',
+            title: item.title,
+            time: formatTimeAgo(item.created_at),
+            user: 'Admin'
+          });
+        });
+      }
+
+      // Process gallery
+      if (galleryData.data) {
+        galleryData.data.forEach((item: { id: number; title: string; created_at: string }) => {
+          activities.push({
+            id: `gallery-${item.id}`,
+            type: 'gallery' as const,
+            action: 'Uploaded image',
+            title: item.title,
+            time: formatTimeAgo(item.created_at),
+            user: 'Admin'
+          });
+        });
+      }
+
+      // Process leadership
+      if (leadershipData.data) {
+        leadershipData.data.forEach((item: { id: number; name: string; created_at: string }) => {
+          activities.push({
+            id: `leadership-${item.id}`,
+            type: 'leadership' as const,
+            action: 'Updated profile',
+            title: item.name,
+            time: formatTimeAgo(item.created_at),
+            user: 'Admin'
+          });
+        });
+      }
+
+      // Sort by time and take the most recent 4
+      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      setRecentActivity(activities.slice(0, 4));
+    } catch (error) {
+      console.error('Failed to load recent activity:', error);
+      // Fallback to empty array
+      setRecentActivity([]);
+    }
+  };
+
+  const loadUpcomingEvents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('id, title, event_date, location, max_attendees')
+        .gte('event_date', new Date().toISOString().split('T')[0])
+        .order('event_date', { ascending: true })
+        .limit(3);
+
+      if (error) {
+        console.error('Error loading upcoming events:', error);
+        return;
+      }
+
+      const events = data?.map((event: { id: number; title: string; event_date: string; location?: string; max_attendees?: number }) => ({
+        id: event.id,
+        title: event.title,
+        date: event.event_date,
+        location: event.location || 'TBA',
+        attendees: event.max_attendees || 0
+      })) || [];
+
+      setUpcomingEvents(events);
+    } catch (error) {
+      console.error('Failed to load upcoming events:', error);
+      // Fallback to empty array
+      setUpcomingEvents([]);
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
   };
 
 
