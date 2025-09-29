@@ -33,6 +33,12 @@ interface AdminUser {
   created_by?: string;
 }
 
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new?: AdminUser;
+  old?: { id: number };
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -201,6 +207,47 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  // Real-time subscription for user changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('admin_users_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'admin_users'
+        },
+        (payload: RealtimePayload) => {
+          console.log('Admin users change received:', payload);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setUsers(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new!.id);
+              if (!exists) {
+                return [payload.new as AdminUser, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            setUsers(prev => prev.map(item => 
+              item.id === payload.new!.id ? payload.new as AdminUser : item
+            ));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setUsers(prev => prev.filter(item => item.id !== payload.old!.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
+
   const checkAuth = async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -231,10 +278,24 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      // Use static data for demonstration
-      setUsers(staticUsers);
+      console.log('Loading users from database...');
+      
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading users:', error);
+        throw error;
+      }
+
+      console.log('Successfully loaded users:', data);
+      setUsers(data || []);
     } catch (error) {
       console.error('Failed to load users:', error);
+      // Fallback to static data if database fails
+      setUsers(staticUsers);
     } finally {
       setLoading(false);
     }
@@ -256,38 +317,166 @@ export default function UsersPage() {
     setShowConfirm(true);
   };
 
-  const handleSaveUser = (userData: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>) => {
-    if (editingItem) {
-      // Update existing user
-      setUsers(prev => prev.map(u => 
-        u.id === editingItem.id 
-          ? { ...userData, id: editingItem.id, created_at: editingItem.created_at, user_id: editingItem.user_id }
-          : u
-      ));
-    } else {
-      // Create new user
-      const newUser: AdminUser = {
-        ...userData,
-        id: Math.max(...users.map(u => u.id), 0) + 1,
-        user_id: `user-${Math.max(...users.map(u => parseInt(u.user_id.split('-')[1])), 0) + 1}`,
-        created_at: new Date().toISOString()
-      };
-      setUsers(prev => [...prev, newUser]);
+  const handleSaveUser = async (userData: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>) => {
+    try {
+      console.log('Saving user:', userData);
+      
+      if (editingItem) {
+        // Update existing user
+        console.log('Updating existing user with ID:', editingItem.id);
+        
+        const updateData = {
+          full_name: userData.full_name,
+          email: userData.email,
+          avatar_url: userData.avatar_url,
+          phone: userData.phone,
+          bio: userData.bio,
+          role: userData.role,
+          department: userData.department,
+          position: userData.position,
+          permissions: userData.permissions,
+          status: userData.status,
+          last_login: userData.last_login,
+          updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+          .from('admin_users')
+          .update(updateData)
+          .eq('id', editingItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating user:', error);
+          alert(`Failed to update user: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from update operation');
+          alert('Failed to update user: No data returned');
+          return;
+        }
+
+        console.log('Successfully updated user:', data);
+        
+        // Update local state
+        setUsers(prev => prev.map(u => u.id === editingItem.id ? data : u));
+      } else {
+        // Create new user
+        console.log('Creating new user...');
+        
+        const insertData = {
+          user_id: crypto.randomUUID(),
+          full_name: userData.full_name,
+          email: userData.email,
+          avatar_url: userData.avatar_url,
+          phone: userData.phone,
+          bio: userData.bio,
+          role: userData.role,
+          department: userData.department,
+          position: userData.position,
+          permissions: userData.permissions,
+          status: userData.status,
+          last_login: userData.last_login,
+          created_by: user?.id
+        };
+
+        const { data, error } = await supabase
+          .from('admin_users')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating user:', error);
+          alert(`Failed to create user: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from create operation');
+          alert('Failed to create user: No data returned');
+          return;
+        }
+
+        console.log('Successfully created user:', data);
+        
+        // Update local state
+        setUsers(prev => [data, ...prev]);
+      }
+      
+      console.log('Closing modal after successful operation');
+      setShowModal(false);
+      
+      // Return success indicator
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save user:', error);
+      // Only show generic error if we haven't already shown a specific error
+      if (error instanceof Error) {
+        alert(`Failed to save user: ${error.message}`);
+      } else {
+        alert('Failed to save user. Please try again.');
+      }
+      
+      // Return error indicator
+      return { success: false, error };
     }
-    setShowModal(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (itemToDelete) {
-      setUsers(prev => prev.filter(u => u.id !== itemToDelete.id));
-      setShowConfirm(false);
-      setItemToDelete(null);
+      try {
+        console.log('Deleting user with ID:', itemToDelete.id);
+        
+        const { error } = await supabase
+          .from('admin_users')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) {
+          console.error('Error deleting user:', error);
+          throw error;
+        }
+
+        console.log('Successfully deleted user');
+        
+        // Update local state
+        setUsers(prev => prev.filter(u => u.id !== itemToDelete.id));
+        setShowConfirm(false);
+        setItemToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        alert('Failed to delete user. Please try again.');
+      }
     }
   };
 
-  const handleBulkDelete = () => {
-    setUsers(prev => prev.filter(u => !selectedItems.includes(u.id)));
-    setSelectedItems([]);
+  const handleBulkDelete = async () => {
+    try {
+      console.log('Bulk deleting users:', selectedItems);
+      
+      const { error } = await supabase
+        .from('admin_users')
+        .delete()
+        .in('id', selectedItems);
+
+      if (error) {
+        console.error('Error bulk deleting users:', error);
+        throw error;
+      }
+
+      console.log('Successfully bulk deleted users');
+      
+      // Update local state
+      setUsers(prev => prev.filter(u => !selectedItems.includes(u.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to delete selected users:', error);
+      alert('Failed to delete selected users. Please try again.');
+    }
   };
 
   const handleSelectAll = () => {
