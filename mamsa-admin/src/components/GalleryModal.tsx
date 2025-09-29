@@ -117,7 +117,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
         setImagePreview(imageUrl);
 
         // Get image dimensions
-        const img = new Image();
+        const img = new window.Image();
         img.onload = () => {
           setFormData(prev => ({
             ...prev,

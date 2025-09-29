@@ -19,7 +19,7 @@ export const createClient = () => {
         signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Missing configuration' } }),
         signOut: () => Promise.resolve({ error: null })
       }
-    } as any;
+    } as ReturnType<typeof createBrowserClient>;
   }
 
   return createBrowserClient(supabaseUrl, supabaseAnonKey);

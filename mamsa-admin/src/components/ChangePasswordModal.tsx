@@ -69,11 +69,11 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
         onClose();
       }, 1500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password update failed:', error);
       setMessage({ 
         type: 'error', 
-        text: error.message || 'Failed to update password. Please try again.' 
+        text: error instanceof Error ? error.message : 'Failed to update password. Please try again.' 
       });
     } finally {
       setLoading(false);

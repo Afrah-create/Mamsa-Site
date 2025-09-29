@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-2xl font-bold">Welcome back, {user?.email?.split('@')[0] || 'Admin'}!</h1>
-              <p className="text-green-100 mt-1">Here's what's happening with MAMSA today.</p>
+              <p className="text-green-100 mt-1">Here&apos;s what&apos;s happening with MAMSA today.</p>
             </div>
             <div className="text-left sm:text-right">
               <p className="text-sm text-green-200">Last login</p>
