@@ -26,6 +26,12 @@ interface Event {
   created_at: string;
 }
 
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new?: Event;
+  old?: { id: number };
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
@@ -149,13 +155,13 @@ export default function EventsPage() {
           schema: 'public',
           table: 'events'
         },
-        (payload) => {
+        (payload: RealtimePayload) => {
           console.log('Events change received:', payload);
           
           if (payload.eventType === 'INSERT' && payload.new) {
             setEvents(prev => {
               // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new.id);
+              const exists = prev.some(item => item.id === payload.new!.id);
               if (!exists) {
                 return [payload.new as Event, ...prev];
               }
@@ -163,10 +169,10 @@ export default function EventsPage() {
             });
           } else if (payload.eventType === 'UPDATE' && payload.new) {
             setEvents(prev => prev.map(item => 
-              item.id === payload.new.id ? payload.new as Event : item
+              item.id === payload.new!.id ? payload.new as Event : item
             ));
           } else if (payload.eventType === 'DELETE' && payload.old) {
-            setEvents(prev => prev.filter(item => item.id !== payload.old.id));
+            setEvents(prev => prev.filter(item => item.id !== payload.old!.id));
           }
         }
       )
@@ -559,12 +565,12 @@ export default function EventsPage() {
                 {filteredEvents.map((event) => (
                   <div key={event.id} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
                     {/* Featured Image Section */}
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <div className="relative h-56 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                       {event.featured_image ? (
                         <img
                           src={event.featured_image}
                           alt={event.title}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             // Fallback for broken images
                             const target = e.target as HTMLImageElement;
