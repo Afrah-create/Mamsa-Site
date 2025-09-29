@@ -34,7 +34,6 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     { id: 3, title: 'System maintenance scheduled', time: '3 hours ago', unread: false },
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -91,6 +90,25 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Profile Settings', 
+      href: '/profile', 
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      )
+    },
+    { 
+      name: 'Account Settings', 
+      href: '/profile', 
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       )
     },
@@ -158,12 +176,14 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Click outside to close dropdowns */}
-      {(showNotifications || showProfile) && (
+      {showNotifications && (
         <div 
           className="fixed inset-0 z-[55]"
-          onClick={() => {
-            setShowNotifications(false);
-            setShowProfile(false);
+          onClick={(e) => {
+            // Only close if clicking on the backdrop, not on dropdown content
+            if (e.target === e.currentTarget) {
+              setShowNotifications(false);
+            }
           }}
         />
       )}
@@ -229,19 +249,22 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
           })}
         </nav>
 
+        {/* Sign Out Button */}
+        <div className="border-t border-green-500 p-4 flex-shrink-0">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+          >
+            <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign Out
+          </button>
+        </div>
+
         {/* Footer */}
         <div className="border-t border-green-500 p-4 flex-shrink-0">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <Image 
-                src="/mamsa-logo.JPG" 
-                alt="MAMSA Logo" 
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full object-cover"
-              />
-              <span className="text-sm font-semibold text-white">MAMSA</span>
-            </div>
             <p className="text-xs text-green-200 mb-2">Admin Portal v1.0</p>
             <div className="flex justify-center space-x-3">
               <a href="#" className="text-green-200 hover:text-white transition-colors duration-200">
@@ -370,140 +393,31 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                 )}
               </div>
 
-              {/* Profile Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProfile(!showProfile)}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                >
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-sm">
-                    {profile?.avatar_url ? (
-                      <Image 
-                        src={profile.avatar_url} 
-                        alt="Profile" 
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold text-white">
-                        {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="hidden sm:block text-left">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {profile?.full_name || user?.email?.split('@')[0] || 'Admin'}
-                    </p>
-                    <p className="text-xs text-gray-500">Administrator</p>
-                  </div>
-                  <svg className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showProfile ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Fresh Profile Dropdown */}
-                {showProfile && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 z-[60] overflow-hidden" style={{ pointerEvents: 'auto' }}>
-                    {/* Header */}
-                    <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-sm">
-                          {profile?.avatar_url ? (
-                            <Image 
-                              src={profile.avatar_url} 
-                              alt="Profile" 
-                              width={40}
-                              height={40}
-                              className="h-10 w-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-sm font-semibold text-white">
-                              {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {profile?.full_name || user?.email?.split('@')[0] || 'Admin'}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {user?.email || 'admin@mamsa.org'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      <Link 
-                        href="/profile"
-                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 cursor-pointer w-full"
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowProfile(false);
-                        }}
-                      >
-                        <svg className="h-4 w-4 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Profile Settings
-                      </Link>
-                      
-                      <Link 
-                        href="/profile"
-                        className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 cursor-pointer w-full"
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowProfile(false);
-                        }}
-                      >
-                        <svg className="h-4 w-4 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Account Settings
-                      </Link>
-
-                      <button 
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 cursor-pointer border-0 bg-transparent"
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowProfile(false);
-                          alert('Help & Support functionality coming soon!');
-                        }}
-                      >
-                        <svg className="h-4 w-4 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Help & Support
-                      </button>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="border-t border-gray-100 px-4 py-2">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowProfile(false);
-                          handleLogout();
-                        }}
-                        className="flex items-center w-full px-2 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors duration-150 rounded-lg cursor-pointer"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <svg className="h-4 w-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Sign out
-                      </button>
-                    </div>
-                  </div>
-                )}
+              {/* Profile Display */}
+              <div className="flex items-center space-x-3">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-sm">
+                  {profile?.avatar_url ? (
+                    <Image 
+                      src={profile.avatar_url} 
+                      alt="Profile" 
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-semibold text-white">
+                      {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
+                    </span>
+                  )}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {profile?.full_name || user?.email?.split('@')[0] || 'Admin'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email || 'admin@mamsa.org'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
