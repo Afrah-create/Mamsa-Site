@@ -5,8 +5,8 @@
   "main": "index.html",
   "scripts": {
     "dev": "vite preview --port 3000",
-    "build": "echo 'No build step required for static site'",
-    "start": "echo 'Starting static file server'"
+    "build": "echo 'Static site - no build required'",
+    "start": "echo 'Static site - no start required'"
   },
   "keywords": ["mamsa", "admin", "supabase", "authentication"],
   "author": "MAMSA Team",
