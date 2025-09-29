@@ -570,44 +570,156 @@ export default function LeadershipPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredLeadership.map((member) => (
                     <div key={member.id} className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all duration-300 transform hover:-translate-y-1">
-                      {/* Checkbox overlay */}
-                      <div className="relative p-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.includes(member.id)}
-                          onChange={() => handleSelectItem(member.id)}
-                          className="absolute top-3 left-3 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
-                        />
-                      </div>
-
-                      {/* Header with Avatar */}
-                      <div className="relative px-6 pt-4 pb-2">
-                        <div className="flex flex-col items-center text-center space-y-3">
-                          {/* Avatar */}
-                          <div className="h-20 w-20 bg-gray-100 flex items-center justify-center overflow-hidden">
-                            {member.image_url ? (
-                              <Image 
-                                src={member.image_url} 
-                                alt={member.name} 
-                                width={80}
-                                height={80}
-                                className="h-20 w-20 object-cover" 
-                              />
-                            ) : (
-                              <span className="text-2xl font-bold text-gray-600">{member.name.charAt(0)}</span>
-                            )}
+                      {/* Featured Image Section */}
+                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-50 to-indigo-100">
+                        {member.image_url ? (
+                          <Image
+                            src={member.image_url}
+                            alt={member.name}
+                            width={400}
+                            height={192}
+                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              // Fallback for broken images
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `
+                                  <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-200">
+                                    <div class="text-center">
+                                      <svg class="mx-auto h-16 w-16 text-purple-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                      </svg>
+                                      <p class="text-sm font-medium text-purple-600 mb-1">Leadership</p>
+                                      <p class="text-xs text-purple-500">No image available</p>
+                                    </div>
+                                  </div>
+                                `;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-indigo-200">
+                            <div className="text-center">
+                              <svg className="mx-auto h-16 w-16 text-purple-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                              </svg>
+                              <p className="text-sm font-medium text-purple-600 mb-1">Leadership</p>
+                              <p className="text-xs text-purple-500">No profile image</p>
+                            </div>
                           </div>
-
-                          {/* Name and Position */}
-                          <div className="space-y-1">
-                            <h3 className="text-lg font-bold text-gray-900 leading-tight">{member.name}</h3>
-                            <p className="text-sm font-semibold text-purple-600">{member.position}</p>
+                        )}
+                        
+                        {/* Image overlay with status and actions */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent">
+                          <div className="absolute top-3 left-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedItems.includes(member.id)}
+                              onChange={() => handleSelectItem(member.id)}
+                              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            />
+                          </div>
+                          
+                          <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button 
+                              onClick={() => handleEditMember(member)}
+                              className="p-2 text-white hover:text-purple-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+                              title="Edit Member"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteMember(member)}
+                              className="p-2 text-white hover:text-red-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+                              title="Delete Member"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          <div className="absolute bottom-3 left-3">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium shadow-sm backdrop-blur-sm ${
+                              member.status === 'active' ? 'bg-green-500/90 text-white' :
+                              member.status === 'inactive' ? 'bg-yellow-500/90 text-white' :
+                              'bg-gray-500/90 text-white'
+                            }`}>
+                              {member.status === 'active' && '🟢 Active'}
+                              {member.status === 'inactive' && '⏸️ Inactive'}
+                              {member.status === 'alumni' && '🎓 Alumni'}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="px-6 pb-6">
+                      {/* Content Section */}
+                      <div className="p-6">
+                        {/* Name and Position */}
+                        <div className="text-center mb-4">
+                          <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">{member.name}</h3>
+                          <p className="text-sm font-semibold text-purple-600">{member.position}</p>
+                        </div>
+
+                        {/* Bio Preview */}
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
+                            {member.bio}
+                          </p>
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="space-y-2 mb-4">
+                          {member.department && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <svg className="h-3 w-3 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              {member.department}
+                            </div>
+                          )}
+                          {member.year && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <svg className="h-3 w-3 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {member.year}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Social Links */}
+                        {member.social_links && (member.social_links.linkedin || member.social_links.twitter || member.social_links.instagram) && (
+                          <div className="flex justify-center space-x-2 mb-4">
+                            {member.social_links.linkedin && (
+                              <a href={member.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 transition-colors">
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                </svg>
+                              </a>
+                            )}
+                            {member.social_links.twitter && (
+                              <a href={member.social_links.twitter} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-500 transition-colors">
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                                </svg>
+                              </a>
+                            )}
+                            {member.social_links.instagram && (
+                              <a href={member.social_links.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:text-pink-600 transition-colors">
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.62 5.367 11.987 11.988 11.987 6.62 0 11.987-5.367 11.987-11.987C24.014 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.448-.49-3.323-1.297C4.198 14.895 3.708 13.744 3.708 12.447s.49-2.448 1.418-3.323c.875-.807 2.026-1.297 3.323-1.297s2.448.49 3.323 1.297c.928.875 1.418 2.026 1.418 3.323s-.49 2.448-1.418 3.244c-.875.807-2.026 1.297-3.323 1.297zm7.83-9.281c-.49 0-.928-.175-1.297-.49-.368-.315-.49-.753-.49-1.243 0-.49.122-.928.49-1.243.369-.315.807-.49 1.297-.49s.928.175 1.297.49c.368.315.49.753.49 1.243 0 .49-.122.928-.49 1.243-.369.315-.807.49-1.297.49z"/>
+                                </svg>
+                              </a>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
                         <div className="flex space-x-2">
                           <button 
                             onClick={() => handleEditMember(member)}
