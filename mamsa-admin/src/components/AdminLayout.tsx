@@ -329,33 +329,40 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
                 {/* Notifications Dropdown */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                    <div className="p-4 border-b border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-3 sm:p-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+                        {unreadCount > 0 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {unreadCount} new
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
                           onClick={() => markNotificationAsRead(notification.id)}
-                          className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                          className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
                             notification.unread ? 'bg-blue-50' : ''
                           }`}
                         >
-                          <div className="flex items-start space-x-3">
-                            <div className={`h-2 w-2 rounded-full mt-2 ${
+                          <div className="flex items-start space-x-2 sm:space-x-3">
+                            <div className={`h-2 w-2 rounded-full mt-2 flex-shrink-0 ${
                               notification.unread ? 'bg-blue-500' : 'bg-gray-300'
                             }`}></div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 leading-tight">{notification.title}</p>
                               <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                    <div className="p-4 border-t border-gray-200">
-                      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    <div className="p-3 sm:p-4 border-t border-gray-200">
+                      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors duration-150">
                         View all notifications
                       </button>
                     </div>
@@ -408,14 +415,20 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                       <Link 
                         href="/profile"
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        onClick={() => setShowProfile(false)}
+                        onClick={() => {
+                          console.log('Profile Settings link clicked');
+                          setShowProfile(false);
+                        }}
                       >
                         Profile Settings
                       </Link>
                       <Link 
                         href="/profile"
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        onClick={() => setShowProfile(false)}
+                        onClick={() => {
+                          console.log('Account Settings link clicked');
+                          setShowProfile(false);
+                        }}
                       >
                         Account Settings
                       </Link>
@@ -424,12 +437,23 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          console.log('Help & Support clicked');
                           setShowProfile(false);
                           alert('Help & Support functionality coming soon!');
                         }}
                       >
                         Help & Support
                       </button>
+                      <Link 
+                        href="/dashboard"
+                        className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+                        onClick={() => {
+                          console.log('Test Dashboard link clicked');
+                          setShowProfile(false);
+                        }}
+                      >
+                        🧪 Test Dashboard
+                      </Link>
                     </div>
                     <div className="border-t border-gray-200 py-2">
                       <button
