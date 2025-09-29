@@ -213,7 +213,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   value={formData.title}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-gray-900 placeholder-gray-500"
                   placeholder="Enter event title..."
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -233,7 +233,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   value={formData.description}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-y"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-y text-gray-900 placeholder-gray-500"
                   placeholder="Describe the event..."
                 />
                 <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
@@ -255,7 +255,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                     value={formData.date}
                     onChange={handleInputChange}
                     required
-                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
                   />
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
@@ -269,7 +269,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                     value={formData.time}
                     onChange={handleInputChange}
                     required
-                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
                   />
                 </div>
               </div>
@@ -286,7 +286,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   value={formData.location}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors text-gray-900 placeholder-gray-500"
                   placeholder="Event location or venue..."
                 />
               </div>
@@ -390,7 +390,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   value={formData.organizer}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                   placeholder="Event organizer..."
                 />
               </div>
@@ -407,7 +407,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   value={formData.capacity}
                   onChange={handleInputChange}
                   min="0"
-                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                   placeholder="Max attendees..."
                 />
                 <p className="mt-1 text-xs text-gray-500">0 = unlimited</p>
@@ -431,7 +431,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                     name="registration_deadline"
                     value={formData.registration_deadline}
                     onChange={handleInputChange}
-                    className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                   />
                 )}
               </div>
@@ -444,7 +444,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   name="contact_email"
                   value={formData.contact_email}
                   onChange={handleInputChange}
-                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                   placeholder="Contact email..."
                 />
                 <input
@@ -452,7 +452,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   name="contact_phone"
                   value={formData.contact_phone}
                   onChange={handleInputChange}
-                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                   placeholder="Contact phone..."
                 />
               </div>
@@ -468,7 +468,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                    className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder-gray-500"
                     placeholder="Add tag..."
                   />
                   <button

@@ -213,7 +213,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="Enter full name..."
                     />
                   </div>
@@ -228,7 +228,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       value={formData.position}
                       onChange={handleInputChange}
                       required
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="e.g., President, Vice President..."
                     />
                   </div>
@@ -247,7 +247,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                   value={formData.bio}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-y"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors resize-y text-gray-900 placeholder-gray-500"
                   placeholder="Tell us about this leadership member's background, achievements, and role..."
                 />
                 <p className="mt-1 text-xs text-gray-500">{formData.bio.length} characters</p>
@@ -267,7 +267,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       id="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="email@example.com"
                     />
                   </div>
@@ -281,7 +281,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       id="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -302,7 +302,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       id="department"
                       value={formData.department}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="e.g., Medicine, Public Health..."
                     />
                   </div>
@@ -316,7 +316,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       id="year"
                       value={formData.year}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-900 placeholder-gray-500"
                       placeholder="e.g., Class of 2025, Year 3..."
                     />
                   </div>
@@ -419,7 +419,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                   value={formData.order}
                   onChange={handleInputChange}
                   min="0"
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
                   placeholder="Order in leadership list..."
                 />
                 <p className="mt-1 text-xs text-gray-500">Lower numbers appear first</p>
@@ -438,7 +438,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       name="social_links.linkedin"
                       value={formData.social_links.linkedin}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-500"
                       placeholder="https://linkedin.com/in/username"
                     />
                   </div>
@@ -451,7 +451,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       name="social_links.twitter"
                       value={formData.social_links.twitter}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-500"
                       placeholder="https://twitter.com/username"
                     />
                   </div>
@@ -464,7 +464,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                       name="social_links.instagram"
                       value={formData.social_links.instagram}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-500"
                       placeholder="https://instagram.com/username"
                     />
                   </div>

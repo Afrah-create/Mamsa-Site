@@ -190,7 +190,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                   value={formData.title}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900 placeholder-gray-500"
                   placeholder="Enter article title..."
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -209,7 +209,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                   rows={2}
                   value={formData.excerpt}
                   onChange={handleInputChange}
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none text-gray-900 placeholder-gray-500"
                   placeholder="Brief summary of your article..."
                 />
                 <p className="mt-1 text-xs text-gray-500">
@@ -229,7 +229,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                   value={formData.content}
                   onChange={handleContentChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y text-gray-900 placeholder-gray-500"
                   placeholder="Write your article content here..."
                 />
                 <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
@@ -335,7 +335,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                   value={formData.author}
                   onChange={handleInputChange}
                   required
-                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                   placeholder="Author name..."
                 />
               </div>
@@ -351,7 +351,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                    className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     placeholder="Add tag..."
                   />
                   <button
