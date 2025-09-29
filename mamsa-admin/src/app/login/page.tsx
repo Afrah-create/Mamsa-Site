@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 
@@ -15,22 +15,6 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Clear any stored credentials on component mount
-  useEffect(() => {
-    // Clear localStorage
-    localStorage.removeItem('admin_user');
-    
-    // Clear form fields
-    setEmail('');
-    setPassword('');
-    
-    // Clear any browser autofill
-    const emailInput = document.getElementById('email') as HTMLInputElement;
-    const passwordInput = document.getElementById('password') as HTMLInputElement;
-    
-    if (emailInput) emailInput.value = '';
-    if (passwordInput) passwordInput.value = '';
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
