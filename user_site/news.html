@@ -3,18 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Madi Makerere University Students Association</title>
-    <meta name="description" content="Official website of the Madi Makerere University Students Association - Connecting students, fostering community, and promoting excellence.">
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Madi Makerere University Students Association">
-    <meta property="og:description" content="Official website of the Madi Makerere University Students Association">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="">
-    <meta property="og:image" content="images/og-image.jpg">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <title>News - Madi Makerere University Students Association</title>
+    <meta name="description" content="Stay updated with the latest news, announcements, and updates from the Madi Makerere University Students Association.">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -55,7 +45,7 @@
                 <div class="nav-menu" id="nav-menu">
                     <ul class="nav-list">
                         <li class="nav-item">
-                            <a href="index.html" class="nav-link active">Home</a>
+                            <a href="index.html" class="nav-link">Home</a>
                         </li>
                         <li class="nav-item">
                             <a href="about.html" class="nav-link">About</a>
@@ -67,7 +57,7 @@
                             <a href="events.html" class="nav-link">Events</a>
                         </li>
                         <li class="nav-item">
-                            <a href="news.html" class="nav-link">News</a>
+                            <a href="news.html" class="nav-link active">News</a>
                         </li>
                         <li class="nav-item">
                             <a href="gallery.html" class="nav-link">Gallery</a>
@@ -90,158 +80,150 @@
         </nav>
     </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title">Welcome to Madi Makerere University Students Association</h1>
-                <p class="hero-subtitle">Connecting students, fostering community, and promoting excellence in education and leadership</p>
-                <div class="hero-buttons">
-                    <a href="about.html" class="btn btn-primary">Learn More</a>
-                    <a href="contact.html" class="btn btn-secondary">Join Us</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="images/index/download.jpeg" alt="Makerere University Campus" class="hero-img">
-            </div>
-        </div>
-    </section>
-
-    <!-- Quick Stats -->
-    <section class="stats">
+    <!-- Page Header -->
+    <section class="page-header news-header">
         <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number" data-target="500">0</h3>
-                        <p class="stat-label">Active Members</p>
-                    </div>
+            <h1 class="page-title">News & Updates</h1>
+            <p class="page-subtitle">Stay informed with the latest news and announcements</p>
+        </div>
+    </section>
+
+    <!-- Search and Filters -->
+    <section class="news-filters">
+        <div class="container">
+            <div class="filters-container">
+                <div class="search-box">
+                    <input type="text" id="news-search" placeholder="Search news articles...">
+                    <button class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
                 </div>
-                <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number" data-target="15">0</h3>
-                        <p class="stat-label">Years Established</p>
-                    </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number" data-target="25">0</h3>
-                        <p class="stat-label">Departments</p>
-                    </div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="fas fa-trophy"></i>
-                    </div>
-                    <div class="stat-content">
-                        <h3 class="stat-number" data-target="50">0</h3>
-                        <p class="stat-label">Events This Year</p>
-                    </div>
+                
+                <div class="category-filters">
+                    <button class="filter-btn active" data-category="all">All News</button>
+                    <button class="filter-btn" data-category="academics">Academics</button>
+                    <button class="filter-btn" data-category="social">Social</button>
+                    <button class="filter-btn" data-category="sports">Sports</button>
+                    <button class="filter-btn" data-category="announcements">Announcements</button>
+                    <button class="filter-btn" data-category="community">Community</button>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- About Preview -->
-    <section class="about-preview">
+    <!-- Featured News -->
+    <section class="featured-news">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">About Our Association</h2>
-                <p class="section-subtitle">Building bridges between students and creating opportunities for growth</p>
+                <h2 class="section-title">Featured News</h2>
             </div>
-            <div class="about-content">
-                <div class="about-text">
-                    <h3>Our Mission</h3>
-                    <p>The Madi Makerere University Students Association is dedicated to fostering unity among students, promoting academic excellence, and providing a platform for personal and professional development.</p>
-                    <a href="about.html" class="btn btn-outline">Learn More About Us</a>
-                </div>
-                <div class="about-image">
-                    <img src="images/index/study.jpg" alt="Students studying together" class="about-img">
-                </div>
+            
+            <div class="featured-article" id="featured-article">
+                <!-- Featured article will be loaded dynamically -->
             </div>
         </div>
     </section>
 
-    <!-- Latest News -->
-    <section class="latest-news">
+    <!-- News Grid -->
+    <section class="news-grid-section">
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Latest News</h2>
-                <a href="news.html" class="view-all">View All News <i class="fas fa-arrow-right"></i></a>
+                <div class="news-sort">
+                    <select id="news-sort">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="popular">Most Popular</option>
+                    </select>
+                </div>
             </div>
-            <div class="news-grid" id="latest-news-grid">
-                <!-- News items will be loaded dynamically -->
+            
+            <div class="news-grid" id="news-grid">
+                <!-- News articles will be loaded dynamically -->
+            </div>
+            
+            <div class="load-more-container">
+                <button class="btn btn-outline" id="load-more-news">Load More News</button>
             </div>
         </div>
     </section>
 
-    <!-- Upcoming Events -->
-    <section class="upcoming-events">
+    <!-- News Archive -->
+    <section class="news-archive">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Upcoming Events</h2>
-                <a href="events.html" class="view-all">View All Events <i class="fas fa-arrow-right"></i></a>
+                <h2 class="section-title">News Archive</h2>
+                <p class="section-subtitle">Browse news by month and year</p>
             </div>
-            <div class="events-grid" id="upcoming-events-grid">
-                <!-- Events will be loaded dynamically -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Leadership Preview -->
-    <section class="leadership-preview">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Meet Our Leadership</h2>
-                <p class="section-subtitle">Dedicated students leading our community forward</p>
-            </div>
-            <div class="leadership-grid" id="leadership-preview-grid">
-                <!-- Leadership items will be loaded dynamically -->
-            </div>
-            <div class="text-center">
-                <a href="leadership.html" class="btn btn-primary">View Full Leadership Team</a>
+            
+            <div class="archive-container">
+                <div class="archive-years" id="archive-years">
+                    <!-- Archive years will be generated dynamically -->
+                </div>
+                
+                <div class="archive-months" id="archive-months">
+                    <!-- Archive months will be generated dynamically -->
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Connect with Us -->
-    <section class="newsletter">
+    <!-- Newsletter Subscription -->
+    <section class="newsletter-subscription">
         <div class="container">
             <div class="newsletter-content">
                 <div class="newsletter-text">
-                    <h2>Connect with Us</h2>
-                    <p>Stay connected with our community and never miss out on important updates, events, and opportunities.</p>
-                    <ul class="newsletter-benefits">
-                        <li><i class="fas fa-check"></i> Latest news and announcements</li>
-                        <li><i class="fas fa-check"></i> Upcoming events and activities</li>
-                        <li><i class="fas fa-check"></i> Exclusive opportunities and scholarships</li>
-                        <li><i class="fas fa-check"></i> Community updates and achievements</li>
-                    </ul>
-                </div>
-                <form class="newsletter-form" id="newsletter-form">
-                    <h3>Join Our Community</h3>
-                    <p>Enter your email to receive our newsletter and stay connected with the Madi Makerere community.</p>
-                    <div class="form-group">
-                        <input type="email" id="newsletter-email" placeholder="Enter your email address" required>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i>
-                            Subscribe Now
-                        </button>
+                    <h2>Never Miss Important News</h2>
+                    <p>Subscribe to our newsletter and get the latest news, announcements, and updates delivered directly to your inbox.</p>
+                    <div class="newsletter-benefits">
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Weekly news digest</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Event announcements</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Important updates</span>
+                        </div>
+                        <div class="benefit-item">
+                            <i class="fas fa-check"></i>
+                            <span>Member-only content</span>
+                        </div>
                     </div>
-                    <p class="newsletter-privacy">
-                        We respect your privacy. Unsubscribe at any time. 
-                        <a href="#">Privacy Policy</a>
-                    </p>
-                </form>
+                </div>
+                
+                <div class="newsletter-form">
+                    <h3>Subscribe to Newsletter</h3>
+                    <form id="newsletter-subscription-form">
+                        <div class="form-group">
+                            <input type="text" id="subscriber-name" placeholder="Your Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="subscriber-email" placeholder="Email Address" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="newsletter-categories" multiple>
+                                <option value="general">General News</option>
+                                <option value="academics">Academic Updates</option>
+                                <option value="events">Event Announcements</option>
+                                <option value="leadership">Leadership Updates</option>
+                                <option value="community">Community News</option>
+                            </select>
+                            <small>Hold Ctrl/Cmd to select multiple categories</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="newsletter-terms" required>
+                                <span class="checkmark"></span>
+                                I agree to receive newsletters and updates
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Subscribe Now</button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
@@ -325,6 +307,23 @@
             </div>
         </div>
     </footer>
+
+    <!-- News Article Modal -->
+    <div class="news-modal" id="news-modal">
+        <div class="news-modal-content">
+            <div class="news-modal-header">
+                <button class="news-modal-close" id="news-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h2 class="news-modal-title" id="news-modal-title"></h2>
+                <div class="news-modal-meta" id="news-modal-meta"></div>
+            </div>
+            <div class="news-modal-body">
+                <img class="news-modal-image" id="news-modal-image" src="" alt="">
+                <div class="news-modal-content-text" id="news-modal-content"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Files -->
     <script src="js/main.js"></script>

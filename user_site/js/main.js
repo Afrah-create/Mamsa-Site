@@ -44,8 +44,7 @@ function initializeApp() {
     initializePageSpecificFeatures();
     initializeEventCategories();
     
-    // Initialize Firebase content synchronization
-    initializeFirebaseSync();
+    // Firebase integration removed - implement Supabase synchronization
     
     // Check if user is on admin page
     if (currentPage.includes('admin')) {
@@ -53,47 +52,14 @@ function initializeApp() {
     }
 }
 
-// Initialize Firebase content synchronization
-async function initializeFirebaseSync() {
+// Firebase integration removed - implement Supabase content synchronization
+async function initializeSupabaseSync() {
     try {
-        // Check if Firebase is available
-        if (typeof window.firebase !== 'undefined') {
-            // Import content synchronizer dynamically
-            const { contentSynchronizer } = await import('./content-synchronizer.js');
-            
-            // Initialize content synchronizer
-            await contentSynchronizer.initializeWebsiteSync();
-            
-            // Listen for content updates
-            window.addEventListener('contentUpdated', (event) => {
-                const { type, data } = event.detail;
-                console.log(`Content updated: ${type}`, data);
-                
-                // Update specific sections based on content type
-                switch (type) {
-                    case 'news':
-                        contentSynchronizer.updateNewsSection(data);
-                        break;
-                    case 'events':
-                        contentSynchronizer.updateEventsSection(data);
-                        break;
-                    case 'leadership':
-                        contentSynchronizer.updateLeadershipSection(data);
-                        break;
-                    case 'gallery':
-                        contentSynchronizer.updateGallerySection(data);
-                        break;
-                }
-            });
-            
-            console.log('Firebase content synchronization initialized');
-        } else {
-            console.log('Firebase not available, using static content');
-        }
+        console.log('Firebase integration removed. Implement Supabase for content synchronization.');
+        // TODO: Implement Supabase content synchronization
     } catch (error) {
-        console.error('Error initializing Firebase sync:', error);
-        // Fallback to static content loading
-        console.log('Falling back to static content loading');
+        console.error('Error initializing Supabase sync:', error);
+        console.log('Using static content loading');
     }
 }
 

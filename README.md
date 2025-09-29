@@ -1,202 +1,219 @@
-# Madi Makerere University Students Association Website
+# Madi Makerere University Students Association (MAMSA)
 
-A complete, professional website for the Madi Makerere University Students Association built with HTML, CSS, and JavaScript. The website features a modern, responsive design with an integrated admin content management system.
+## Project Structure for Separate Hosting
 
-## 🎨 Design Features
-
-- **Makerere University Colors**: Maroon (#800020) and Gold (#FFD700) color scheme
-- **Modern Typography**: Poppins for headings, Open Sans for body text
-- **Responsive Design**: Mobile-first approach with breakpoints for all devices
-- **Professional Layout**: Clean design with proper whitespace and visual hierarchy
-- **Accessibility**: WCAG 2.1 compliant with semantic HTML and ARIA labels
-
-## 📁 Project Structure
+This repository contains the official website for the Madi Makerere University Students Association, organized for separate hosting of the public website and admin panel.
 
 ```
-/
-├── index.html                 # Homepage
-├── about.html                 # About page
-├── leadership.html            # Leadership team page
-├── events.html               # Events page
-├── news.html                 # News page
-├── gallery.html              # Photo gallery
-├── services.html             # Services page
-├── contact.html              # Contact page
-├── admin/
-│   ├── admin.html           # Admin dashboard
-│   └── login.html           # Admin login
-├── css/
-│   ├── style.css            # Main styles
-│   ├── admin.css            # Admin panel styles
-│   └── responsive.css       # Responsive design
-├── js/
-│   ├── main.js              # Main functionality
-│   ├── admin.js             # Admin panel JS
-│   └── content-manager.js   # Content management
-├── images/                  # Image assets
-│   ├── news/               # News images
-│   ├── events/             # Event images
-│   ├── leadership/         # Leadership photos
-│   ├── gallery/            # Gallery photos
-│   └── services/           # Service images
-└── data/
-    └── content.json        # Content data storage
+mamsa/
+├── 📁 admin/                    # Admin panel (host separately)
+│   ├── *.html                   # Admin interface pages
+│   ├── css/                     # Admin stylesheets
+│   ├── js/                      # Admin JavaScript files
+│   ├── data/                    # Content data (duplicate for admin)
+│   └── images/                  # All images (duplicate for admin)
+├── 📁 user_site/               # Public website (host separately)
+│   ├── *.html                   # Public website pages
+│   ├── css/                     # Website stylesheets
+│   ├── js/                      # Website JavaScript files
+│   ├── data/                    # Content data
+│   └── images/                  # All images
+├── 📄 README.md                # This documentation
+├── 📄 PROJECT_STRUCTURE.md     # Detailed structure guide
+├── 📄 FIREBASE_REMOVAL_SUMMARY.md # Migration documentation
+└── 📄 HEADER_*.md              # Setup guides
 ```
 
-## 🚀 Features
+## Separate Hosting Setup
+
+### 🌐 Public Website (`user_site/`)
+**Host this directory as your main website**
+
+- **Entry Point**: `index.html`
+- **URL Structure**: Your main domain (e.g., `mamsa.org`)
+- **Content**: All public-facing pages for students and visitors
+- **Assets**: Complete set of images, CSS, and JavaScript
+
+### ⚙️ Admin Panel (`admin/`)
+**Host this directory as your admin interface**
+
+- **Entry Point**: `login.html`
+- **URL Structure**: Subdomain or path (e.g., `admin.mamsa.org` or `mamsa.org/admin`)
+- **Content**: Administrative interface for content management
+- **Assets**: Complete duplicate of assets for independent operation
+
+## Features
+
+### Public Website (`user_site/`)
+- **Homepage**: Welcome page with latest news, events, and leadership preview
+- **About Us**: Mission, vision, and association information
+- **Leadership**: Team members and organizational structure
+- **Events**: Upcoming and past events with calendar view
+- **News**: Latest announcements and news articles
+- **Gallery**: Photo gallery with filtering and lightbox
+- **Services**: Student support services and resources
+- **Contact**: Contact information and FAQ
+
+### Admin Panel (`admin/`)
+- **Dashboard**: Overview of content and statistics
+- **Content Management**: Create, edit, and manage website content
+- **Analytics**: View website statistics and performance
+- **User Management**: Admin user accounts and permissions
+- **Settings**: Website configuration and preferences
+
+## Deployment Instructions
+
+### Option 1: Separate Domains/Subdomains
+
+**Public Website:**
+```bash
+# Deploy user_site/ to your main domain
+# Example: mamsa.org
+```
+
+**Admin Panel:**
+```bash
+# Deploy admin/ to a subdomain
+# Example: admin.mamsa.org
+```
+
+### Option 2: Same Domain, Different Paths
+
+**Public Website:**
+```bash
+# Deploy user_site/ to root path
+# Example: mamsa.org/
+```
+
+**Admin Panel:**
+```bash
+# Deploy admin/ to admin path
+# Example: mamsa.org/admin/
+```
+
+### Hosting Services
+
+**GitHub Pages:**
+- Create separate repositories for each directory
+- Or use GitHub Pages with custom paths
+
+**Netlify:**
+- Deploy each directory as separate sites
+- Configure custom domains for each
+
+**Vercel:**
+- Deploy each directory as separate projects
+- Link to same GitHub repository with different paths
+
+**Traditional Hosting:**
+- Upload `user_site/` to public_html
+- Upload `admin/` to admin subdirectory
+- Configure proper access controls for admin
+
+## Technology Stack
+
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Styling**: Custom CSS with responsive design
+- **Icons**: Font Awesome
+- **Fonts**: Google Fonts (Inter)
+- **Content**: JSON-based content management
+- **Backend**: Ready for Supabase integration (Firebase removed)
+
+## Admin Access
+
+- **URL**: `/login.html` (within admin directory)
+- **Default Credentials**: 
+  - Username: `admin`
+  - Password: `admin123`
+
+## Content Management
+
+### Current System
+- **Static Content**: Edit files directly in each directory
+- **Dynamic Content**: Modify `data/content.json` in both directories
+- **Images**: Add to appropriate folders in `images/` directory
+- **Synchronization**: Manually sync changes between directories
+
+### Future (Supabase Integration)
+- **Centralized Content**: Single source of truth
+- **Real-time Sync**: Automatic updates across both sites
+- **Admin Interface**: Full content management capabilities
+
+## Local Development
 
 ### Public Website
-- **Homepage**: Hero section, stats, latest news, upcoming events, leadership preview
-- **About Page**: Mission, vision, history timeline, objectives, achievements
-- **Leadership**: Executive committee, department heads, organizational chart
-- **Events**: Upcoming/past events, event calendar, registration forms
-- **News**: Latest news, categories, search functionality, newsletter signup
-- **Gallery**: Photo gallery with lightbox, categories, upload functionality
-- **Services**: Academic support, student welfare, career services, social activities
-- **Contact**: Contact form, office information, social media links, FAQ
-
-### Admin Panel
-- **Secure Login**: Username/password authentication with session management
-- **Dashboard**: Overview statistics, recent activity, quick actions
-- **Content Management**: Edit homepage, about page, contact information
-- **News Management**: Add, edit, delete news articles with WYSIWYG editor
-- **Events Management**: Manage events, dates, locations, registration
-- **Leadership Management**: Update leadership team information and photos
-- **Gallery Management**: Upload, organize, and manage photos
-- **Settings**: General settings, security, backup/restore functionality
-
-### Technical Features
-- **Responsive Design**: Works on all devices (mobile, tablet, desktop)
-- **Dynamic Content**: Content loaded from JSON with real-time updates
-- **Form Validation**: Client-side validation with error handling
-- **Search Functionality**: Site-wide search with filtering
-- **Image Management**: Base64 encoding for image storage
-- **Data Persistence**: localStorage for admin content and settings
-- **Performance**: Optimized images, lazy loading, efficient code
-
-## 🛠️ Installation & Setup
-
-1. **Clone or Download** the project files to your web server
-2. **Add Images**: Replace placeholder image files with actual photos
-3. **Configure Admin**: Default login credentials are `admin` / `admin123`
-4. **Customize Content**: Update the content.json file with your information
-5. **Deploy**: Upload to your web hosting service
-
-## 📱 Responsive Breakpoints
-
-- **Mobile**: 320px - 575px
-- **Tablet**: 576px - 991px  
-- **Desktop**: 992px and above
-
-## 🎯 Browser Support
-
-- Chrome 60+
-- Firefox 55+
-- Safari 12+
-- Edge 79+
-- Mobile browsers (iOS Safari, Chrome Mobile)
-
-## 🔧 Customization
-
-### Colors
-Update CSS variables in `css/style.css`:
-```css
-:root {
-    --primary-color: #800020;    /* Maroon */
-    --accent-color: #FFD700;     /* Gold */
-    /* ... other colors */
-}
+```bash
+cd user_site
+# Serve locally or open index.html in browser
+python -m http.server 8000
+# Access at: http://localhost:8000
 ```
 
-### Content
-Edit `data/content.json` to update:
-- News articles
-- Events
-- Leadership team
-- Gallery photos
-- About information
-- Contact details
+### Admin Panel
+```bash
+cd admin
+# Serve locally or open login.html in browser
+python -m http.server 8001
+# Access at: http://localhost:8001
+```
 
-### Admin Settings
-Access admin panel at `/admin/login.html` and customize:
-- Site title and description
-- Contact information
-- Office hours
-- Social media links
+## Migration Status
 
-## 📊 Performance Features
+### ✅ Completed
+- Firebase integration removed
+- Project restructured for separate hosting
+- All file paths updated for independent operation
+- Duplicate assets created for each directory
+- Admin interface structure in place
 
-- **Optimized Images**: Compressed and properly sized
-- **Minified CSS**: Production-ready stylesheets
-- **Efficient JavaScript**: Modular and optimized code
-- **Lazy Loading**: Images load as needed
-- **Caching**: Browser caching for static assets
+### 🔄 Next Steps (Supabase Integration)
+- [ ] Set up Supabase project
+- [ ] Implement centralized authentication
+- [ ] Create shared content management API
+- [ ] Add file storage capabilities
+- [ ] Implement real-time synchronization
+- [ ] Restore full admin functionality
 
-## 🔒 Security Features
+## Benefits of Separate Hosting
 
-- **Admin Authentication**: Secure login system
-- **Input Validation**: Form validation and sanitization
-- **XSS Protection**: Safe content rendering
-- **CSRF Protection**: Form token validation
-- **Secure Storage**: Encrypted localStorage data
+### 🔒 Security
+- Admin panel can be hosted with additional security measures
+- Separate access controls and authentication
+- Isolated admin functionality from public site
 
-## 📈 SEO Features
+### 🚀 Performance
+- Each site can be optimized independently
+- Different caching strategies
+- Separate CDN configurations
 
-- **Semantic HTML**: Proper heading hierarchy and structure
-- **Meta Tags**: Title, description, keywords for each page
-- **Open Graph**: Social media sharing optimization
-- **Structured Data**: Schema.org markup for better search results
-- **Sitemap Ready**: Clean URL structure for search engines
+### 🛠️ Maintenance
+- Independent updates and deployments
+- Separate monitoring and logging
+- Different backup strategies
 
-## 🎨 Design System
+### 👥 Team Workflow
+- Different teams can work on each site
+- Independent development cycles
+- Separate testing and staging environments
 
-### Typography
-- **Headings**: Poppins (Google Fonts)
-- **Body Text**: Open Sans (Google Fonts)
-- **Hierarchy**: H1-H6 with consistent sizing
+## Contributing
 
-### Components
-- **Buttons**: Primary, secondary, outline variants
-- **Cards**: News, events, leadership, gallery items
-- **Forms**: Consistent styling with validation states
-- **Navigation**: Responsive mobile menu
-- **Modals**: Lightbox for gallery, admin forms
+1. Fork the repository
+2. Make changes to the appropriate directory (`user_site/` or `admin/`)
+3. Test thoroughly in both environments
+4. Submit a pull request
 
-### Layout
-- **Grid System**: CSS Grid and Flexbox
-- **Spacing**: Consistent spacing scale
-- **Containers**: Max-width containers with padding
-- **Sections**: Clear content organization
+## Support
 
-## 🚀 Future Enhancements
+For technical support or questions:
+- Check the documentation files in the root directory
+- Review the Firebase removal summary for migration details
+- Contact the development team for advanced issues
 
-- **Database Integration**: Replace localStorage with database
-- **User Authentication**: Member login and profiles
-- **Event Registration**: Advanced registration system
-- **Payment Integration**: Membership fees and event payments
-- **Email Notifications**: Automated email system
-- **Analytics**: Google Analytics integration
-- **Multi-language**: Support for multiple languages
-- **Mobile App**: React Native or Flutter app
+## License
 
-## 📞 Support
-
-For technical support or customization requests:
-- **Email**: info@madimakerere.org
-- **Phone**: +256 700 000 000
-- **Website**: [Your Website URL]
-
-## 📄 License
-
-This project is created for the Madi Makerere University Students Association. All rights reserved.
-
-## 🙏 Acknowledgments
-
-- Makerere University for the color scheme and branding
-- Google Fonts for typography
-- Font Awesome for icons
-- Modern web development best practices
+This project is for the Madi Makerere University Students Association. All rights reserved.
 
 ---
 
-**Built with ❤️ for the Madi Makerere University Students Association**
+**Note**: This project has been restructured for separate hosting and is ready for Supabase integration. Each directory contains all necessary assets for independent operation.
