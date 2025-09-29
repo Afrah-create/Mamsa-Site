@@ -260,7 +260,14 @@ export default function NewsPage() {
 
         if (error) {
           console.error('Error updating news article:', error);
-          throw error;
+          alert(`Failed to update news article: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from update operation');
+          alert('Failed to update news article: No data returned');
+          return;
         }
 
         console.log('Successfully updated news article:', data);
@@ -291,7 +298,14 @@ export default function NewsPage() {
 
         if (error) {
           console.error('Error creating news article:', error);
-          throw error;
+          alert(`Failed to create news article: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from create operation');
+          alert('Failed to create news article: No data returned');
+          return;
         }
 
         console.log('Successfully created news article:', data);
@@ -300,11 +314,22 @@ export default function NewsPage() {
         setNews(prev => [data, ...prev]);
       }
       
+      console.log('Closing modal after successful operation');
       setShowModal(false);
+      
+      // Return success indicator
+      return { success: true };
     } catch (error) {
       console.error('Failed to save news:', error);
-      // You could add a toast notification here to show the error to the user
-      alert('Failed to save news article. Please try again.');
+      // Only show generic error if we haven't already shown a specific error
+      if (error instanceof Error) {
+        alert(`Failed to save news article: ${error.message}`);
+      } else {
+        alert('Failed to save news article. Please try again.');
+      }
+      
+      // Return error indicator
+      return { success: false, error };
     }
   };
 
@@ -541,18 +566,82 @@ export default function NewsPage() {
                     </div>
 
                     {/* Featured Image Section */}
-                    {item.featured_image && (
-                      <div className="px-6 pb-4">
-                        <div className="relative h-48 w-full rounded-lg overflow-hidden bg-gray-100">
+                    <div className="px-6 pb-4">
+                      {item.featured_image ? (
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm">
                           <img
                             src={item.featured_image}
                             alt={item.title}
                             className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              // Fallback for broken images
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = `
+                                  <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+                                    <div class="text-center">
+                                      <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                      <p class="text-xs text-gray-500">Image not available</p>
+                                    </div>
+                                  </div>
+                                `;
+                              }
+                            }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                          
+                          {/* Image overlay with article info */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="text-white text-xs font-medium bg-black/20 px-2 py-1 rounded backdrop-blur-sm">
+                                Featured Article
+                              </div>
+                              {item.status === 'published' && (
+                                <div className="text-white text-xs bg-green-500/80 px-2 py-1 rounded backdrop-blur-sm flex items-center">
+                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Published
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        /* Placeholder for articles without featured images */
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 shadow-sm">
+                          <div className="h-full w-full flex items-center justify-center">
+                            <div className="text-center">
+                              <svg className="mx-auto h-16 w-16 text-blue-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                              </svg>
+                              <p className="text-sm font-medium text-blue-600 mb-1">News Article</p>
+                              <p className="text-xs text-blue-500">No featured image</p>
+                            </div>
+                          </div>
+                          
+                          {/* Placeholder overlay */}
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="text-blue-600 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm">
+                                {item.status === 'published' ? '📰 Published' : 
+                                 item.status === 'draft' ? '📝 Draft' : '📁 Archived'}
+                              </div>
+                              <div className="text-blue-600 text-xs bg-white/80 px-2 py-1 rounded backdrop-blur-sm flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                Article
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Article Meta Information */}
                     <div className="px-6 pb-4">

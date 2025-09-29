@@ -112,16 +112,17 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
     setLoading(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onSave({
+      // Call onSave and wait for it to complete
+      await onSave({
         ...formData,
         published_at: new Date().toISOString()
       });
+      
+      // Only close modal if save was successful
       onClose();
     } catch (error) {
       console.error('Failed to save article:', error);
+      // Don't close modal on error - let the parent handle the error display
     } finally {
       setLoading(false);
     }
