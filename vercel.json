@@ -2,39 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "admin/**/*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "user_site/**/*",
+      "src": "admin/**/*",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/admin",
+      "src": "/",
       "dest": "/admin/index.html"
     },
     {
-      "src": "/admin/login",
+      "src": "/login",
       "dest": "/admin/login.html"
     },
     {
-      "src": "/admin/(.*)",
-      "dest": "/admin/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/user_site/$1"
+      "dest": "/admin/$1"
     }
   ],
   "env": {
     "VITE_SUPABASE_URL": "@supabase_url",
     "VITE_SUPABASE_ANON_KEY": "@supabase_anon_key"
-  },
-  "functions": {
-    "admin/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
   }
 }

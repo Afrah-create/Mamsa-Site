@@ -1,0 +1,17 @@
+{
+  "name": "mamsa-user-site",
+  "version": "1.0.0",
+  "description": "MAMSA Public User Site",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite preview --port 3001",
+    "build": "echo 'No build step required for static site'",
+    "start": "echo 'Starting static file server'"
+  },
+  "keywords": ["mamsa", "public", "website"],
+  "author": "MAMSA Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
