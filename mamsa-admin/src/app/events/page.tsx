@@ -358,6 +358,7 @@ export default function EventsPage() {
                   <label className="text-sm font-medium text-gray-700">Select All</label>
                 </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filteredEvents.map((event) => (
                   <div key={event.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start space-x-3">
@@ -466,6 +467,7 @@ export default function EventsPage() {
                     </div>
                   </div>
                 ))}
+                </div>
               </div>
             )}
 

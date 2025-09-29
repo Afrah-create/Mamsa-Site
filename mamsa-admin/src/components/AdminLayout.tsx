@@ -318,7 +318,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                   className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 relative"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.5 5.5a3 3 0 116 0v6a3 3 0 11-6 0v-6zM15 17h5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -405,62 +405,30 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                       <p className="text-xs text-gray-500">{user?.email || 'admin@mamsa.org'}</p>
                     </div>
                     <div className="py-2">
-                      <button 
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('Profile Settings clicked - router:', router);
-                          console.log('Current pathname:', pathname);
-                          setShowProfile(false);
-                          setTimeout(() => {
-                            router.push('/profile');
-                            console.log('Navigation triggered to /profile');
-                          }, 100);
-                        }}
+                      <Link 
+                        href="/profile"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setShowProfile(false)}
                       >
                         Profile Settings
-                      </button>
-                      <button 
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('Account Settings clicked - router:', router);
-                          console.log('Current pathname:', pathname);
-                          setShowProfile(false);
-                          setTimeout(() => {
-                            router.push('/profile');
-                            console.log('Navigation triggered to /profile');
-                          }, 100);
-                        }}
+                      </Link>
+                      <Link 
+                        href="/profile"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => setShowProfile(false)}
                       >
                         Account Settings
-                      </button>
+                      </Link>
                       <button 
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          console.log('Help & Support clicked');
                           setShowProfile(false);
                           alert('Help & Support functionality coming soon!');
                         }}
                       >
                         Help & Support
-                      </button>
-                      <button 
-                        className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer border-0 bg-transparent"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          console.log('TEST BUTTON clicked');
-                          alert('Test button works! Navigation should work too.');
-                          setShowProfile(false);
-                          router.push('/dashboard');
-                        }}
-                      >
-                        🧪 Test Navigation
                       </button>
                     </div>
                     <div className="border-t border-gray-200 py-2">
