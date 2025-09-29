@@ -29,6 +29,12 @@ interface GalleryImage {
   created_at: string;
 }
 
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new?: GalleryImage;
+  old?: { id: number };
+}
+
 export default function GalleryPage() {
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,6 +195,47 @@ export default function GalleryPage() {
     loadGallery();
   }, []);
 
+  // Real-time subscription for gallery changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('gallery_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gallery'
+        },
+        (payload: RealtimePayload) => {
+          console.log('Gallery change received:', payload);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setGallery(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new!.id);
+              if (!exists) {
+                return [payload.new as GalleryImage, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            setGallery(prev => prev.map(item => 
+              item.id === payload.new!.id ? payload.new as GalleryImage : item
+            ));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setGallery(prev => prev.filter(item => item.id !== payload.old!.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
+
   const checkAuth = async () => {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
@@ -219,10 +266,24 @@ export default function GalleryPage() {
   const loadGallery = async () => {
     try {
       setLoading(true);
-      // Use static data for demonstration
-      setGallery(staticGallery);
+      console.log('Loading gallery from database...');
+      
+      const { data, error } = await supabase
+        .from('gallery')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading gallery:', error);
+        throw error;
+      }
+
+      console.log('Successfully loaded gallery:', data);
+      setGallery(data || []);
     } catch (error) {
       console.error('Failed to load gallery:', error);
+      // Fallback to static data if database fails
+      setGallery(staticGallery);
     } finally {
       setLoading(false);
     }
@@ -244,37 +305,169 @@ export default function GalleryPage() {
     setShowConfirm(true);
   };
 
-  const handleSaveImage = (imageData: Omit<GalleryImage, 'id' | 'created_at'>) => {
-    if (editingItem) {
-      // Update existing image
-      setGallery(prev => prev.map(image => 
-        image.id === editingItem.id 
-          ? { ...imageData, id: editingItem.id, created_at: editingItem.created_at }
-          : image
-      ));
-    } else {
-      // Create new image
-      const newImage: GalleryImage = {
-        ...imageData,
-        id: Math.max(...gallery.map(i => i.id), 0) + 1,
-        created_at: new Date().toISOString()
-      };
-      setGallery(prev => [...prev, newImage]);
+  const handleSaveImage = async (imageData: Omit<GalleryImage, 'id' | 'created_at'>) => {
+    try {
+      console.log('Saving gallery image:', imageData);
+      
+      if (editingItem) {
+        // Update existing image
+        console.log('Updating existing image with ID:', editingItem.id);
+        
+        const updateData = {
+          title: imageData.title,
+          description: imageData.description,
+          image_url: imageData.image_url,
+          category: imageData.category,
+          tags: imageData.tags,
+          photographer: imageData.photographer,
+          location: imageData.location,
+          event_date: imageData.event_date,
+          file_size: imageData.file_size,
+          dimensions: imageData.dimensions,
+          status: imageData.status,
+          featured: imageData.featured,
+          alt_text: imageData.alt_text,
+          updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+          .from('gallery')
+          .update(updateData)
+          .eq('id', editingItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating image:', error);
+          alert(`Failed to update image: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from update operation');
+          alert('Failed to update image: No data returned');
+          return;
+        }
+
+        console.log('Successfully updated image:', data);
+        
+        // Update local state
+        setGallery(prev => prev.map(image => image.id === editingItem.id ? data : image));
+      } else {
+        // Create new image
+        console.log('Creating new image...');
+        
+        const insertData = {
+          title: imageData.title,
+          description: imageData.description,
+          image_url: imageData.image_url,
+          category: imageData.category,
+          tags: imageData.tags,
+          photographer: imageData.photographer,
+          location: imageData.location,
+          event_date: imageData.event_date,
+          file_size: imageData.file_size,
+          dimensions: imageData.dimensions,
+          status: imageData.status,
+          featured: imageData.featured,
+          alt_text: imageData.alt_text,
+          created_by: user?.id
+        };
+
+        const { data, error } = await supabase
+          .from('gallery')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating image:', error);
+          alert(`Failed to create image: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from create operation');
+          alert('Failed to create image: No data returned');
+          return;
+        }
+
+        console.log('Successfully created image:', data);
+        
+        // Update local state
+        setGallery(prev => [data, ...prev]);
+      }
+      
+      console.log('Closing modal after successful operation');
+      setShowModal(false);
+      
+      // Return success indicator
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save image:', error);
+      // Only show generic error if we haven't already shown a specific error
+      if (error instanceof Error) {
+        alert(`Failed to save image: ${error.message}`);
+      } else {
+        alert('Failed to save image. Please try again.');
+      }
+      
+      // Return error indicator
+      return { success: false, error };
     }
-    setShowModal(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (itemToDelete) {
-      setGallery(prev => prev.filter(image => image.id !== itemToDelete.id));
-      setShowConfirm(false);
-      setItemToDelete(null);
+      try {
+        console.log('Deleting image with ID:', itemToDelete.id);
+        
+        const { error } = await supabase
+          .from('gallery')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) {
+          console.error('Error deleting image:', error);
+          throw error;
+        }
+
+        console.log('Successfully deleted image');
+        
+        // Update local state
+        setGallery(prev => prev.filter(image => image.id !== itemToDelete.id));
+        setShowConfirm(false);
+        setItemToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete image:', error);
+        alert('Failed to delete image. Please try again.');
+      }
     }
   };
 
-  const handleBulkDelete = () => {
-    setGallery(prev => prev.filter(image => !selectedItems.includes(image.id)));
-    setSelectedItems([]);
+  const handleBulkDelete = async () => {
+    try {
+      console.log('Bulk deleting images:', selectedItems);
+      
+      const { error } = await supabase
+        .from('gallery')
+        .delete()
+        .in('id', selectedItems);
+
+      if (error) {
+        console.error('Error bulk deleting images:', error);
+        throw error;
+      }
+
+      console.log('Successfully bulk deleted images');
+      
+      // Update local state
+      setGallery(prev => prev.filter(image => !selectedItems.includes(image.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to delete selected images:', error);
+      alert('Failed to delete selected images. Please try again.');
+    }
   };
 
   const handleSelectAll = () => {
