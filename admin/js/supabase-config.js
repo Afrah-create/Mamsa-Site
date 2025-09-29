@@ -1,8 +1,22 @@
 // Supabase Configuration
-// Replace these with your actual Supabase project credentials
+// Uses environment variables for secure credential management
 
-const SUPABASE_URL = 'https://lvcwbyqzjmpyopmbzqvc.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpleXFmamRseWdoYWVhYXZhZnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNjE1MTIsImV4cCI6MjA3NDYzNzUxMn0._fpZB5J1pafKN4UqLdn1ZdURcRsNddW7xGnsB4l8-QY';
+// Configure Supabase using environment variables
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+// Validate configuration
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Missing Supabase configuration!');
+  console.error('📁 Please create a .env file in your project root with:');
+  console.error('   VITE_SUPABASE_URL=https://your-project-url.supabase.co');
+  console.error('   VITE_SUPABASE_ANON_KEY=your-anon-key-here');
+  console.error('');
+  console.error('💡 See env.example for the template');
+  
+  // Throw error to prevent app from running with missing config
+  throw new Error('Supabase configuration is required. See console for instructions.');
+}
 
 // Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
