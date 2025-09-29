@@ -8,14 +8,30 @@ const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || process.env
 // Validate configuration
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.error('❌ Missing Supabase configuration!');
-  console.error('📁 Please create a .env file in your project root with:');
+  console.error('📁 Please add environment variables in Vercel:');
   console.error('   VITE_SUPABASE_URL=https://your-project-url.supabase.co');
   console.error('   VITE_SUPABASE_ANON_KEY=your-anon-key-here');
   console.error('');
-  console.error('💡 See env.example for the template');
+  console.error('💡 Go to Vercel Dashboard → Settings → Environment Variables');
   
-  // Throw error to prevent app from running with missing config
-  throw new Error('Supabase configuration is required. See console for instructions.');
+  // Redirect to login page if config is missing
+  if (window.location.pathname !== '/login.html') {
+    window.location.href = '/login.html';
+  }
+  
+  // Create a dummy client to prevent errors
+  const dummyClient = {
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: null }, error: { message: 'Missing configuration' } }),
+      signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Missing configuration' } }),
+      signOut: () => Promise.resolve({ error: null })
+    }
+  };
+  
+  // Export dummy client
+  window.supabaseClient = dummyClient;
+  window.dbConfig = {};
+  return;
 }
 
 // Initialize Supabase client
