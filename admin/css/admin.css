@@ -741,6 +741,10 @@
     border-left: 4px solid #3b82f6;
 }
 
+.notification.warning {
+    border-left: 4px solid #f59e0b;
+}
+
 .notification-content {
     display: flex;
     align-items: center;
@@ -762,6 +766,10 @@
 
 .notification.info .notification-content i {
     color: #3b82f6;
+}
+
+.notification.warning .notification-content i {
+    color: #f59e0b;
 }
 
 .notification-close {

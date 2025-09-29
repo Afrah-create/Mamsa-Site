@@ -9,12 +9,14 @@ class AdminLogin {
     init() {
         this.setupEventListeners();
         this.checkExistingSession();
+        this.showSessionMessages();
     }
 
     setupEventListeners() {
         const loginForm = document.getElementById('login-form');
         const passwordToggle = document.getElementById('password-toggle');
         const passwordInput = document.getElementById('password');
+        const forgotPasswordLink = document.querySelector('.forgot-password');
 
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
@@ -23,14 +25,48 @@ class AdminLogin {
         if (passwordToggle && passwordInput) {
             passwordToggle.addEventListener('click', () => this.togglePasswordVisibility());
         }
+
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', (e) => this.handleForgotPassword(e));
+        }
     }
 
     async checkExistingSession() {
         try {
+            // Check localStorage session first
+            const storedSession = localStorage.getItem('admin_user');
+            if (storedSession) {
+                const sessionData = JSON.parse(storedSession);
+                const now = new Date();
+                const expiresAt = new Date(sessionData.expiresAt);
+                
+                // If session hasn't expired, check with Supabase
+                if (now < expiresAt) {
+                    const { data: { user }, error } = await this.supabase.auth.getUser();
+                    
+                    if (user && !error && user.email === sessionData.email) {
+                        // Valid session, redirect to dashboard
+                        window.location.href = 'index.html';
+                        return;
+                    } else {
+                        // Invalid or expired session, clear localStorage
+                        localStorage.removeItem('admin_user');
+                        localStorage.removeItem('admin_token');
+                        localStorage.removeItem('admin_refresh_token');
+                    }
+                } else {
+                    // Session expired, clear localStorage
+                    localStorage.removeItem('admin_user');
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_refresh_token');
+                }
+            }
+            
+            // Check Supabase session as fallback
             const { data: { user }, error } = await this.supabase.auth.getUser();
             
             if (user && !error) {
-                // User is already logged in, redirect to dashboard
+                // User is logged in but not in localStorage, redirect to dashboard
                 window.location.href = 'index.html';
             }
         } catch (error) {
@@ -65,12 +101,27 @@ class AdminLogin {
             if (data.user) {
                 this.showNotification('Login successful! Redirecting...', 'success');
                 
-                // Store user session info
-                localStorage.setItem('admin_user', JSON.stringify({
+                // Check remember me option
+                const rememberMe = document.getElementById('remember-me').checked;
+                
+                // Store user session info with expiration based on remember me
+                const sessionData = {
                     id: data.user.id,
                     email: data.user.email,
-                    loginTime: new Date().toISOString()
-                }));
+                    loginTime: new Date().toISOString(),
+                    remember: rememberMe,
+                    expiresAt: rememberMe ? 
+                        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : // 30 days
+                        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 1 day
+                };
+                
+                localStorage.setItem('admin_user', JSON.stringify(sessionData));
+
+                // Store session token for automatic refresh
+                if (data.session?.access_token) {
+                    localStorage.setItem('admin_token', data.session.access_token);
+                    localStorage.setItem('admin_refresh_token', data.session.refresh_token);
+                }
 
                 // Redirect to dashboard after a short delay
                 setTimeout(() => {
@@ -140,6 +191,89 @@ class AdminLogin {
                 notification.remove();
             }
         }, 5000);
+    }
+
+    showSessionMessages() {
+        // Check for auth failure reason
+        const authFailureReason = sessionStorage.getItem('auth_failure_reason');
+        if (authFailureReason) {
+            this.showNotification(authFailureReason, 'error');
+            sessionStorage.removeItem('auth_failure_reason');
+            return;
+        }
+
+        // Check for non-admin user message
+        const nonAdminUserData = sessionStorage.getItem('non_admin_user');
+        if (nonAdminUserData) {
+            try {
+                const userData = JSON.parse(nonAdminUserData);
+                this.showNotification(userData.message, 'warning');
+                // Pre-fill email field
+                const emailInput = document.getElementById('email');
+                if (emailInput) {
+                    emailInput.value = userData.email;
+                }
+            } catch (e) {
+                console.error('Error parsing non-admin user data:', e);
+            }
+            sessionStorage.removeItem('non_admin_user');
+            return;
+        }
+
+        // Check for password reset success
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('reset') === 'success') {
+            this.showNotification('Password reset successful! You can now sign in with your new password.', 'success');
+            // Clean URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }
+
+    async handleForgotPassword(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value.trim();
+        
+        if (!email) {
+            this.showNotification('Please enter your email address first.', 'error');
+            return;
+        }
+
+        if (!this.isValidEmail(email)) {
+            this.showNotification('Please enter a valid email address.', 'error');
+            return;
+        }
+
+        try {
+            const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/admin/login.html?reset=success`
+            });
+
+            if (error) {
+                throw error;
+            }
+
+            this.showNotification('Password reset link sent! Check your email and follow the instructions to reset your password.', 'success');
+            
+        } catch (error) {
+            console.error('Password reset error:', error);
+            
+            let errorMessage = 'Failed to send password reset email. Please try again.';
+            
+            if (error.message.includes('email address')) {
+                errorMessage = 'No account found with this email address.';
+            } else if (error.message.includes('rate limit')) {
+                errorMessage = 'Too many reset attempts. Please wait before trying again.';
+            }
+
+            this.showNotification(errorMessage, 'error');
+        }
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 }
 

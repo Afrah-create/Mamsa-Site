@@ -39,26 +39,138 @@ class AdminContentManager {
             
             if (error) {
                 console.error('Auth error:', error);
-                this.redirectToLogin();
+                this.handleAuthFailure(error.message);
                 return;
             }
 
             if (!user) {
-                this.redirectToLogin();
+                this.handleAuthFailure('No user session found');
+                return;
+            }
+
+            // Check if user has admin access (validate against admin_users table)
+            const { data: adminData, error: adminError } = await this.supabase
+                .from('admin_users')
+                .select('*')
+                .eq('user_id', user.id)
+                .single();
+
+            if (adminError && adminError.code !== 'PGRST116') { // PGRST116 = no rows returned
+                console.error('Admin check error:', adminError);
+                this.handleAuthFailure('Unable to verify admin access');
+                return;
+            }
+
+            // If no admin record found, require admin registration
+            if (!adminData) {
+                this.handleNonAdminUser(user);
                 return;
             }
 
             this.currentUser = user;
+            this.adminData = adminData;
             this.updateUserInfo();
+            
+            // Set up auth state listener
+            this.setupAuthStateListener();
             
         } catch (error) {
             console.error('Error checking auth:', error);
-            this.redirectToLogin();
+            this.handleAuthFailure('Authentication check failed');
         }
     }
 
+    handleAuthFailure(message) {
+        console.log('Authentication failed:', message);
+        
+        // Clear all session data
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_refresh_token');
+        sessionStorage.removeItem('admin_session');
+        
+        // Store the reason for logging
+        sessionStorage.setItem('auth_failure_reason', message);
+        
+        // Show error notification if we can
+        try {
+            this.showNotification(message, 'error');
+        } catch (e) {
+            // Admin content manager might not be initialized yet
+            console.log('Cannot show notification:', e.message);
+        }
+        
+        this.redirectToLogin();
+    }
+
+    handleNonAdminUser(user) {
+        console.log('User is not registered as admin:', user.email);
+        
+        // Store user info and show admin registration required message
+        sessionStorage.setItem('non_admin_user', JSON.stringify({
+            email: user.email,
+            name: user.user_metadata?.full_name || 'Unknown',
+            message: 'Admin access required. Please contact an administrator.'
+        }));
+        
+        // Try to show notification
+        try {
+            this.showNotification('Admin access required. Please contact an administrator.', 'warning');
+        } catch (e) {
+            console.log('Cannot show notification:', e.message);
+        }
+        
+        this.redirectToLogin();
+    }
+
     redirectToLogin() {
-        window.location.href = 'login.html';
+        // Clear any stored session data
+        localStorage.removeItem('admin_user');
+        
+        // Show loading message
+        this.showMessage('Redirecting to login...', 'info');
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1000);
+    }
+
+    setupAuthStateListener() {
+        // Listen for auth state changes
+        this.supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state change:', event, session?.user?.email);
+            
+            try {
+                if (event === 'SIGNED_OUT' || !session) {
+                    this.handleAuthFailure('Session expired');
+                } else if (event === 'TOKEN_REFRESHED') {
+                    console.log('Token refreshed successfully');
+                    // Update localStorage token
+                    if (session.access_token) {
+                        localStorage.setItem('admin_token', session.access_token);
+                        localStorage.setItem('admin_refresh_token', session.refresh_token);
+                    }
+                    // Update user info if needed
+                    this.currentUser = session.user;
+                    this.updateUserInfo();
+                } else if (event === 'USER_UPDATED') {
+                    this.currentUser = session.user;
+                    this.updateUserInfo();
+                } else if (event === 'PASSWORD_RECOVERY') {
+                    this.showMessage('Password recovery in progress...', 'info');
+                } else if (event === 'EMAIL_CONFIRMED') {
+                    this.showMessage('Email confirmed successfully!', 'success');
+                } else if (event === 'SIGNED_IN') {
+                    console.log('User signed in successfully');
+                    this.currentUser = session.user;
+                    this.updateUserInfo();
+                }
+            } catch (error) {
+                console.error('Error handling auth state change:', error);
+                this.handleAuthFailure('Authentication system error');
+            }
+        });
     }
 
     updateUserInfo() {
@@ -193,6 +305,9 @@ class AdminContentManager {
                     break;
                 case 'contact':
                     await this.loadContactManagement();
+                    break;
+                case 'admins':
+                    await this.loadAdminManagement();
                     break;
                 case 'settings':
                     await this.loadSettingsManagement();
@@ -1542,6 +1657,518 @@ class AdminContentManager {
         } catch (error) {
             console.error('Error saving contact info:', error);
             this.showError('Failed to save contact information');
+        }
+    }
+
+    async loadAdminManagement() {
+        const content = document.getElementById('admin-content');
+        if (!content) return;
+
+        try {
+            // Load existing admin users
+            const { data: adminUsers, error } = await this.supabase
+                .from('admin_users')
+                .select(`
+                    id,
+                    role,
+                    permissions,
+                    created_at,
+                    user_id,
+                    users:auth.users!inner (
+                        id,
+                        email,
+                        created_at,
+                        last_sign_in_at,
+                        email_confirmed_at
+                    )
+                `)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+
+            content.innerHTML = `
+                <div class="content-management">
+                    <div class="content-header">
+                        <h2>Admin User Management</h2>
+                        <div class="admin-actions">
+                            <button class="btn btn-success" onclick="adminContentManager.showInviteAdminModal()">
+                                <i class="fas fa-user-plus"></i>
+                                Invite Admin
+                            </button>
+                            <button class="btn btn-primary" onclick="adminContentManager.showAddExistingUserModal()">
+                                <i class="fas fa-user-check"></i>
+                                Add Existing User
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-users-grid">
+                        ${adminUsers.map(admin => admin.users ? this.renderAdminUserCard(admin, admin.users) : '').join('')}
+                    </div>
+
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>${adminUsers.length}</h3>
+                                <p>Total Admins</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>${adminUsers.filter(admin => admin.users?.email_confirmed_at).length}</h3>
+                                <p>Active Users</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>${adminUsers.filter(admin => {
+                                    if (!admin.users?.last_sign_in_at) return false;
+                                    const lastSignIn = new Date(admin.users.last_sign_in_at);
+                                    const daysSince = (Date.now() - lastSignIn.getTime()) / (1000 * 60 * 60 * 24);
+                                    return daysSince <= 7;
+                                }).length}</h3>
+                                <p>Active This Week</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        } catch (error) {
+            console.error('Error loading admin management:', error);
+            content.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>Failed to load admin users</h2>
+                    <p>${error.message || 'Please check your connection and try again.'}</p>
+                </div>
+            `;
+        }
+    }
+
+    renderAdminUserCard(adminData, user) {
+        const createdDate = new Date(adminData.created_at);
+        const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at) : null;
+        const isEmailConfirmed = !!user.email_confirmed_at;
+
+        return `
+            <div class="admin-user-card ${!isEmailConfirmed ? 'pending' : ''}">
+                <div class="user-card-header">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <h3>${user.email}</h3>
+                        <p class="user-role">${adminData.role || 'Administrator'}</p>
+                        ${!isEmailConfirmed ? '<span class="status-badge pending">Pending Email Confirmation</span>' : ''}
+                    </div>
+                </div>
+                
+                <div class="user-details">
+                    <div class="detail-item">
+                        <span class="label">Joined:</span>
+                        <span class="value">${Utils.formatDate(createdDate)}</span>
+                    </div>
+                    ${lastSignIn ? `
+                        <div class="detail-item">
+                            <span class="label">Last Sign In:</span>
+                            <span class="value">${Utils.formatDateTime(lastSignIn)}</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="user-actions">
+                    <button class="btn btn-sm btn-warning" onclick="adminContentManager.editAdminPermissions('${adminData.id}')">
+                        <i class="fas fa-key"></i>
+                        Permissions
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="adminContentManager.removeAdmin('${adminData.id}', '${user.email}')">
+                        <i class="fas fa-trash"></i>
+                        Remove
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    showInviteAdminModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Invite New Admin</h3>
+                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="invite-admin-form">
+                        <div class="form-group">
+                            <label for="admin-email">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="admin-email" 
+                                name="email" 
+                                required 
+                                placeholder="admin@madimakerere.org"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-role">Role</label>
+                            <select id="admin-role" name="role" required>
+                                <option value="admin">Administrator</option>
+                                <option value="editor">Editor</option>
+                                <option value="moderator">Moderator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Permissions</label>
+                            <div class="permissions-grid">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-news" name="permissions" value="news">
+                                    <span>News Management</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-events" name="permissions" value="events">
+                                    <span>Events Management</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-gallery" name="permissions" value="gallery">
+                                    <span>Gallery Management</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-leadership" name="permissions" value="leadership">
+                                    <span>Leadership Management</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-admin" name="permissions" value="admin_users">
+                                    <span>Admin User Management</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="perm-settings" name="permissions" value="settings">
+                                    <span>Settings Management</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="adminContentManager.sendAdminInvite()">
+                        <i class="fas fa-paper-plane"></i>
+                        Send Invitation
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    async sendAdminInvite() {
+        try {
+            const form = document.getElementById('invite-admin-form');
+            const formData = new FormData(form);
+            
+            const email = formData.get('email');
+            const role = formData.get('role');
+            const permissions = formData.getAll('permissions');
+
+            // Validate inputs
+            if (!email || !this.isValidEmail(email)) {
+                throw new Error('Please enter a valid email address');
+            }
+
+            if (!permissions.length) {
+                throw new Error('Please select at least one permission');
+            }
+
+            // Check if user already exists
+            const { data: existingAdmin, error: checkError } = await this.supabase
+                .from('admin_users')
+                .select('id')
+                .eq('user_id', 'temp-' + email)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                throw new Error('Unable to check existing admin users');
+            }
+
+            if (existingAdmin) {
+                throw new Error('This user is already an admin');
+            }
+
+            // Send invitation email via Supabase Auth
+            const { data: inviteData, error: inviteError } = await this.supabase.auth.admin.inviteUserByEmail(email, {
+                data: {
+                    role: role,
+                    permissions: permissions
+                },
+                redirectTo: `${window.location.origin}/admin/login.html?invite=true`
+            });
+
+            if (inviteError) {
+                // Handle specific errors
+                if (inviteError.message.includes('already registered')) {
+                    throw new Error('A user with this email is already registered');
+                } else if (inviteError.message.includes('rate limit')) {
+                    throw new Error('Too many invitation attempts. Please wait before trying again.');
+                } else {
+                    throw inviteError;
+                }
+            }
+
+            // Create admin record in our database
+            const { error: adminError } = await this.supabase
+                .from('admin_users')
+                .insert({
+                    user_id: inviteData.user.id,
+                    role: role,
+                    permissions: permissions
+                });
+
+            if (adminError) {
+                console.warn('Admin invitation sent but failed to create admin record:', adminError);
+                // Don't throw here - invitation was successful
+            }
+
+            // Show success message
+            this.showMessage('Admin invitation sent successfully!', 'success');
+            
+            // Close modal
+            document.querySelector('.modal-overlay').remove();
+            
+            // Refresh admin list
+            await this.loadAdminManagement();
+
+        } catch (error) {
+            console.error('Error sending admin invite:', error);
+            this.showError('Failed to send admin invitation: ' + error.message);
+        }
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    async showAddExistingUserModal() {
+        try {
+            // Get all existing auth users that are not already admins
+            const { data: allUsers, error: usersError } = await this.supabase.auth.admin.listUsers();
+            
+            if (usersError) {
+                throw usersError;
+            }
+
+            // Get existing admin user IDs
+            const { data: adminUsers, error: adminError } = await this.supabase
+                .from('admin_users')
+                .select('user_id');
+            
+            if (adminError) {
+                throw adminError;
+            }
+
+            const adminUserIds = new Set(adminUsers.map(admin => admin.user_id));
+            
+            // Filter out users who are already admins
+            const availableUsers = allUsers.users.filter(user => 
+                !adminUserIds.has(user.id) && user.email_confirmed_at
+            );
+
+            if (availableUsers.length === 0) {
+                this.showError('No confirmed users available to add as admins');
+                return;
+            }
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Add Existing User as Admin</h3>
+                        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="info-box" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-info-circle" style="color: #0ea5e9;"></i>
+                            <p style="margin: 0; color: #0c4a6e;">Select a confirmed user from Supabase Auth to grant admin privileges.</p>
+                        </div>
+                        
+                        <form id="add-existing-admin-form">
+                            <div class="form-group">
+                                <label for="selected-user">Select User</label>
+                                <select id="selected-user" name="user_id" required>
+                                    <option value="">Choose a user...</option>
+                                    ${availableUsers.map(user => `
+                                        <option value="${user.id}">
+                                            ${user.email} (${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'})
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="existing-admin-role">Role</label>
+                                <select id="existing-admin-role" name="role" required>
+                                    <option value="admin">Administrator</option>
+                                    <option value="editor">Editor</option>
+                                    <option value="moderator">Moderator</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Permissions</label>
+                                <div class="permissions-grid">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-news" name="permissions" value="news" checked>
+                                        <span>News Management</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-events" name="permissions" value="events" checked>
+                                        <span>Events Management</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-gallery" name="permissions" value="gallery" checked>
+                                        <span>Gallery Management</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-leadership" name="permissions" value="leadership" checked>
+                                        <span>Leadership Management</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-admin" name="permissions" value="admin_users">
+                                        <span>Admin User Management</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="existing-perm-settings" name="permissions" value="settings">
+                                        <span>Settings Management</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="adminContentManager.addExistingUserAsAdmin()">
+                            <i class="fas fa-user-check"></i>
+                            Add as Admin
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+
+        } catch (error) {
+            console.error('Error loading users for admin assignment:', error);
+            this.showError('Failed to load users: ' + error.message);
+        }
+    }
+
+    async addExistingUserAsAdmin() {
+        try {
+            const form = document.getElementById('add-existing-admin-form');
+            const formData = new FormData(form);
+            
+            const userId = formData.get('user_id');
+            const role = formData.get('role');
+            const permissions = formData.getAll('permissions');
+
+            // Validate inputs
+            if (!userId) {
+                throw new Error('Please select a user');
+            }
+
+            if (!permissions.length) {
+                throw new Error('Please select at least one permission');
+            }
+
+            // Check if user already has admin access
+            const { data: existingAdmin, error: checkError } = await this.supabase
+                .from('admin_users')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                throw new Error('Unable to check existing admin users');
+            }
+
+            if (existingAdmin) {
+                throw new Error('This user is already an admin');
+            }
+
+            // Add user to admin_users table
+            const { data: newAdmin, error: adminError } = await this.supabase
+                .from('admin_users')
+                .insert({
+                    user_id: userId,
+                    role: role,
+                    permissions: permissions
+                })
+                .select()
+                .single();
+
+            if (adminError) {
+                throw adminError;
+            }
+
+            // Show success message
+            this.showMessage('User added as admin successfully!', 'success');
+            
+            // Close modal
+            document.querySelector('.modal-overlay').remove();
+            
+            // Refresh admin list
+            await this.loadAdminManagement();
+
+        } catch (error) {
+            console.error('Error adding existing user as admin:', error);
+            this.showError('Failed to add user as admin: ' + error.message);
+        }
+    }
+
+    async removeAdmin(adminId, email) {
+        if (!confirm(`Are you sure you want to remove admin access for ${email}? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // Remove from admin_users table
+            const { error } = await this.supabase
+                .from('admin_users')
+                .delete()
+                .eq('id', adminId);
+
+            if (error) {
+                throw error;
+            }
+
+            this.showMessage('Admin access removed successfully', 'success');
+            await this.loadAdminManagement();
+
+        } catch (error) {
+            console.error('Error removing admin:', error);
+            this.showError('Failed to remove admin: ' + error.message);
         }
     }
 

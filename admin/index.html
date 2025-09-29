@@ -6,6 +6,7 @@
     <title>MAMSA Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/admin-management.css">
     <link rel="stylesheet" href="css/responsive.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -72,6 +73,12 @@
                         <a href="#" onclick="adminContentManager.navigateToPage('contact'); return false;">
                             <i class="fas fa-envelope"></i>
                             <span>Contact Info</span>
+                        </a>
+                    </li>
+                    <li class="menu-item" data-page="admins">
+                        <a href="#" onclick="adminContentManager.navigateToPage('admins'); return false;">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Admin Users</span>
                         </a>
                     </li>
                     <li class="menu-item" data-page="settings">
