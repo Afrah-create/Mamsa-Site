@@ -19,7 +19,7 @@ interface LeadershipMember {
     instagram?: string;
   };
   status: 'active' | 'inactive' | 'alumni';
-  order: number;
+  order_position: number;
   created_at: string;
 }
 
@@ -46,7 +46,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
       instagram: ''
     },
     status: 'active' as 'active' | 'inactive' | 'alumni',
-    order: 0
+    order_position: 0
   });
   const [loading, setLoading] = useState(false);
 
@@ -67,7 +67,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
           instagram: editingItem.social_links?.instagram || ''
         },
         status: editingItem.status,
-        order: editingItem.order
+        order_position: editingItem.order_position
       });
     } else {
       setFormData({
@@ -85,7 +85,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
           instagram: ''
         },
         status: 'active',
-        order: 0
+        order_position: 0
       });
     }
   }, [editingItem, isOpen]);
@@ -156,7 +156,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
         instagram: ''
       },
       status: 'active',
-      order: 0
+      order_position: 0
     });
     onClose();
   };
@@ -409,14 +409,14 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
 
               {/* Display Order */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <label htmlFor="order" className="block text-sm font-semibold text-gray-800 mb-3">
+                <label htmlFor="order_position" className="block text-sm font-semibold text-gray-800 mb-3">
                   Display Order
                 </label>
                 <input
                   type="number"
-                  name="order"
-                  id="order"
-                  value={formData.order}
+                  name="order_position"
+                  id="order_position"
+                  value={formData.order_position}
                   onChange={handleInputChange}
                   min="0"
                   className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"

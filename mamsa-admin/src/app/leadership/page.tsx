@@ -24,8 +24,14 @@ interface LeadershipMember {
     instagram?: string;
   };
   status: 'active' | 'inactive' | 'alumni';
-  order: number;
+  order_position: number;
   created_at: string;
+}
+
+interface RealtimePayload {
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
+  new?: LeadershipMember;
+  old?: { id: number };
 }
 
 export default function LeadershipPage() {
@@ -59,7 +65,7 @@ export default function LeadershipPage() {
         twitter: 'https://twitter.com/sarahjohnson'
       },
       status: 'active',
-      order: 1,
+      order_position: 1,
       created_at: '2024-01-15T10:00:00Z'
     },
     {
@@ -77,7 +83,7 @@ export default function LeadershipPage() {
         instagram: 'https://instagram.com/michaelchen'
       },
       status: 'active',
-      order: 2,
+      order_position: 2,
       created_at: '2024-01-10T14:30:00Z'
     },
     {
@@ -94,7 +100,7 @@ export default function LeadershipPage() {
         linkedin: 'https://linkedin.com/in/emilyrodriguez'
       },
       status: 'active',
-      order: 3,
+      order_position: 3,
       created_at: '2024-01-08T16:45:00Z'
     },
     {
@@ -112,7 +118,7 @@ export default function LeadershipPage() {
         twitter: 'https://twitter.com/jameswilson'
       },
       status: 'active',
-      order: 4,
+      order_position: 4,
       created_at: '2024-01-05T09:15:00Z'
     },
     {
@@ -130,7 +136,7 @@ export default function LeadershipPage() {
         instagram: 'https://instagram.com/lisapark'
       },
       status: 'active',
-      order: 5,
+      order_position: 5,
       created_at: '2024-01-12T11:20:00Z'
     },
     {
@@ -147,7 +153,7 @@ export default function LeadershipPage() {
         linkedin: 'https://linkedin.com/in/robertthompson'
       },
       status: 'alumni',
-      order: 6,
+      order_position: 6,
       created_at: '2023-12-20T13:45:00Z'
     }
   ];
@@ -156,6 +162,47 @@ export default function LeadershipPage() {
     checkAuth();
     loadLeadership();
   }, []);
+
+  // Real-time subscription for leadership changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('leadership_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'leadership'
+        },
+        (payload: RealtimePayload) => {
+          console.log('Leadership change received:', payload);
+          
+          if (payload.eventType === 'INSERT' && payload.new) {
+            setLeadership(prev => {
+              // Check if item already exists to prevent duplicates
+              const exists = prev.some(item => item.id === payload.new!.id);
+              if (!exists) {
+                return [payload.new as LeadershipMember, ...prev];
+              }
+              return prev;
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            setLeadership(prev => prev.map(item => 
+              item.id === payload.new!.id ? payload.new as LeadershipMember : item
+            ));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setLeadership(prev => prev.filter(item => item.id !== payload.old!.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
 
   const checkAuth = async () => {
     try {
@@ -187,10 +234,24 @@ export default function LeadershipPage() {
   const loadLeadership = async () => {
     try {
       setLoading(true);
-      // Use static data for demonstration
-      setLeadership(staticLeadership);
+      console.log('Loading leadership from database...');
+      
+      const { data, error } = await supabase
+        .from('leadership')
+        .select('*')
+        .order('order_position', { ascending: true });
+
+      if (error) {
+        console.error('Error loading leadership:', error);
+        throw error;
+      }
+
+      console.log('Successfully loaded leadership:', data);
+      setLeadership(data || []);
     } catch (error) {
       console.error('Failed to load leadership:', error);
+      // Fallback to static data if database fails
+      setLeadership(staticLeadership);
     } finally {
       setLoading(false);
     }
@@ -212,37 +273,165 @@ export default function LeadershipPage() {
     setShowConfirm(true);
   };
 
-  const handleSaveMember = (memberData: Omit<LeadershipMember, 'id' | 'created_at'>) => {
-    if (editingItem) {
-      // Update existing member
-      setLeadership(prev => prev.map(member => 
-        member.id === editingItem.id 
-          ? { ...memberData, id: editingItem.id, created_at: editingItem.created_at }
-          : member
-      ));
-    } else {
-      // Create new member
-      const newMember: LeadershipMember = {
-        ...memberData,
-        id: Math.max(...leadership.map(m => m.id), 0) + 1,
-        created_at: new Date().toISOString()
-      };
-      setLeadership(prev => [...prev, newMember]);
+  const handleSaveMember = async (memberData: Omit<LeadershipMember, 'id' | 'created_at'>) => {
+    try {
+      console.log('Saving leadership member:', memberData);
+      
+      if (editingItem) {
+        // Update existing member
+        console.log('Updating existing member with ID:', editingItem.id);
+        
+        const updateData = {
+          name: memberData.name,
+          position: memberData.position,
+          bio: memberData.bio,
+          image_url: memberData.image_url,
+          email: memberData.email,
+          phone: memberData.phone,
+          department: memberData.department,
+          year: memberData.year,
+          social_links: memberData.social_links,
+          status: memberData.status,
+          order_position: memberData.order_position,
+          updated_at: new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+          .from('leadership')
+          .update(updateData)
+          .eq('id', editingItem.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating member:', error);
+          alert(`Failed to update member: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from update operation');
+          alert('Failed to update member: No data returned');
+          return;
+        }
+
+        console.log('Successfully updated member:', data);
+        
+        // Update local state
+        setLeadership(prev => prev.map(member => member.id === editingItem.id ? data : member));
+      } else {
+        // Create new member
+        console.log('Creating new member...');
+        
+        const insertData = {
+          name: memberData.name,
+          position: memberData.position,
+          bio: memberData.bio,
+          image_url: memberData.image_url,
+          email: memberData.email,
+          phone: memberData.phone,
+          department: memberData.department,
+          year: memberData.year,
+          social_links: memberData.social_links,
+          status: memberData.status,
+          order_position: memberData.order_position,
+          created_by: user?.id
+        };
+
+        const { data, error } = await supabase
+          .from('leadership')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating member:', error);
+          alert(`Failed to create member: ${error.message}`);
+          return;
+        }
+
+        if (!data) {
+          console.error('No data returned from create operation');
+          alert('Failed to create member: No data returned');
+          return;
+        }
+
+        console.log('Successfully created member:', data);
+        
+        // Update local state
+        setLeadership(prev => [data, ...prev]);
+      }
+      
+      console.log('Closing modal after successful operation');
+      setShowModal(false);
+      
+      // Return success indicator
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to save member:', error);
+      // Only show generic error if we haven't already shown a specific error
+      if (error instanceof Error) {
+        alert(`Failed to save member: ${error.message}`);
+      } else {
+        alert('Failed to save member. Please try again.');
+      }
+      
+      // Return error indicator
+      return { success: false, error };
     }
-    setShowModal(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (itemToDelete) {
-      setLeadership(prev => prev.filter(member => member.id !== itemToDelete.id));
-      setShowConfirm(false);
-      setItemToDelete(null);
+      try {
+        console.log('Deleting member with ID:', itemToDelete.id);
+        
+        const { error } = await supabase
+          .from('leadership')
+          .delete()
+          .eq('id', itemToDelete.id);
+
+        if (error) {
+          console.error('Error deleting member:', error);
+          throw error;
+        }
+
+        console.log('Successfully deleted member');
+        
+        // Update local state
+        setLeadership(prev => prev.filter(member => member.id !== itemToDelete.id));
+        setShowConfirm(false);
+        setItemToDelete(null);
+      } catch (error) {
+        console.error('Failed to delete member:', error);
+        alert('Failed to delete member. Please try again.');
+      }
     }
   };
 
-  const handleBulkDelete = () => {
-    setLeadership(prev => prev.filter(member => !selectedItems.includes(member.id)));
-    setSelectedItems([]);
+  const handleBulkDelete = async () => {
+    try {
+      console.log('Bulk deleting members:', selectedItems);
+      
+      const { error } = await supabase
+        .from('leadership')
+        .delete()
+        .in('id', selectedItems);
+
+      if (error) {
+        console.error('Error bulk deleting members:', error);
+        throw error;
+      }
+
+      console.log('Successfully bulk deleted members');
+      
+      // Update local state
+      setLeadership(prev => prev.filter(member => !selectedItems.includes(member.id)));
+      setSelectedItems([]);
+    } catch (error) {
+      console.error('Failed to delete selected members:', error);
+      alert('Failed to delete selected members. Please try again.');
+    }
   };
 
   const handleSelectAll = () => {
@@ -270,7 +459,7 @@ export default function LeadershipPage() {
                          member.year?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }).sort((a, b) => a.order - b.order);
+  }).sort((a, b) => a.order_position - b.order_position);
 
   return (
     <AdminLayout user={user}>
