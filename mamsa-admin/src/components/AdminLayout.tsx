@@ -160,7 +160,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       {/* Click outside to close dropdowns */}
       {(showNotifications || showProfile) && (
         <div 
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[55]"
           onClick={() => {
             setShowNotifications(false);
             setShowProfile(false);
@@ -379,9 +379,9 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="text-sm font-medium text-blue-700">
+                    <span className="text-sm font-medium text-blue-700">
                         {profile?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'A'}
-                      </span>
+                    </span>
                     )}
                   </div>
                   <div className="hidden sm:block text-left">
@@ -397,26 +397,60 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
                 {/* Profile Dropdown */}
                 {showProfile && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div 
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[60]"
+                  >
                     <div className="p-4 border-b border-gray-200">
                       <p className="text-sm font-medium text-gray-900">{profile?.full_name || user?.email || 'admin@mamsa.org'}</p>
                       <p className="text-xs text-gray-500">{user?.email || 'admin@mamsa.org'}</p>
                     </div>
                     <div className="py-2">
-                      <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      <a 
+                        href="/profile"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer no-underline"
+                        style={{ pointerEvents: 'auto', textDecoration: 'none' }}
+                        onClick={() => {
+                          console.log('Profile Settings link clicked');
+                          setShowProfile(false);
+                          // Let the default navigation happen
+                        }}
+                      >
                         Profile Settings
-                      </Link>
-                      <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Account Settings
-                      </Link>
-                      <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Help & Support
                       </a>
+                      <a 
+                        href="/profile"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer no-underline"
+                        style={{ pointerEvents: 'auto', textDecoration: 'none' }}
+                        onClick={() => {
+                          console.log('Account Settings link clicked');
+                          setShowProfile(false);
+                          // Let the default navigation happen
+                        }}
+                      >
+                        Account Settings
+                      </a>
+                      <button 
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-0 bg-transparent"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Help & Support clicked');
+                          setShowProfile(false);
+                          alert('Help & Support functionality coming soon!');
+                        }}
+                      >
+                        Help & Support
+                      </button>
                     </div>
                     <div className="border-t border-gray-200 py-2">
                       <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Sign out clicked');
+                          handleLogout();
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer focus:outline-none focus:bg-red-50 border-0 bg-transparent"
                       >
                         Sign out
                       </button>
@@ -432,7 +466,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         <main className="flex-1 overflow-y-auto pt-16 min-h-0">
           <div className="px-4 sm:px-6 lg:px-8 py-6">
             <div className="w-full">
-              {children}
+            {children}
             </div>
           </div>
         </main>
