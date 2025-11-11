@@ -205,7 +205,7 @@ export default function GalleryPage() {
         {
           event: '*',
           schema: 'public',
-          table: 'gallery'
+          table: 'gallery_images'
         },
         (payload: RealtimePayload) => {
           console.log('Gallery change received:', payload);
@@ -268,7 +268,7 @@ export default function GalleryPage() {
       console.log('Loading gallery from database...');
       
       const { data, error } = await supabase
-        .from('gallery')
+        .from('gallery_images')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -320,7 +320,7 @@ export default function GalleryPage() {
           tags: imageData.tags,
           photographer: imageData.photographer,
           location: imageData.location,
-          event_date: imageData.event_date,
+          event_date: imageData.event_date ? imageData.event_date : null,
           file_size: imageData.file_size,
           dimensions: imageData.dimensions,
           status: imageData.status,
@@ -330,7 +330,7 @@ export default function GalleryPage() {
         };
 
         const { data, error } = await supabase
-          .from('gallery')
+          .from('gallery_images')
           .update(updateData)
           .eq('id', editingItem.id)
           .select()
@@ -364,7 +364,7 @@ export default function GalleryPage() {
           tags: imageData.tags,
           photographer: imageData.photographer,
           location: imageData.location,
-          event_date: imageData.event_date,
+          event_date: imageData.event_date ? imageData.event_date : null,
           file_size: imageData.file_size,
           dimensions: imageData.dimensions,
           status: imageData.status,
@@ -374,7 +374,7 @@ export default function GalleryPage() {
         };
 
         const { data, error } = await supabase
-          .from('gallery')
+          .from('gallery_images')
           .insert(insertData)
           .select()
           .single();
@@ -422,7 +422,7 @@ export default function GalleryPage() {
         console.log('Deleting image with ID:', itemToDelete.id);
         
         const { error } = await supabase
-          .from('gallery')
+          .from('gallery_images')
           .delete()
           .eq('id', itemToDelete.id);
 
@@ -449,7 +449,7 @@ export default function GalleryPage() {
       console.log('Bulk deleting images:', selectedItems);
       
       const { error } = await supabase
-        .from('gallery')
+        .from('gallery_images')
         .delete()
         .in('id', selectedItems);
 

@@ -1,22 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 
+const INITIAL_STATS = {
+  news: 0,
+  events: 0,
+  leadership: 0,
+  gallery: 0,
+  totalUsers: 0,
+  totalViews: 0
+};
+
+const formatTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+  if (diffInHours < 1) return 'Just now';
+  if (diffInHours < 24) return `${diffInHours}h ago`;
+  if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+  return date.toLocaleDateString();
+};
+
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    news: 0,
-    events: 0,
-    leadership: 0,
-    gallery: 0,
-    totalUsers: 0,
-    totalViews: 0
-  });
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(INITIAL_STATS);
   
   interface Activity {
     id: string;
@@ -40,50 +53,35 @@ export default function DashboardPage() {
   
   const supabase = createClient();
 
-  useEffect(() => {
-    // Check auth first, then load content
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    // Load stats and data after user is set
-    if (user) {
-      loadStats();
-      loadRecentActivity();
-      loadUpcomingEvents();
-    }
-  }, [user]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+
+      if (error || !authUser) {
         console.log('No authenticated user found:', error);
         window.location.href = '/login';
         return;
       }
 
-      console.log('Authenticated user found:', user.email);
+      console.log('Authenticated user found:', authUser.email);
 
-      // Check if user is admin
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', authUser.id)
         .single();
 
       if (adminError) {
         console.log('Admin check error:', adminError);
-        // If table doesn't exist or user not found, create admin user
+
         if (adminError.code === 'PGRST116' || adminError.message.includes('relation "admin_users" does not exist')) {
           console.log('Admin table not found, creating admin user...');
-          const { data: newAdmin, error: createError } = await supabase
+          const { error: createError } = await supabase
             .from('admin_users')
             .insert({
-              user_id: user.id,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin User',
-              email: user.email || '',
+              user_id: authUser.id,
+              full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Admin User',
+              email: authUser.email || '',
               role: 'super_admin',
               permissions: {
                 news: true,
@@ -94,22 +92,19 @@ export default function DashboardPage() {
                 reports: true
               },
               status: 'active'
-            })
-            .select()
-            .single();
+            });
 
           if (createError) {
             console.error('Failed to create admin user:', createError);
-            // Allow access anyway for now
-            setUser(user);
+            setUser(authUser);
             return;
           }
+
           console.log('Admin user created successfully');
-          setUser(user);
+          setUser(authUser);
           return;
         }
-        
-        // If user not found in admin table, redirect to login
+
         console.log('User not found in admin table');
         window.location.href = '/login';
         return;
@@ -122,156 +117,181 @@ export default function DashboardPage() {
       }
 
       console.log('Admin access granted for:', adminData.full_name);
-      setUser(user);
+      setUser(authUser);
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Allow access for now to debug
-      setUser(user);
     }
-  };
+  }, [supabase]);
 
-  const loadStats = async () => {
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const fetchStats = useCallback(async (): Promise<typeof INITIAL_STATS> => {
     try {
       const [newsResult, eventsResult, leadershipResult, galleryResult, usersResult] = await Promise.all([
-        supabase.from('news').select('*', { count: 'exact', head: true }),
-        supabase.from('events').select('*', { count: 'exact', head: true }),
-        supabase.from('leadership').select('*', { count: 'exact', head: true }),
-        supabase.from('gallery').select('*', { count: 'exact', head: true }),
-        supabase.from('admin_users').select('*', { count: 'exact', head: true })
+        supabase.from('news').select('id', { count: 'exact', head: true }),
+        supabase.from('events').select('id', { count: 'exact', head: true }),
+        supabase.from('leadership').select('id', { count: 'exact', head: true }),
+        supabase.from('gallery_images').select('id', { count: 'exact', head: true }),
+        supabase.from('admin_users').select('id', { count: 'exact', head: true })
       ]);
 
-      setStats({
+      return {
         news: newsResult.count || 0,
         events: eventsResult.count || 0,
         leadership: leadershipResult.count || 0,
         gallery: galleryResult.count || 0,
         totalUsers: usersResult.count || 0,
-        totalViews: 15420 // Mock data for now
-      });
+        totalViews: 15420
+      };
     } catch (error) {
       console.error('Failed to load stats:', error);
+      return INITIAL_STATS;
     }
-  };
+  }, [supabase]);
 
-  const loadRecentActivity = async () => {
+  const fetchRecentActivity = useCallback(async (): Promise<Activity[]> => {
     try {
-      // Get recent items from all tables
       const [newsData, eventsData, galleryData, leadershipData] = await Promise.all([
-        supabase.from('news').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
-        supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
-        supabase.from('gallery').select('id, title, created_at').order('created_at', { ascending: false }).limit(2),
-        supabase.from('leadership').select('id, name, created_at').order('created_at', { ascending: false }).limit(2)
+        supabase.from('news').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
+        supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
+        supabase.from('gallery_images').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
+        supabase.from('leadership').select('id, name, created_at').order('created_at', { ascending: false }).limit(4)
       ]);
 
-      const activities: Activity[] = [];
+      type ActivitySeed = {
+        id: string;
+        type: Activity['type'];
+        action: string;
+        title: string;
+        created_at: string;
+      };
 
-      // Process news
-      if (newsData.data) {
-        newsData.data.forEach((item: { id: number; title: string; created_at: string }) => {
-          activities.push({
-            id: `news-${item.id}`,
-            type: 'news' as const,
-            action: 'Published new article',
-            title: item.title,
-            time: formatTimeAgo(item.created_at),
-            user: 'Admin'
-          });
-        });
-      }
+      const seeds: ActivitySeed[] = [];
 
-      // Process events
-      if (eventsData.data) {
-        eventsData.data.forEach((item: { id: number; title: string; created_at: string }) => {
-          activities.push({
-            id: `event-${item.id}`,
-            type: 'event' as const,
-            action: 'Created new event',
-            title: item.title,
-            time: formatTimeAgo(item.created_at),
-            user: 'Admin'
-          });
-        });
-      }
+      newsData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
+        seeds.push({
+          id: `news-${item.id}`,
+          type: 'news',
+          action: 'Published new article',
+          title: item.title,
+          created_at: item.created_at
+        })
+      );
 
-      // Process gallery
-      if (galleryData.data) {
-        galleryData.data.forEach((item: { id: number; title: string; created_at: string }) => {
-          activities.push({
-            id: `gallery-${item.id}`,
-            type: 'gallery' as const,
-            action: 'Uploaded image',
-            title: item.title,
-            time: formatTimeAgo(item.created_at),
-            user: 'Admin'
-          });
-        });
-      }
+      eventsData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
+        seeds.push({
+          id: `event-${item.id}`,
+          type: 'event',
+          action: 'Created new event',
+          title: item.title,
+          created_at: item.created_at
+        })
+      );
 
-      // Process leadership
-      if (leadershipData.data) {
-        leadershipData.data.forEach((item: { id: number; name: string; created_at: string }) => {
-          activities.push({
-            id: `leadership-${item.id}`,
-            type: 'leadership' as const,
-            action: 'Updated profile',
-            title: item.name,
-            time: formatTimeAgo(item.created_at),
-            user: 'Admin'
-          });
-        });
-      }
+      galleryData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
+        seeds.push({
+          id: `gallery-${item.id}`,
+          type: 'gallery',
+          action: 'Uploaded image',
+          title: item.title,
+          created_at: item.created_at
+        })
+      );
 
-      // Sort by time and take the most recent 4
-      activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      setRecentActivity(activities.slice(0, 4));
+      leadershipData.data?.forEach((item: { id: number; name: string; created_at: string }) =>
+        seeds.push({
+          id: `leadership-${item.id}`,
+          type: 'leadership',
+          action: 'Updated profile',
+          title: item.name,
+          created_at: item.created_at
+        })
+      );
+
+      seeds.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return seeds.slice(0, 4).map((item) => ({
+        id: item.id,
+        type: item.type,
+        action: item.action,
+        title: item.title,
+        time: formatTimeAgo(item.created_at),
+        user: 'Admin'
+      }));
     } catch (error) {
       console.error('Failed to load recent activity:', error);
-      // Fallback to empty array
-      setRecentActivity([]);
+      return [];
     }
-  };
+  }, [supabase]);
 
-  const loadUpcomingEvents = async () => {
+  const fetchUpcomingEvents = useCallback(async (): Promise<UpcomingEvent[]> => {
     try {
       const { data, error } = await supabase
         .from('events')
-        .select('id, title, event_date, location, max_attendees')
-        .gte('event_date', new Date().toISOString().split('T')[0])
-        .order('event_date', { ascending: true })
+        .select('id, title, date, location, capacity')
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
         .limit(3);
 
       if (error) {
         console.error('Error loading upcoming events:', error);
-        return;
+        return [];
       }
 
-      const events = data?.map((event: { id: number; title: string; event_date: string; location?: string; max_attendees?: number }) => ({
-        id: event.id,
-        title: event.title,
-        date: event.event_date,
-        location: event.location || 'TBA',
-        attendees: event.max_attendees || 0
-      })) || [];
-
-      setUpcomingEvents(events);
+      return (
+        data?.map((event: { id: number; title: string; date: string; location?: string; capacity?: number }) => ({
+          id: event.id,
+          title: event.title,
+          date: event.date,
+          location: event.location || 'TBA',
+          attendees: event.capacity || 0
+        })) || []
+      );
     } catch (error) {
       console.error('Failed to load upcoming events:', error);
-      // Fallback to empty array
-      setUpcomingEvents([]);
+      return [];
     }
-  };
+  }, [supabase]);
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
-    return date.toLocaleDateString();
-  };
+  useEffect(() => {
+    if (!user) return;
 
+    let cancelled = false;
+
+    const loadDashboardData = async () => {
+      setLoading(true);
+
+      try {
+        const [statsData, activityData, eventsData] = await Promise.all([
+          fetchStats(),
+          fetchRecentActivity(),
+          fetchUpcomingEvents()
+        ]);
+
+        if (cancelled) return;
+
+        setStats(statsData);
+        setRecentActivity(activityData);
+        setUpcomingEvents(eventsData);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load dashboard data:', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchRecentActivity, fetchStats, fetchUpcomingEvents, user]);
 
   // Show loading state if no user
   if (!user) {
@@ -282,6 +302,19 @@ export default function DashboardPage() {
           <p className="text-gray-600 mt-2">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout user={user}>
+        <div className="flex h-full items-center justify-center py-16">
+          <div className="text-center text-gray-600">
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+            <p className="font-medium">Loading dashboard data…</p>
+          </div>
+        </div>
+      </AdminLayout>
     );
   }
 
