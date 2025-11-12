@@ -1,5 +1,9 @@
 import { createServerClient } from '@/lib/supabase-server';
 
+export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
+export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
+export type AboutSnapshot = Record<AboutSectionKey, string>;
+
 export type NewsArticle = {
   id: number;
   title: string;
@@ -48,6 +52,7 @@ export type HomeContent = {
   events: Event[];
   leadership: Leader[];
   gallery: GalleryImage[];
+  about: AboutSnapshot;
   hasError: boolean;
 };
 
@@ -123,7 +128,7 @@ export async function fetchLeadership(limit?: number) {
 export async function fetchPublishedGallery(limit?: number) {
   const supabase = await createServerClient();
   let query = supabase
-    .from('gallery_images')
+    .from('gallery')
     .select('id, title, image_url, category, description, featured')
     .eq('status', 'published')
     .order('featured', { ascending: false })
@@ -137,16 +142,43 @@ export async function fetchPublishedGallery(limit?: number) {
   return { data: data ?? [], error };
 }
 
+export async function fetchAboutSnapshot() {
+  const supabase = await createServerClient();
+
+  const draft: AboutSnapshot = ABOUT_SECTIONS.reduce((acc, key) => {
+    acc[key] = '';
+    return acc;
+  }, {} as AboutSnapshot);
+
+  const { data, error } = await supabase
+    .from('about')
+    .select('section, content');
+
+  if (error) {
+    return { data: draft, error };
+  }
+
+  data?.forEach((row: { section: string; content: string }) => {
+    const key = row.section as AboutSectionKey;
+    if (ABOUT_SECTIONS.includes(key)) {
+      draft[key] = row.content ?? '';
+    }
+  });
+
+  return { data: draft, error: null };
+}
+
 export async function fetchHomeContent(): Promise<HomeContent> {
-  const [newsResult, eventsResult, leadershipResult, galleryResult] = await Promise.all([
+  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
     fetchPublishedNews(3),
     fetchActiveEvents(3),
     fetchLeadership(4),
     fetchPublishedGallery(6),
+    fetchAboutSnapshot(),
   ]);
 
   const hasError = Boolean(
-    newsResult.error || eventsResult.error || leadershipResult.error || galleryResult.error
+    newsResult.error || eventsResult.error || leadershipResult.error || galleryResult.error || aboutResult.error
   );
 
   return {
@@ -154,6 +186,7 @@ export async function fetchHomeContent(): Promise<HomeContent> {
     events: eventsResult.data,
     leadership: leadershipResult.data,
     gallery: galleryResult.data,
+    about: aboutResult.data,
     hasError,
   };
 }

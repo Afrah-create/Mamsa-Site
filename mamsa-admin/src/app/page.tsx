@@ -7,7 +7,52 @@ import { fetchHomeContent, formatDate, formatTime } from '@/lib/public-content';
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const { news, events, leadership, gallery, hasError } = await fetchHomeContent();
+  const { news, events, leadership, gallery, about, hasError } = await fetchHomeContent();
+  const hasAboutContent = Object.values(about).some((value) => value?.trim().length);
+  const aboutCards = [
+    {
+      key: 'mission' as const,
+      title: 'Our Mission',
+      icon: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 18h6m-3 3v-3m-4-4c0 .943.265 1.83.73 2.58.208.333.27.747.162 1.132l-.302 1.093a.75.75 0 00.727.95h6.38a.75.75 0 00.728-.95l-.303-1.093a1.75 1.75 0 01.161-1.132A5 5 0 0012 5a5 5 0 00-5 5z" />
+        </svg>
+      ),
+      accent: 'border-emerald-200',
+    },
+    {
+      key: 'vision' as const,
+      title: 'Our Vision',
+      icon: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v4m0 10v4m4.95-14.95l-2.828 2.828M9.879 17.657L7.05 20.485M21 12h-4M7 12H3m14.95 4.95l-2.828-2.828M9.879 6.343L7.05 3.515" />
+          <circle cx="12" cy="12" r="3.5" />
+        </svg>
+      ),
+      accent: 'border-emerald-200',
+    },
+    {
+      key: 'values' as const,
+      title: 'Core Values',
+      icon: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5l8.5 3.5L12 11.5 3.5 8z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 10.5v5a2 2 0 001.2 1.84L12 20.5l5.8-3.16A2 2 0 0019 15.5v-5" />
+        </svg>
+      ),
+      accent: 'border-emerald-200',
+    },
+    {
+      key: 'objectives' as const,
+      title: 'Strategic Objectives',
+      icon: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h16M8 16v-5m4 5V8m4 8v-3" />
+        </svg>
+      ),
+      accent: 'border-emerald-200',
+    },
+  ];
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
@@ -84,6 +129,37 @@ export default async function HomePage() {
             </div>
           </div>
         </header>
+
+        {hasAboutContent && (
+          <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-14">
+            <div className="grid gap-8 lg:grid-cols-[1.2fr,1fr] lg:gap-10">
+              <div className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm sm:p-7">
+                <h2 className="text-2xl font-semibold text-emerald-800 sm:text-[2.1rem]">Who We Are</h2>
+                <p className="text-pretty text-sm text-emerald-800/90 sm:text-base leading-relaxed">
+                  {about.history?.trim() || 'Our story is being crafted. Check back soon to learn more about MAMSA’s journey.'}
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {aboutCards.map((card) => (
+                  <article
+                    key={card.key}
+                    className={`rounded-3xl border bg-white px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${card.accent}`}
+                  >
+                    <div className="flex items-center gap-3 text-emerald-600">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                        {card.icon}
+                      </span>
+                      <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
+                    </div>
+                    <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                      {about[card.key]?.trim() || 'Content coming soon.'}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {hasError && (
           <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

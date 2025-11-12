@@ -15,6 +15,8 @@ const INITIAL_STATS = {
   totalViews: 0
 };
 
+const DASHBOARD_CACHE_KEY = 'admin_dashboard_snapshot_v1';
+
 const formatTimeAgo = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
@@ -52,6 +54,8 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   
   const supabase = createClient();
+  const [snapshotReady, setSnapshotReady] = useState(false);
+  const [hasSnapshot, setHasSnapshot] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -127,13 +131,42 @@ export default function DashboardPage() {
     checkAuth();
   }, [checkAuth]);
 
+  useEffect(() => {
+    if (!user || snapshotReady) return;
+
+    try {
+      const raw = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          stats?: typeof INITIAL_STATS;
+          recentActivity?: Activity[];
+          upcomingEvents?: UpcomingEvent[];
+          timestamp?: string;
+        };
+
+        if (parsed.stats) setStats(parsed.stats);
+        if (parsed.recentActivity) setRecentActivity(parsed.recentActivity);
+        if (parsed.upcomingEvents) setUpcomingEvents(parsed.upcomingEvents);
+
+        if (parsed.stats || parsed.recentActivity || parsed.upcomingEvents) {
+          setHasSnapshot(true);
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to restore dashboard snapshot', error);
+    } finally {
+      setSnapshotReady(true);
+    }
+  }, [snapshotReady, user]);
+
   const fetchStats = useCallback(async (): Promise<typeof INITIAL_STATS> => {
     try {
       const [newsResult, eventsResult, leadershipResult, galleryResult, usersResult] = await Promise.all([
         supabase.from('news').select('id', { count: 'exact', head: true }),
         supabase.from('events').select('id', { count: 'exact', head: true }),
         supabase.from('leadership').select('id', { count: 'exact', head: true }),
-        supabase.from('gallery_images').select('id', { count: 'exact', head: true }),
+        supabase.from('gallery').select('id', { count: 'exact', head: true }),
         supabase.from('admin_users').select('id', { count: 'exact', head: true })
       ]);
 
@@ -156,7 +189,7 @@ export default function DashboardPage() {
       const [newsData, eventsData, galleryData, leadershipData] = await Promise.all([
         supabase.from('news').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('gallery_images').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
+        supabase.from('gallery').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
         supabase.from('leadership').select('id, name, created_at').order('created_at', { ascending: false }).limit(4)
       ]);
 
@@ -256,12 +289,14 @@ export default function DashboardPage() {
   }, [supabase]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !snapshotReady) return;
 
     let cancelled = false;
 
     const loadDashboardData = async () => {
-      setLoading(true);
+      if (!hasSnapshot) {
+        setLoading(true);
+      }
 
       try {
         const [statsData, activityData, eventsData] = await Promise.all([
@@ -275,6 +310,21 @@ export default function DashboardPage() {
         setStats(statsData);
         setRecentActivity(activityData);
         setUpcomingEvents(eventsData);
+
+        try {
+          sessionStorage.setItem(
+            DASHBOARD_CACHE_KEY,
+            JSON.stringify({
+              stats: statsData,
+              recentActivity: activityData,
+              upcomingEvents: eventsData,
+              timestamp: new Date().toISOString()
+            })
+          );
+          setHasSnapshot(true);
+        } catch (storageError) {
+          console.warn('Failed to persist dashboard snapshot', storageError);
+        }
       } catch (error) {
         if (!cancelled) {
           console.error('Failed to load dashboard data:', error);
@@ -291,7 +341,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [fetchRecentActivity, fetchStats, fetchUpcomingEvents, user]);
+  }, [fetchRecentActivity, fetchStats, fetchUpcomingEvents, hasSnapshot, snapshotReady, user]);
 
   // Show loading state if no user
   if (!user) {

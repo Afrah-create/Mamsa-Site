@@ -85,6 +85,15 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         </svg>
       )
     },
+    {
+      name: 'About MAMSA',
+      href: '/about',
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1 4v-4m0-4h.01M12 6a9 9 0 100 18 9 9 0 000-18z" />
+        </svg>
+      )
+    },
     { 
       name: 'Users', 
       href: '/users', 
@@ -332,7 +341,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                 </svg>
               </button>
               <h1 className="ml-4 text-xl font-semibold text-gray-900 lg:ml-0">
-                {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
+                {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
               </h1>
             </div>
             
