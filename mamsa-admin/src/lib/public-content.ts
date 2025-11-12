@@ -112,7 +112,7 @@ export async function fetchActiveEvents(limit?: number) {
 export async function fetchLeadership(limit?: number) {
   const supabase = await createServerClient();
   let query = supabase
-    .from('leadership_members')
+    .from('leadership')
     .select('id, name, position, bio, image_url, department, email, phone')
     .eq('status', 'active')
     .order('order_position', { ascending: true });
