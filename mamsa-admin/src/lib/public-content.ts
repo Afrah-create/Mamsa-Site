@@ -1,5 +1,20 @@
 import { createServerClient } from '@/lib/supabase-server';
 
+const SUPABASE_TIMEOUT_MS = Number(process.env.SUPABASE_TIMEOUT_MS ?? '15000');
+
+const createTimeoutController = (label: string) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+
+  return {
+    controller,
+    clear: () => clearTimeout(timeoutId),
+    label,
+  };
+};
+
+const buildUnavailableError = (message: string) => new Error(`[Supabase] ${message}`);
+
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
 export type AboutSnapshot = Record<AboutSectionKey, string>;
@@ -38,6 +53,25 @@ export type Leader = {
   phone?: string | null;
 };
 
+export type NotableAlumnus = {
+  id: number;
+  full_name: string;
+  graduation_year: number | null;
+  biography: string | null;
+  achievements: string | null;
+  current_position: string | null;
+  organization: string | null;
+  specialty: string | null;
+  image_url: string | null;
+  profile_links: {
+    linkedin?: string | null;
+    twitter?: string | null;
+    website?: string | null;
+  } | null;
+  featured: boolean | null;
+  order_position: number | null;
+};
+
 export type GalleryImage = {
   id: number;
   title: string;
@@ -56,90 +90,213 @@ export type HomeContent = {
   hasError: boolean;
 };
 
-export const formatDate = (value?: string | null) => {
-  if (!value) return 'To be announced';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
-export const formatTime = (value?: string | null) => {
-  if (!value) return '';
-  const date = new Date(`1970-01-01T${value}`);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-};
-
 export async function fetchPublishedNews(limit?: number) {
   const supabase = await createServerClient();
-  let query = supabase
-    .from('news_articles')
-    .select('id, title, excerpt, featured_image, published_at, author, content')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false });
 
-  if (limit) {
-    query = query.limit(limit);
+  if (!supabase) {
+    return { data: [] as NewsArticle[], error: buildUnavailableError('Client unavailable while fetching news.') };
   }
 
-  const { data, error } = await query;
-  return { data: data ?? [], error };
+  const timeout = createTimeoutController('news');
+
+  try {
+    let query = supabase
+      .from('news_articles')
+      .select('id, title, excerpt, featured_image, published_at, author, content')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query.abortSignal(timeout.controller.signal);
+    return { data: data ?? [], error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: [] as NewsArticle[],
+        error: buildUnavailableError(`Timed out fetching published news (>${SUPABASE_TIMEOUT_MS}ms).`),
+      };
+    }
+    return { data: [] as NewsArticle[], error: error as Error };
+  } finally {
+    timeout.clear();
+  }
+}
+
+export async function fetchPublishedNewsArticle(id: number) {
+  const supabase = await createServerClient();
+
+  if (!supabase) {
+    return { data: null, error: buildUnavailableError('Client unavailable while fetching news article.') };
+  }
+
+  const timeout = createTimeoutController('news-article');
+
+  try {
+    const { data, error } = await supabase
+      .from('news_articles')
+      .select('id, title, content, excerpt, featured_image, published_at, author')
+      .eq('status', 'published')
+      .eq('id', id)
+      .maybeSingle()
+      .abortSignal(timeout.controller.signal);
+
+    return { data: data ?? null, error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: null,
+        error: buildUnavailableError(`Timed out fetching news article (>${SUPABASE_TIMEOUT_MS}ms).`),
+      };
+    }
+    return { data: null, error: error as Error };
+  } finally {
+    timeout.clear();
+  }
 }
 
 export async function fetchActiveEvents(limit?: number) {
   const supabase = await createServerClient();
-  let query = supabase
-    .from('events')
-    .select('id, title, description, date, time, location, status, featured_image, organizer, contact_email')
-    .in('status', ['upcoming', 'ongoing'])
-    .order('date', { ascending: true });
 
-  if (limit) {
-    query = query.limit(limit);
+  if (!supabase) {
+    return { data: [] as Event[], error: buildUnavailableError('Client unavailable while fetching events.') };
   }
 
-  const { data, error } = await query;
-  return { data: data ?? [], error };
+  const timeout = createTimeoutController('events');
+
+  try {
+    let query = supabase
+      .from('events')
+      .select('id, title, description, date, time, location, status, featured_image, organizer, contact_email')
+      .in('status', ['upcoming', 'ongoing'])
+      .order('date', { ascending: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query.abortSignal(timeout.controller.signal);
+    return { data: data ?? [], error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { data: [] as Event[], error: buildUnavailableError(`Timed out fetching events (>${SUPABASE_TIMEOUT_MS}ms).`) };
+    }
+    return { data: [] as Event[], error: error as Error };
+  } finally {
+    timeout.clear();
+  }
 }
 
 export async function fetchLeadership(limit?: number) {
   const supabase = await createServerClient();
-  let query = supabase
-    .from('leadership')
-    .select('id, name, position, bio, image_url, department, email, phone')
-    .eq('status', 'active')
-    .order('order_position', { ascending: true });
 
-  if (limit) {
-    query = query.limit(limit);
+  if (!supabase) {
+    return { data: [] as Leader[], error: buildUnavailableError('Client unavailable while fetching leadership.') };
   }
 
-  const { data, error } = await query;
-  return { data: data ?? [], error };
+  const timeout = createTimeoutController('leadership');
+
+  try {
+    let query = supabase
+      .from('leadership')
+      .select('id, name, position, bio, image_url, department, email, phone')
+      .eq('status', 'active')
+      .order('order_position', { ascending: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query.abortSignal(timeout.controller.signal);
+    return { data: data ?? [], error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: [] as Leader[],
+        error: buildUnavailableError(`Timed out fetching leadership (>${SUPABASE_TIMEOUT_MS}ms).`),
+      };
+    }
+    return { data: [] as Leader[], error: error as Error };
+  } finally {
+    timeout.clear();
+  }
 }
 
 export async function fetchPublishedGallery(limit?: number) {
   const supabase = await createServerClient();
-  let query = supabase
-    .from('gallery')
-    .select('id, title, image_url, category, description, featured')
-    .eq('status', 'published')
-    .order('featured', { ascending: false })
-    .order('created_at', { ascending: false });
 
-  if (limit) {
-    query = query.limit(limit);
+  if (!supabase) {
+    return { data: [] as GalleryImage[], error: buildUnavailableError('Client unavailable while fetching gallery.') };
   }
 
-  const { data, error } = await query;
-  return { data: data ?? [], error };
+  const timeout = createTimeoutController('gallery');
+
+  try {
+    let query = supabase
+      .from('gallery')
+      .select('id, title, image_url, category, description, featured')
+      .eq('status', 'published')
+      .order('featured', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query.abortSignal(timeout.controller.signal);
+    return { data: data ?? [], error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: [] as GalleryImage[],
+        error: buildUnavailableError(`Timed out fetching gallery (>${SUPABASE_TIMEOUT_MS}ms).`),
+      };
+    }
+    return { data: [] as GalleryImage[], error: error as Error };
+  } finally {
+    timeout.clear();
+  }
+}
+
+export async function fetchPublishedAlumni(limit?: number) {
+  const supabase = await createServerClient();
+
+  if (!supabase) {
+    return { data: [] as NotableAlumnus[], error: buildUnavailableError('Client unavailable while fetching alumni.') };
+  }
+
+  const timeout = createTimeoutController('alumni');
+
+  try {
+    let query = supabase
+      .from('notable_alumni')
+      .select(
+        'id, full_name, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, order_position'
+      )
+      .eq('status', 'published')
+      .order('featured', { ascending: false })
+      .order('order_position', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query.abortSignal(timeout.controller.signal);
+    return { data: (data as NotableAlumnus[]) ?? [], error };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return {
+        data: [] as NotableAlumnus[],
+        error: buildUnavailableError(`Timed out fetching notable alumni (>${SUPABASE_TIMEOUT_MS}ms).`),
+      };
+    }
+    return { data: [] as NotableAlumnus[], error: error as Error };
+  } finally {
+    timeout.clear();
+  }
 }
 
 export async function fetchAboutSnapshot() {
@@ -150,22 +307,38 @@ export async function fetchAboutSnapshot() {
     return acc;
   }, {} as AboutSnapshot);
 
-  const { data, error } = await supabase
-    .from('about')
-    .select('section, content');
-
-  if (error) {
-    return { data: draft, error };
+  if (!supabase) {
+    return { data: draft, error: buildUnavailableError('Client unavailable while fetching about snapshot.') };
   }
 
-  data?.forEach((row: { section: string; content: string }) => {
-    const key = row.section as AboutSectionKey;
-    if (ABOUT_SECTIONS.includes(key)) {
-      draft[key] = row.content ?? '';
-    }
-  });
+  const timeout = createTimeoutController('about');
 
-  return { data: draft, error: null };
+  try {
+    const { data, error } = await supabase
+      .from('about')
+      .select('section, content')
+      .abortSignal(timeout.controller.signal);
+
+    if (error) {
+      return { data: draft, error };
+    }
+
+    data?.forEach((row: { section: string; content: string }) => {
+      const key = row.section as AboutSectionKey;
+      if (ABOUT_SECTIONS.includes(key)) {
+        draft[key] = row.content ?? '';
+      }
+    });
+
+    return { data: draft, error: null };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { data: draft, error: buildUnavailableError(`Timed out fetching about snapshot (>${SUPABASE_TIMEOUT_MS}ms).`) };
+    }
+    return { data: draft, error: error as Error };
+  } finally {
+    timeout.clear();
+  }
 }
 
 export async function fetchHomeContent(): Promise<HomeContent> {

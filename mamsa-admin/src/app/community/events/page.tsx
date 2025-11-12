@@ -1,4 +1,5 @@
-import { fetchActiveEvents, formatDate, formatTime } from '@/lib/public-content';
+import { fetchActiveEvents, type Event } from '@/lib/public-content';
+import { formatDate, formatTime } from '@/lib/public-content-utils';
 
 export const revalidate = 60;
 
@@ -6,8 +7,8 @@ export default async function EventsPage() {
   const { data: events, error } = await fetchActiveEvents();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-16">
-      <div className="space-y-4 text-center">
+    <div className="mx-auto max-w-5xl px-6 py-12">
+      <div className="space-y-3 text-center">
         <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Events</p>
         <h1 className="text-4xl font-bold text-gray-900">Upcoming Activities & Gatherings</h1>
         <p className="text-base text-gray-600">
@@ -30,7 +31,7 @@ export default async function EventsPage() {
             </p>
           </div>
         ) : (
-          events.map((event) => (
+          events.map((event: Event) => (
             <div key={event.id} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-3">

@@ -6,6 +6,7 @@ import Link from 'next/link';
 
 const navigation = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/community/about' },
   { label: 'Updates', href: '/community/updates' },
   { label: 'Events', href: '/community/events' },
   { label: 'Leadership', href: '/community/leadership' },

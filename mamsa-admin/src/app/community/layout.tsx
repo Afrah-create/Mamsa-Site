@@ -9,7 +9,7 @@ export default function CommunityLayout({
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
       <PublicNavbar />
-      <main className="flex-1 pt-24">{children}</main>
+      <main className="flex-1 pt-16">{children}</main>
       <PublicFooter />
     </div>
   );
