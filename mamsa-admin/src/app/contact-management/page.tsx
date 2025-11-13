@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
+import MapLocationPicker from '@/components/MapLocationPicker';
 
 interface ContactMessage {
   id: number;
@@ -68,6 +69,11 @@ const emptyContactSettings: ContactSettings = {
   longitude: null,
   map_embed_url: '',
   updated_at: new Date().toISOString(),
+};
+
+const buildEmbedUrl = (lat?: number | null, lng?: number | null) => {
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+  return `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
 };
 
 export default function ContactManagementPage() {
@@ -294,7 +300,7 @@ export default function ContactManagementPage() {
           phone: settings.phone || null,
           latitude: settings.latitude,
           longitude: settings.longitude,
-          map_embed_url: settings.map_embed_url || null,
+          map_embed_url: buildEmbedUrl(settings.latitude, settings.longitude),
           updated_by: user?.id ?? null,
         };
 
@@ -754,6 +760,20 @@ export default function ContactManagementPage() {
               </div>
             </div>
 
+            <MapLocationPicker
+              latitude={settings.latitude}
+              longitude={settings.longitude}
+              onLocationChange={({ latitude: lat, longitude: lng, formattedAddress }) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  latitude: lat,
+                  longitude: lng,
+                  address: formattedAddress ?? prev.address,
+                  map_embed_url: buildEmbedUrl(lat, lng) ?? prev.map_embed_url,
+                }))
+              }
+            />
+
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-gray-700">Latitude</label>
@@ -762,10 +782,15 @@ export default function ContactManagementPage() {
                   step="any"
                   value={settings.latitude ?? ''}
                   onChange={(event) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      latitude: event.target.value === '' ? null : Number(event.target.value),
-                    }))
+                    setSettings((prev) => {
+                      const value = event.target.value === '' ? null : Number(event.target.value);
+                      return {
+                        ...prev,
+                        latitude: value,
+                        map_embed_url:
+                          value != null && prev.longitude != null ? buildEmbedUrl(value, prev.longitude) : null,
+                      };
+                    })
                   }
                   placeholder="0"
                   className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
@@ -778,33 +803,20 @@ export default function ContactManagementPage() {
                   step="any"
                   value={settings.longitude ?? ''}
                   onChange={(event) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      longitude: event.target.value === '' ? null : Number(event.target.value),
-                    }))
+                    setSettings((prev) => {
+                      const value = event.target.value === '' ? null : Number(event.target.value);
+                      return {
+                        ...prev,
+                        longitude: value,
+                        map_embed_url:
+                          value != null && prev.latitude != null ? buildEmbedUrl(prev.latitude, value) : null,
+                      };
+                    })
                   }
                   placeholder="0"
                   className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">Map embed URL</label>
-              <textarea
-                value={settings.map_embed_url ?? ''}
-                onChange={(event) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    map_embed_url: event.target.value,
-                  }))
-                }
-                placeholder="https://www.google.com/maps/embed?pb="
-                className="mt-2 h-32 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Provide a full Google Maps embed URL. If left blank, we will use the latitude and longitude coordinates.
-              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">

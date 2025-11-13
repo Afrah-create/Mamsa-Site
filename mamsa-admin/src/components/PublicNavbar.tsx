@@ -11,6 +11,7 @@ const navigation = [
   { label: 'Events', href: '/community/events' },
   { label: 'Leadership', href: '/community/leadership' },
   { label: 'Gallery', href: '/community/gallery' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 export default function PublicNavbar() {
@@ -52,15 +53,6 @@ export default function PublicNavbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Link
-            href="/login"
-            className="inline-flex items-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-          >
-            Admin Login
-          </Link>
-        </div>
-
         <button
           type="button"
           aria-label="Toggle navigation"
@@ -90,13 +82,6 @@ export default function PublicNavbar() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/login"
-              onClick={closeMobile}
-              className="mt-2 inline-flex items-center justify-center rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-            >
-              Admin Login
-            </Link>
           </div>
         </nav>
       )}

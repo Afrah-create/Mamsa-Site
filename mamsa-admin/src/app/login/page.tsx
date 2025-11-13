@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 
@@ -90,6 +91,15 @@ export default function LoginPage() {
                 className="h-12 w-12 rounded-full object-cover"
               />
             </div>
+            <Link
+              href="/"
+              className="mt-4 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+              Back to public site
+            </Link>
             <h2 className="mt-4 text-2xl font-bold text-gray-900">
               MAMSA Admin Portal
             </h2>

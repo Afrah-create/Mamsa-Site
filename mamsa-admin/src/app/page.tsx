@@ -76,14 +76,8 @@ export default async function HomePage() {
               </p>
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start lg:gap-3">
                 <Link
-                  href="/login"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-green-700 shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-900/25 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
-                >
-                  Admin Login
-                </Link>
-                <Link
                   href="/community/updates"
-                  className="inline-flex w-full items-center justify-center rounded-xl border border-white/60 px-6 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/10 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-green-700 shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-xl hover:shadow-emerald-900/25 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                 >
                   Explore Latest Updates
                 </Link>

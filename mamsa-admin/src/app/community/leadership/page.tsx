@@ -35,16 +35,16 @@ export default async function LeadershipPage() {
               key={leader.id}
               className="flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="relative w-full max-w-[220px] overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
+              <div className="relative aspect-[3/4] w-full max-w-[220px] overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
                 {leader.image_url ? (
                   <img
                     src={leader.image_url}
                     alt={leader.name}
-                    className="aspect-[3/4] w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex aspect-[3/4] w-full items-center justify-center bg-emerald-50 text-3xl font-semibold text-emerald-700">
+                  <div className="absolute inset-0 flex items-center justify-center bg-emerald-50 text-3xl font-semibold text-emerald-700">
                     {leader.name.slice(0, 2).toUpperCase()}
                   </div>
                 )}

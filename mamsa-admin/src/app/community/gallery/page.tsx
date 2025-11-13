@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { fetchPublishedGallery } from '@/lib/public-content';
 import PublicGalleryBrowser from '@/components/PublicGalleryBrowser';
 
@@ -17,6 +18,17 @@ export default async function GalleryPage() {
               Explore highlights from events, outreach, and the day-to-day life of our medical student community.
               Browse, search, and filter through memories captured by our members.
             </p>
+          </div>
+          <div className="mt-8 flex flex-col items-center justify-center gap-2 text-emerald-50/90 md:flex-row md:gap-3">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-xl bg-white/95 px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-lg shadow-emerald-900/30 transition hover:-translate-y-0.5 hover:bg-white"
+            >
+              Upload an Image
+            </Link>
+            <span className="text-xs text-emerald-100/90 md:text-sm">
+              Administrators can upload new gallery items after signing in.
+            </span>
           </div>
         </div>
       </section>

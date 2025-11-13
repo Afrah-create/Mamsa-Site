@@ -191,13 +191,13 @@ export default async function CommunityAboutPage() {
                     key={alumnus.id}
                     className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                   >
-                    <div className="relative h-60 w-full overflow-hidden bg-emerald-50">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-emerald-50">
                       {alumnus.image_url ? (
                         <Image
                           src={alumnus.image_url}
                           alt={alumnus.full_name}
                           fill
-                          className="object-cover transition duration-500 group-hover:scale-105"
+                          className="object-contain p-4 transition duration-500 group-hover:scale-105"
                           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
                           unoptimized
                         />

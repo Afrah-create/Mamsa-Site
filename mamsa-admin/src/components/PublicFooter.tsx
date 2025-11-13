@@ -5,6 +5,7 @@ const footerLinks = [
   { label: 'Events', href: '/community/events' },
   { label: 'Leadership', href: '/community/leadership' },
   { label: 'Gallery', href: '/community/gallery' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 export default function PublicFooter() {
@@ -31,9 +32,6 @@ export default function PublicFooter() {
               {item.label}
             </Link>
           ))}
-          <Link href="/login" className="transition hover:text-white">
-            Admin Login
-          </Link>
         </nav>
       </div>
       <div className="bg-emerald-900/40 py-4 text-center text-xs text-emerald-200/80">
