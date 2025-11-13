@@ -49,6 +49,41 @@ export default function GalleryPage() {
   
   const supabase = createClient();
 
+  const resolveImageUrl = (url?: string | null) => {
+    if (!url) return '';
+
+    const trimmed = url.trim();
+    if (
+      trimmed.startsWith('http://') ||
+      trimmed.startsWith('https://') ||
+      trimmed.startsWith('data:') ||
+      trimmed.startsWith('blob:')
+    ) {
+      return trimmed;
+    }
+
+    const cleaned = trimmed.replace(/^public\//, '').replace(/^\/+/, '');
+    const [bucket, ...segments] = cleaned.split('/');
+
+    if (!bucket || segments.length === 0) {
+      return trimmed;
+    }
+
+    try {
+      const path = segments.join('/');
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+      return data?.publicUrl ?? trimmed;
+    } catch (error) {
+      console.error('Error resolving gallery image URL:', trimmed, error);
+      return trimmed;
+    }
+  };
+
+  const normalizeGalleryImage = (image: GalleryImage): GalleryImage => ({
+    ...image,
+    image_url: resolveImageUrl(image.image_url),
+  });
+
   // Static data for demonstration
   const staticGallery: GalleryImage[] = [
     {
@@ -215,13 +250,13 @@ export default function GalleryPage() {
               // Check if item already exists to prevent duplicates
               const exists = prev.some(item => item.id === payload.new!.id);
               if (!exists) {
-                return [payload.new as GalleryImage, ...prev];
+                return [normalizeGalleryImage(payload.new as GalleryImage), ...prev];
               }
               return prev;
             });
           } else if (payload.eventType === 'UPDATE' && payload.new) {
             setGallery(prev => prev.map(item => 
-              item.id === payload.new!.id ? payload.new as GalleryImage : item
+              item.id === payload.new!.id ? normalizeGalleryImage(payload.new as GalleryImage) : item
             ));
           } else if (payload.eventType === 'DELETE' && payload.old) {
             setGallery(prev => prev.filter(item => item.id !== payload.old!.id));
@@ -278,11 +313,11 @@ export default function GalleryPage() {
       }
 
       console.log('Successfully loaded gallery:', data);
-      setGallery(data || []);
+      setGallery((data || []).map(normalizeGalleryImage));
     } catch (error) {
       console.error('Failed to load gallery:', error);
       // Fallback to static data if database fails
-      setGallery(staticGallery);
+      setGallery(staticGallery.map(normalizeGalleryImage));
     } finally {
       setLoading(false);
     }
@@ -351,7 +386,7 @@ export default function GalleryPage() {
         console.log('Successfully updated image:', data);
         
         // Update local state
-        setGallery(prev => prev.map(image => image.id === editingItem.id ? data : image));
+        setGallery(prev => prev.map(image => image.id === editingItem.id ? normalizeGalleryImage(data as GalleryImage) : image));
       } else {
         // Create new image
         console.log('Creating new image...');
@@ -394,7 +429,7 @@ export default function GalleryPage() {
         console.log('Successfully created image:', data);
         
         // Update local state
-        setGallery(prev => [data, ...prev]);
+        setGallery(prev => [normalizeGalleryImage(data as GalleryImage), ...prev]);
       }
       
       console.log('Closing modal after successful operation');

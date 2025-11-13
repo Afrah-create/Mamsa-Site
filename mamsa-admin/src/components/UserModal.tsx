@@ -28,10 +28,15 @@ interface AdminUser {
   created_by?: string;
 }
 
+type SavePayload = {
+  user: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>;
+  password?: string;
+};
+
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (userData: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>) => void;
+  onSave: (payload: SavePayload) => Promise<{ success: boolean; error?: unknown } | void>;
   editingItem?: AdminUser | null;
 }
 
@@ -103,6 +108,26 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+
+    if (name === 'role') {
+      const nextRole = value as 'super_admin' | 'admin' | 'moderator';
+      setFormData((prev) => ({
+        ...prev,
+        role: nextRole,
+        permissions:
+          nextRole === 'super_admin'
+            ? {
+                news: true,
+                events: true,
+                leadership: true,
+                gallery: true,
+                users: true,
+                reports: true,
+              }
+            : prev.permissions,
+      }));
+      return;
+    }
     
     if (name.startsWith('permissions.')) {
       const permissionKey = name.split('.')[1];
@@ -137,8 +162,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate password for new users
+
     if (!editingItem && (!password || password !== confirmPassword)) {
       alert('Please enter matching passwords for new users');
       return;
@@ -147,12 +171,17 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
     setLoading(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onSave(formData);
-      onClose();
+      const result = await onSave({
+        user: formData,
+        password: editingItem ? undefined : password,
+      });
+
+      if (result?.success) {
+        onClose();
+      }
     } catch (error) {
       console.error('Failed to save user:', error);
+      alert(error instanceof Error ? error.message : 'Failed to save user. Please try again.');
     } finally {
       setLoading(false);
     }

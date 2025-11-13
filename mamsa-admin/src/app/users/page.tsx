@@ -317,7 +317,7 @@ export default function UsersPage() {
     setShowConfirm(true);
   };
 
-  const handleSaveUser = async (userData: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>) => {
+  const handleSaveUser = async ({ user: userData, password }: { user: Omit<AdminUser, 'id' | 'created_at' | 'user_id'>; password?: string }) => {
     try {
       console.log('Saving user:', userData);
       
@@ -336,7 +336,6 @@ export default function UsersPage() {
           position: userData.position,
           permissions: userData.permissions,
           status: userData.status,
-          last_login: userData.last_login,
           updated_at: new Date().toISOString()
         };
 
@@ -361,67 +360,49 @@ export default function UsersPage() {
 
         console.log('Successfully updated user:', data);
         
-        // Update local state
         setUsers(prev => prev.map(u => u.id === editingItem.id ? data : u));
       } else {
-        // Create new user
-        console.log('Creating new user...');
-        
-        const insertData = {
-          user_id: crypto.randomUUID(),
-          full_name: userData.full_name,
-          email: userData.email,
-          avatar_url: userData.avatar_url,
-          phone: userData.phone,
-          bio: userData.bio,
-          role: userData.role,
-          department: userData.department,
-          position: userData.position,
-          permissions: userData.permissions,
-          status: userData.status,
-          last_login: userData.last_login,
-          created_by: user?.id
-        };
-
-        const { data, error } = await supabase
-          .from('admin_users')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating user:', error);
-          alert(`Failed to create user: ${error.message}`);
-          return;
+        if (!password) {
+          alert('A password is required when creating a new user.');
+          return { success: false };
         }
 
-        if (!data) {
-          console.error('No data returned from create operation');
-          alert('Failed to create user: No data returned');
-          return;
+        console.log('Creating new user via API...');
+
+        const response = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user: userData,
+            password,
+            createdBy: user?.id ?? null,
+          }),
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          console.error('API error creating user:', payload);
+          alert(`Failed to create user: ${payload?.error ?? 'Unknown error'}`);
+          return { success: false, error: payload?.error };
         }
 
-        console.log('Successfully created user:', data);
-        
-        // Update local state
-        setUsers(prev => [data, ...prev]);
+        if (!payload?.data) {
+          alert('Failed to create user: invalid response');
+          return { success: false };
+        }
+
+        setUsers((prev) => [payload.data, ...prev]);
       }
       
-      console.log('Closing modal after successful operation');
-      setShowModal(false);
-      
-      // Return success indicator
       return { success: true };
     } catch (error) {
       console.error('Failed to save user:', error);
-      // Only show generic error if we haven't already shown a specific error
       if (error instanceof Error) {
         alert(`Failed to save user: ${error.message}`);
       } else {
         alert('Failed to save user. Please try again.');
       }
-      
-      // Return error indicator
       return { success: false, error };
     }
   };
