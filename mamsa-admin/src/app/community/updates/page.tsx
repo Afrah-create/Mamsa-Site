@@ -23,37 +23,40 @@ export default async function UpdatesPage() {
         </div>
       )}
 
-      <div className="mt-12 space-y-8">
-        {articles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
-            <p className="text-lg font-semibold text-gray-700">No updates yet</p>
-            <p className="mt-2 text-sm text-gray-500">
-              Published stories from the admin panel will appear here automatically.
-            </p>
-          </div>
-        ) : (
-          articles.map((article: NewsArticle) => (
-            <article key={article.id} className="rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+      {articles.length === 0 ? (
+        <div className="mt-12 rounded-2xl border border-dashed border-gray-200 p-10 text-center">
+          <p className="text-lg font-semibold text-gray-700">No updates yet</p>
+          <p className="mt-2 text-sm text-gray-500">
+            Published stories from the admin panel will appear here automatically.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-12 grid gap-8 md:grid-cols-2">
+          {articles.map((article: NewsArticle) => (
+            <article
+              key={article.id}
+              className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            >
               {article.featured_image && (
-                <Link href={`/community/updates/${article.id}`} className="block">
+                <Link href={`/community/updates/${article.id}`} className="relative block aspect-[4/3] overflow-hidden bg-gray-100">
                   <img
                     src={article.featured_image}
                     alt={article.title}
-                    className="h-60 w-full rounded-t-2xl object-cover transition duration-300 hover:opacity-90"
+                    className="absolute inset-0 h-full w-full object-cover transition duration-300 hover:scale-105"
                     loading="lazy"
                   />
                 </Link>
               )}
-              <div className="space-y-4 px-8 py-6">
+              <div className="flex flex-1 flex-col space-y-4 px-6 py-6 sm:px-8">
                 <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
                   {formatDate(article.published_at)}
                 </p>
-                <h2 className="text-2xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
                   <Link href={`/community/updates/${article.id}`} className="transition hover:text-emerald-700">
                     {article.title}
                   </Link>
                 </h2>
-                <p className="text-sm text-gray-600">
+                <p className="flex-1 text-sm text-gray-600">
                   {article.excerpt ||
                     article.content?.slice(0, 220) ||
                     'Details for this story will be available soon.'}
@@ -73,9 +76,9 @@ export default async function UpdatesPage() {
                 </div>
               </div>
             </article>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

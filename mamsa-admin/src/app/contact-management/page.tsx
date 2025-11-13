@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
-import MapLocationPicker from '@/components/MapLocationPicker';
 
 interface ContactMessage {
   id: number;
@@ -59,6 +58,9 @@ const statusDotStyles: Record<ContactMessage['status'], string> = {
   archived: 'bg-slate-400',
 };
 
+const DEFAULT_MAP_EMBED =
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.569055274308636!3d0.32938786404163964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
+
 const emptyContactSettings: ContactSettings = {
   id: 0,
   office_name: '',
@@ -67,13 +69,8 @@ const emptyContactSettings: ContactSettings = {
   phone: '',
   latitude: null,
   longitude: null,
-  map_embed_url: '',
+  map_embed_url: DEFAULT_MAP_EMBED,
   updated_at: new Date().toISOString(),
-};
-
-const buildEmbedUrl = (lat?: number | null, lng?: number | null) => {
-  if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-  return `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
 };
 
 export default function ContactManagementPage() {
@@ -200,7 +197,11 @@ export default function ContactManagementPage() {
       }
 
       if (data) {
-        setSettings(data);
+        setSettings({
+          ...emptyContactSettings,
+          ...data,
+          map_embed_url: data.map_embed_url?.trim() || DEFAULT_MAP_EMBED,
+        });
       } else {
         setSettings(emptyContactSettings);
       }
@@ -300,7 +301,7 @@ export default function ContactManagementPage() {
           phone: settings.phone || null,
           latitude: settings.latitude,
           longitude: settings.longitude,
-          map_embed_url: buildEmbedUrl(settings.latitude, settings.longitude),
+          map_embed_url: settings.map_embed_url?.trim() || DEFAULT_MAP_EMBED,
           updated_by: user?.id ?? null,
         };
 
@@ -760,19 +761,34 @@ export default function ContactManagementPage() {
               </div>
             </div>
 
-            <MapLocationPicker
-              latitude={settings.latitude}
-              longitude={settings.longitude}
-              onLocationChange={({ latitude: lat, longitude: lng, formattedAddress }) =>
-                setSettings((prev) => ({
-                  ...prev,
-                  latitude: lat,
-                  longitude: lng,
-                  address: formattedAddress ?? prev.address,
-                  map_embed_url: buildEmbedUrl(lat, lng) ?? prev.map_embed_url,
-                }))
-              }
-            />
+            <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
+              <label className="text-sm font-medium text-gray-700">Map embed URL</label>
+              <textarea
+                value={settings.map_embed_url ?? ''}
+                onChange={(event) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    map_embed_url: event.target.value,
+                  }))
+                }
+                placeholder="Paste the Google Maps embed URL here"
+                className="mt-2 h-32 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+              />
+              <p className="mt-1 text-xs text-gray-600">
+                Use Google Maps → Share → Embed a map → Copy HTML, then extract the <code>src</code> URL. Leaving this blank will
+                default to Makerere University.
+              </p>
+              <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <iframe
+                  title="Contact map preview"
+                  src={(settings.map_embed_url && settings.map_embed_url.trim()) || DEFAULT_MAP_EMBED}
+                  loading="lazy"
+                  className="h-48 w-full border-0"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              </div>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               <div>
@@ -782,15 +798,10 @@ export default function ContactManagementPage() {
                   step="any"
                   value={settings.latitude ?? ''}
                   onChange={(event) =>
-                    setSettings((prev) => {
-                      const value = event.target.value === '' ? null : Number(event.target.value);
-                      return {
-                        ...prev,
-                        latitude: value,
-                        map_embed_url:
-                          value != null && prev.longitude != null ? buildEmbedUrl(value, prev.longitude) : null,
-                      };
-                    })
+                    setSettings((prev) => ({
+                      ...prev,
+                      latitude: event.target.value === '' ? null : Number(event.target.value),
+                    }))
                   }
                   placeholder="0"
                   className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
@@ -803,15 +814,10 @@ export default function ContactManagementPage() {
                   step="any"
                   value={settings.longitude ?? ''}
                   onChange={(event) =>
-                    setSettings((prev) => {
-                      const value = event.target.value === '' ? null : Number(event.target.value);
-                      return {
-                        ...prev,
-                        longitude: value,
-                        map_embed_url:
-                          value != null && prev.latitude != null ? buildEmbedUrl(prev.latitude, value) : null,
-                      };
-                    })
+                    setSettings((prev) => ({
+                      ...prev,
+                      longitude: event.target.value === '' ? null : Number(event.target.value),
+                    }))
                   }
                   placeholder="0"
                   className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"

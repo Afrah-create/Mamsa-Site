@@ -31,6 +31,9 @@ const DEFAULT_FORM: ContactFormState = {
   message: '',
 };
 
+const DEFAULT_MAP_EMBED =
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.569055274308636!3d0.32938786404163964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
+
 export default function ContactPage() {
   const [settings, setSettings] = useState<ContactSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -118,7 +121,7 @@ export default function ContactPage() {
       const { latitude, longitude } = settings;
       return `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY ?? ''}&q=${latitude},${longitude}`;
     }
-    return 'https://www.google.com/maps/embed?pb=';
+    return DEFAULT_MAP_EMBED;
   }, [settings]);
 
   return (
