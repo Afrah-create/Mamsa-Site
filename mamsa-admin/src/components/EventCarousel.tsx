@@ -45,7 +45,7 @@ export default function EventCarousel({ events }: Props) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-lg"
+      className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white/60 shadow-lg"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -53,78 +53,88 @@ export default function EventCarousel({ events }: Props) {
         className="flex transition-transform duration-700 ease-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {slides.map((event) => (
-          <article key={event.id} className="flex w-full flex-none flex-col md:flex-row">
-            <div className="relative h-72 w-full overflow-hidden md:h-[420px] md:w-1/2">
-              {event.featured_image ? (
-                <Image
-                  src={event.featured_image}
-                  alt={event.title}
-                  fill
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-emerald-50 text-emerald-500">
-                  <span className="text-sm font-semibold uppercase tracking-wide">MAMSA Event</span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/10" />
-            </div>
+        {slides.map((event) => {
+          const hasDetails = Boolean(event.location || event.time || event.organizer);
 
-            <div className="flex w-full flex-col justify-between gap-6 p-8 md:w-1/2 md:p-10">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                  <span>{event.status || 'Upcoming'}</span>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-3xl font-semibold text-gray-900">{event.title}</h3>
-                  {event.description && (
-                    <p className="text-sm text-gray-600 sm:text-base">{event.description}</p>
+          return (
+            <article key={event.id} className="w-full flex-none">
+              <div className="relative h-[320px] w-full overflow-hidden sm:h-[360px] lg:h-[420px]">
+                {event.featured_image ? (
+                  <Image
+                    src={event.featured_image}
+                    alt={event.title}
+                    fill
+                    sizes="(min-width: 1024px) 60vw, 100vw"
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white">
+                    <span className="text-sm font-semibold uppercase tracking-wide">MAMSA Event</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/10" />
+                <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-8">
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-wide text-white/80">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-white">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                      {event.status || 'Upcoming'}
+                    </span>
+                    <span>{formatDate(event.date)}</span>
+                  </div>
+
+                  <div className="space-y-4 text-white drop-shadow">
+                    <h3 className="text-balance text-2xl font-semibold sm:text-3xl lg:text-[2.1rem]">{event.title}</h3>
+                    {event.description && (
+                      <p className="max-w-3xl text-sm leading-relaxed text-white/90 sm:text-base">
+                        {event.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {hasDetails && (
+                    <div className="flex flex-wrap gap-3 text-xs text-white/85 sm:text-sm">
+                      {event.location && (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8 14s5-3.33 5-7A5 5 0 003 7c0 3.67 5 7 5 7z"
+                            />
+                            <circle cx={8} cy={7} r={1.5} />
+                          </svg>
+                          {event.location}
+                        </span>
+                      )}
+                      {event.time && (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                            <circle cx={8} cy={8} r={5.25} />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 5.25V8l2.25 1.5" />
+                          </svg>
+                          {formatTime(event.time)}
+                        </span>
+                      )}
+                      {event.organizer && (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1">
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8 8a3 3 0 100-6 3 3 0 000 6zM2.5 13.25a5.5 5.5 0 0111 0"
+                            />
+                          </svg>
+                          {event.organizer}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
-              <dl className="grid gap-3 text-sm text-gray-700 sm:grid-cols-2">
-                <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </span>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Date</dt>
-                    <dd className="font-medium text-gray-900">{formatDate(event.date)}</dd>
-                  </div>
-                </div>
-                {(event.time || event.location) && (
-                  <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2a8 8 0 018 8c0 5-8 12-8 12s-8-7-8-12a8 8 0 018-8z" />
-                        <circle cx={12} cy={10} r={3} />
-                      </svg>
-                    </span>
-                    <div>
-                      {event.location && (
-                        <>
-                          <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Location</dt>
-                          <dd className="font-medium text-gray-900">{event.location}</dd>
-                        </>
-                      )}
-                      {event.time && (
-                        <>
-                          <dt className="mt-1 text-xs font-semibold uppercase tracking-wide text-gray-500">Time</dt>
-                          <dd className="font-medium text-gray-900">{formatTime(event.time)}</dd>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       {slides.length > 1 && (
@@ -136,18 +146,11 @@ export default function EventCarousel({ events }: Props) {
                 type="button"
                 onClick={() => goToSlide(index)}
                 className={`h-2.5 rounded-full transition-all duration-300 ${
-                  currentIndex === index ? 'w-8 bg-emerald-500' : 'w-2.5 bg-emerald-200 hover:bg-emerald-300'
+                  currentIndex === index ? 'w-8 bg-white' : 'w-2.5 bg-white/50 hover:bg-white/80'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
-          </div>
-
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
-            <div className="h-32 w-24 bg-gradient-to-r from-white to-transparent" />
-          </div>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-            <div className="h-32 w-24 bg-gradient-to-l from-white to-transparent" />
           </div>
         </>
       )}

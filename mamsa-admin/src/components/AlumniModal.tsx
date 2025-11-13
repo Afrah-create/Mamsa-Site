@@ -68,11 +68,15 @@ type Props = {
 export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Props) {
   const [form, setForm] = useState<AlumniFormValues>(defaultValues);
   const [saving, setSaving] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setForm(defaultValues);
       setSaving(false);
+      setImagePreview('');
+      setImageUploadError(null);
       return;
     }
 
@@ -94,10 +98,26 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
         status: editingItem.status ?? 'draft',
         order_position: editingItem.order_position ?? 0,
       });
+      setImagePreview(editingItem.image_url ?? '');
+      setImageUploadError(null);
     } else {
       setForm(defaultValues);
+      setImagePreview('');
+      setImageUploadError(null);
     }
   }, [editingItem, isOpen]);
+
+  useEffect(() => {
+    if (!form.image_url) {
+      setImagePreview('');
+      return;
+    }
+
+    const value = form.image_url.trim();
+    if (value.startsWith('data:image') || value.startsWith('http')) {
+      setImagePreview(value);
+    }
+  }, [form.image_url]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -114,6 +134,45 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
       ...prev,
       [name]: nextValue,
     }));
+  };
+
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setImageUploadError('Please choose a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError('Image must be 5MB or smaller.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setForm((prev) => ({
+        ...prev,
+        image_url: base64,
+      }));
+      setImagePreview(base64);
+      setImageUploadError(null);
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const clearUploadedImage = () => {
+    setForm((prev) => ({
+      ...prev,
+      image_url: '',
+    }));
+    setImagePreview('');
+    setImageUploadError(null);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -262,19 +321,57 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
             <div className="space-y-5">
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <h3 className="text-sm font-semibold text-gray-800">Profile Image</h3>
-                <label className="mt-3 block text-sm text-gray-600">
-                  Image URL
-                  <input
-                    name="image_url"
-                    value={form.image_url}
-                    onChange={handleChange}
-                    placeholder="https://example.com/photo.jpg"
-                    className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                  />
-                </label>
-                <p className="mt-2 text-xs text-gray-500">
-                  Provide a hosted image link. (Upload support coming soon.)
-                </p>
+                <div className="mt-3 space-y-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Upload from device</p>
+                    <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-emerald-200 bg-white px-4 py-6 text-center text-sm text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50/60">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="hidden"
+                      />
+                      <svg className="mb-2 h-8 w-8 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 12l-3-3m3 3l3-3M6 20h12" />
+                      </svg>
+                      <span className="font-semibold">Click to upload</span>
+                      <span className="mt-1 text-xs text-emerald-700/70">JPG or PNG, up to 5MB</span>
+                    </label>
+                  </div>
+
+                  {imagePreview ? (
+                    <div className="overflow-hidden rounded-xl border border-emerald-100 bg-white">
+                      <img src={imagePreview} alt="Uploaded preview" className="h-48 w-full object-cover" />
+                      <div className="flex items-center justify-between px-4 py-2">
+                        <span className="text-xs text-gray-500">Preview</span>
+                        <button
+                          type="button"
+                          onClick={clearUploadedImage}
+                          className="text-xs font-semibold text-emerald-600 transition hover:text-emerald-700"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-gray-200 bg-white px-4 py-6 text-center text-xs text-gray-500">
+                      No image selected yet.
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Or use hosted image URL</p>
+                    <input
+                      name="image_url"
+                      value={form.image_url}
+                      onChange={handleChange}
+                      placeholder="https://example.com/photo.jpg"
+                      className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    />
+                  </div>
+
+                  {imageUploadError && <p className="text-xs text-red-600">{imageUploadError}</p>}
+                </div>
               </div>
 
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">

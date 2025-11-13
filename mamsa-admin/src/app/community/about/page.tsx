@@ -172,45 +172,6 @@ export default async function CommunityAboutPage() {
           </div>
         </section>
 
-      <section className="bg-gray-50">
-          <div className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:py-20">
-            <div className="flex flex-col gap-4 text-center md:text-left">
-              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Why We Exist</p>
-              <h2 className="text-3xl font-bold text-gray-900 sm:text-[2.2rem]">Mission, Vision & Strategic Objectives</h2>
-              <p className="max-w-3xl text-sm text-gray-600 sm:text-base">
-                These statements capture our north star. Every program, outreach, and leadership initiative we run is designed to
-                advance these commitments to our members and the wider community.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-6 lg:grid-cols-3">
-              {highlightSections.map((key) => (
-                <article
-                  key={key}
-                  className="flex h-full flex-col justify-between rounded-3xl border border-gray-100 bg-white p-7 shadow-sm"
-                >
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                      <span>{SECTION_LABELS[key]}</span>
-                    </div>
-                    {sectionParagraphs[key].length > 0 ? (
-                      <div className="space-y-3 text-sm leading-relaxed text-gray-700">
-                        {sectionParagraphs[key].map((paragraph) => (
-                          <p key={paragraph.id}>{paragraph.text}</p>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm leading-relaxed text-gray-600">
-                        We&apos;re preparing an updated statement for this section. Stay tuned!
-                      </p>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
       <section className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:py-20">
           <div className="flex flex-col gap-4 text-center md:text-left">
             <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Community Champions</p>
