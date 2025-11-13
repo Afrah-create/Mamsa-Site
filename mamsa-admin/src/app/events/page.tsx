@@ -46,6 +46,68 @@ export default function EventsPage() {
   
   const supabase = createClient();
 
+  const formatTimeForDisplay = (rawTime?: string | null) => {
+    if (!rawTime) return '';
+    const trimmed = rawTime.trim();
+    if (/^\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+    if (/^\d{2}:\d{2}:\d{2}/.test(trimmed)) return trimmed.slice(0, 5);
+    const parsed = new Date(`1970-01-01T${trimmed}`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().substring(11, 16);
+    }
+    return trimmed;
+  };
+
+  const formatTimeForDb = (rawTime?: string | null) => {
+    if (!rawTime) return null;
+    const trimmed = rawTime.trim();
+    if (/^\d{2}:\d{2}$/.test(trimmed)) return `${trimmed}:00`;
+    if (/^\d{2}:\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+    const parsed = new Date(`1970-01-01T${trimmed}`);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().substring(11, 19);
+    }
+    return trimmed;
+  };
+
+  const formatDateTimeForDisplay = (raw?: string | null) => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    const date = new Date(trimmed);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 16);
+    }
+    // If already close to desired format (YYYY-MM-DDTHH:mm)
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmed)) {
+      return trimmed.slice(0, 16);
+    }
+    return trimmed;
+  };
+
+  const formatDateTimeForDb = (raw?: string | null) => {
+    if (!raw) return null;
+    const trimmed = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed)) {
+      return `${trimmed}:00`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const date = new Date(trimmed);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+    return trimmed;
+  };
+
+  const normalizeEvent = (event: Event): Event => ({
+    ...event,
+    time: formatTimeForDisplay(event.time),
+    registration_deadline: event.registration_deadline
+      ? formatDateTimeForDisplay(event.registration_deadline)
+      : event.registration_deadline
+  });
+
   // Static data for demonstration
   const staticEvents: Event[] = [
     {
@@ -163,13 +225,13 @@ export default function EventsPage() {
               // Check if item already exists to prevent duplicates
               const exists = prev.some(item => item.id === payload.new!.id);
               if (!exists) {
-                return [payload.new as Event, ...prev];
+                return [normalizeEvent(payload.new as Event), ...prev];
               }
               return prev;
             });
           } else if (payload.eventType === 'UPDATE' && payload.new) {
             setEvents(prev => prev.map(item => 
-              item.id === payload.new!.id ? payload.new as Event : item
+              item.id === payload.new!.id ? normalizeEvent(payload.new as Event) : item
             ));
           } else if (payload.eventType === 'DELETE' && payload.old) {
             setEvents(prev => prev.filter(item => item.id !== payload.old!.id));
@@ -225,13 +287,13 @@ export default function EventsPage() {
         
         // If table doesn't exist or has issues, fall back to static data
         console.log('Falling back to static data...');
-        setEvents(staticEvents);
+        setEvents(staticEvents.map(normalizeEvent));
         return;
       }
 
       if (data && data.length > 0) {
         console.log('Loaded events from database:', data.length, 'events');
-        setEvents(data);
+        setEvents(data.map(normalizeEvent));
       } else {
         console.log('No events found in database');
         setEvents([]);
@@ -272,13 +334,13 @@ export default function EventsPage() {
           title: eventData.title,
           description: eventData.description,
           date: eventData.date,
-          time: eventData.time,
+          time: formatTimeForDb(eventData.time),
           location: eventData.location,
           status: eventData.status,
           featured_image: eventData.featured_image,
           capacity: eventData.capacity,
           registration_required: eventData.registration_required,
-          registration_deadline: eventData.registration_deadline,
+          registration_deadline: formatDateTimeForDb(eventData.registration_deadline),
           organizer: eventData.organizer,
           contact_email: eventData.contact_email,
           contact_phone: eventData.contact_phone,
@@ -308,7 +370,7 @@ export default function EventsPage() {
         console.log('Successfully updated event:', data);
         
         // Update local state
-        setEvents(prev => prev.map(event => event.id === editingItem.id ? data : event));
+        setEvents(prev => prev.map(event => event.id === editingItem.id ? normalizeEvent(data as Event) : event));
       } else {
         // Create new event
         console.log('Creating new event...');
@@ -317,13 +379,13 @@ export default function EventsPage() {
           title: eventData.title,
           description: eventData.description,
           date: eventData.date,
-          time: eventData.time,
+          time: formatTimeForDb(eventData.time),
           location: eventData.location,
           status: eventData.status,
           featured_image: eventData.featured_image,
           capacity: eventData.capacity,
           registration_required: eventData.registration_required,
-          registration_deadline: eventData.registration_deadline,
+          registration_deadline: formatDateTimeForDb(eventData.registration_deadline),
           organizer: eventData.organizer,
           contact_email: eventData.contact_email,
           contact_phone: eventData.contact_phone,
@@ -352,7 +414,7 @@ export default function EventsPage() {
         console.log('Successfully created event:', data);
         
         // Update local state
-        setEvents(prev => [data, ...prev]);
+        setEvents(prev => [normalizeEvent(data as Event), ...prev]);
       }
       
       console.log('Closing modal after successful operation');

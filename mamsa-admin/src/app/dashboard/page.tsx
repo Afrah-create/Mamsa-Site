@@ -372,129 +372,108 @@ export default function DashboardPage() {
     <AdminLayout user={user}>
       <div className="w-full space-y-6">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold">Welcome back, {user?.email?.split('@')[0] || 'Admin'}!</h1>
-              <p className="text-green-100 mt-1">Here&apos;s what&apos;s happening with MAMSA today.</p>
+        <div className="bg-white border border-emerald-100 rounded-2xl shadow-sm p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="hidden lg:flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c1.656 0 3-1.343 3-3S13.656 2 12 2 9 3.343 9 5s1.344 3 3 3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.2em]">Admin Overview</p>
+                <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-gray-900">Welcome back, {user?.email?.split('@')[0] || 'Admin'}</h1>
+                <p className="mt-2 text-sm text-gray-600">Here is a summary of the latest activity across the platform.</p>
+              </div>
             </div>
-            <div className="text-left sm:text-right">
-              <p className="text-sm text-green-200">Last login</p>
-              <p className="text-lg font-semibold">{new Date().toLocaleDateString()}</p>
+            <div className="inline-flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-emerald-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-inner">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-widest text-emerald-500">Last login</p>
+                <p className="text-sm font-semibold text-emerald-700">{new Date().toLocaleDateString()}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">News Articles</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{stats.news || 0}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Events</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{stats.events || 0}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Leadership</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{stats.leadership || 0}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Gallery</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{stats.gallery || 0}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{(stats.totalUsers || 0).toLocaleString()}</dd>
-                  </dl>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6 2xl:grid-cols-6">
+          {[
+            {
+              label: 'News Articles',
+              value: stats.news || 0,
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              )
+            },
+            {
+              label: 'Events',
+              value: stats.events || 0,
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              )
+            },
+            {
+              label: 'Leadership',
+              value: stats.leadership || 0,
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              )
+            },
+            {
+              label: 'Gallery',
+              value: stats.gallery || 0,
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              )
+            },
+            {
+              label: 'Total Users',
+              value: (stats.totalUsers || 0).toLocaleString(),
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              )
+            },
+            {
+              label: 'Page Views',
+              value: (stats.totalViews || 0).toLocaleString(),
+              iconColor: 'text-emerald-600',
+              iconPath: (
+                <>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </>
+              )
+            }
+          ].map((card) => (
+            <div key={card.label} className="bg-white border border-gray-100 rounded-xl shadow-sm flex flex-col h-full transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="p-4 lg:p-5 flex-1">
+                <div className="flex items-center gap-4">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 ${card.iconColor}`}>
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      {card.iconPath}
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <dl>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</dt>
+                      <dd className="mt-2 text-2xl font-semibold text-gray-900">{card.value}</dd>
+                    </dl>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-4 lg:p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </div>
-                <div className="ml-3 lg:ml-4 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Page Views</dt>
-                    <dd className="text-xl lg:text-2xl font-bold text-gray-900">{(stats.totalViews || 0).toLocaleString()}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Main Content Grid */}
@@ -506,23 +485,33 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50">
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                      activity.type === 'news' ? 'bg-blue-100' :
-                      activity.type === 'event' ? 'bg-green-100' :
-                      activity.type === 'gallery' ? 'bg-yellow-100' : 'bg-purple-100'
-                    }`}>
-                      <span className={`text-sm font-medium ${
-                        activity.type === 'news' ? 'text-blue-600' :
-                        activity.type === 'event' ? 'text-green-600' :
-                        activity.type === 'gallery' ? 'text-yellow-600' : 'text-purple-600'
-                      }`}>
-                        {activity.type === 'news' ? '📰' : activity.type === 'event' ? '📅' : activity.type === 'gallery' ? '🖼️' : '👥'}
-                      </span>
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        {activity.type === 'news' && (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        )}
+                        {activity.type === 'event' && (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        )}
+                        {activity.type === 'gallery' && (
+                          <>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 16l1.586-1.586a2 2 0 012.828 0L20 14" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </>
+                        )}
+                        {activity.type === 'leadership' && (
+                          <>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </>
+                        )}
+                      </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                      <p className="text-sm font-semibold text-gray-900">{activity.action}</p>
                       <p className="text-sm text-gray-600">{activity.title}</p>
-                      <p className="text-xs text-gray-500">{activity.time} by {activity.user}</p>
+                      <p className="text-xs text-gray-400">{activity.time} by {activity.user}</p>
                     </div>
                   </div>
                 ))}
@@ -534,13 +523,22 @@ export default function DashboardPage() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Upcoming Events</h3>
-              <div className="space-y-4">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="border-l-4 border-green-500 pl-4">
-                    <h4 className="text-sm font-medium text-gray-900">{event.title}</h4>
-                    <p className="text-sm text-gray-600">{event.location}</p>
-                    <p className="text-xs text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
-                    <p className="text-xs text-green-600 font-medium">{event.attendees} attendees</p>
+              <div className="space-y-4 divide-y divide-gray-100">
+                {upcomingEvents.map((event, index) => (
+                  <div key={event.id} className={`pt-${index === 0 ? '0' : '4'}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-900">{event.title}</h4>
+                        <p className="mt-1 text-sm text-gray-600">{event.location}</p>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-emerald-600">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-xs font-medium">{new Date(event.date).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs font-medium text-emerald-600">{event.attendees} registered attendees</p>
                   </div>
                 ))}
               </div>
@@ -552,19 +550,63 @@ export default function DashboardPage() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              <Link href="/news" className="bg-blue-600 hover:bg-blue-700 text-white px-4 lg:px-6 py-3 rounded-lg text-sm font-medium text-center transition-colors">
-                📰 Manage News
-              </Link>
-              <Link href="/events" className="bg-green-600 hover:bg-green-700 text-white px-4 lg:px-6 py-3 rounded-lg text-sm font-medium text-center transition-colors">
-                📅 Manage Events
-              </Link>
-              <Link href="/leadership" className="bg-purple-600 hover:bg-purple-700 text-white px-4 lg:px-6 py-3 rounded-lg text-sm font-medium text-center transition-colors">
-                👥 Manage Leadership
-              </Link>
-              <Link href="/gallery" className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 lg:px-6 py-3 rounded-lg text-sm font-medium text-center transition-colors">
-                🖼️ Manage Gallery
-              </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
+              {[
+                {
+                  href: '/news',
+                  label: 'Manage News',
+                  bg: 'bg-emerald-600 hover:bg-emerald-700',
+                  iconPaths: (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </>
+                  )
+                },
+                {
+                  href: '/events',
+                  label: 'Manage Events',
+                  bg: 'bg-emerald-600 hover:bg-emerald-700',
+                  iconPaths: (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </>
+                  )
+                },
+                {
+                  href: '/leadership',
+                  label: 'Manage Leadership',
+                  bg: 'bg-emerald-600 hover:bg-emerald-700',
+                  iconPaths: (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </>
+                  )
+                },
+                {
+                  href: '/gallery',
+                  label: 'Manage Gallery',
+                  bg: 'bg-emerald-600 hover:bg-emerald-700',
+                  iconPaths: (
+                    <>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </>
+                  )
+                }
+              ].map((action) => (
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className={`${action.bg} text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-3`}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      {action.iconPaths}
+                    </svg>
+                  </span>
+                  <span>{action.label}</span>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
