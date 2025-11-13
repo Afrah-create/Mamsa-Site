@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { createClient, supabaseUrl } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
 import GalleryModal from '@/components/GalleryModal';
@@ -62,21 +62,45 @@ export default function GalleryPage() {
       return trimmed;
     }
 
-    const cleaned = trimmed.replace(/^public\//, '').replace(/^\/+/, '');
+    const normalized = trimmed.replace(/\\/g, '/');
+
+    if (normalized.startsWith('/')) {
+      return normalized;
+    }
+
+    if (normalized.startsWith('public/')) {
+      return `/${normalized.replace(/^public\//, '')}`;
+    }
+
+    const staticPrefixes = ['images/', 'img/', 'uploads/', 'assets/'];
+    if (staticPrefixes.some((prefix) => normalized.startsWith(prefix))) {
+      return `/${normalized}`;
+    }
+
+    const cleaned = normalized.replace(/^\/+/, '');
     const [bucket, ...segments] = cleaned.split('/');
 
     if (!bucket || segments.length === 0) {
       return trimmed;
     }
 
+    const path = segments.join('/');
+
     try {
-      const path = segments.join('/');
       const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      return data?.publicUrl ?? trimmed;
+      if (data?.publicUrl) {
+        return data.publicUrl;
+      }
     } catch (error) {
-      console.error('Error resolving gallery image URL:', trimmed, error);
-      return trimmed;
+      console.warn('Falling back to manual gallery URL resolution:', trimmed, error);
     }
+
+    if (supabaseUrl) {
+      const normalizedBase = supabaseUrl.replace(/\/+$/, '');
+      return `${normalizedBase}/storage/v1/object/public/${bucket}/${path}`;
+    }
+
+    return trimmed;
   };
 
   const normalizeGalleryImage = (image: GalleryImage): GalleryImage => ({

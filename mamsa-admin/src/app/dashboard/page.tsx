@@ -370,7 +370,7 @@ export default function DashboardPage() {
 
   return (
     <AdminLayout user={user}>
-      <div className="w-full space-y-6">
+      <div className="w-full max-w-7xl mx-auto space-y-6 lg:space-y-8">
         {/* Welcome Section */}
         <div className="bg-white border border-emerald-100 rounded-2xl shadow-sm p-6 lg:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -402,7 +402,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6 2xl:grid-cols-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 xl:gap-6">
           {[
             {
               label: 'News Articles',
@@ -520,12 +520,15 @@ export default function DashboardPage() {
           </div>
 
           {/* Upcoming Events */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white shadow rounded-lg border border-gray-100">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Upcoming Events</h3>
               <div className="space-y-4 divide-y divide-gray-100">
                 {upcomingEvents.map((event, index) => (
-                  <div key={event.id} className={`pt-${index === 0 ? '0' : '4'}`}>
+                  <div
+                    key={event.id}
+                    className={index === 0 ? '' : 'pt-4'}
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900">{event.title}</h4>
@@ -547,7 +550,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-white shadow rounded-lg border border-gray-100">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 xl:gap-4">
@@ -599,7 +602,7 @@ export default function DashboardPage() {
                   href={action.href}
                   className={`${action.bg} text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-3`}
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 shadow-sm">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       {action.iconPaths}
                     </svg>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,20 +24,98 @@ interface ProfileData {
   created_at: string;
 }
 
+type NotificationType = 'contact';
+
+interface NotificationItem {
+  id: number;
+  recordId: number;
+  title: string;
+  subtitle?: string;
+  time: string;
+  unread: boolean;
+  type: NotificationType;
+}
+
+interface ContactMessageRow {
+  id: number;
+  name: string;
+  subject: string | null;
+  status: 'new' | 'in_progress' | 'resolved' | 'archived';
+  created_at: string;
+  updated_at: string | null;
+}
+
+const formatRelativeTime = (input?: string | null) => {
+  if (!input) return '';
+  const value = new Date(input);
+  if (Number.isNaN(value.getTime())) return '';
+
+  const now = new Date();
+  const diffMs = now.getTime() - value.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSeconds < 60) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  if (diffHours < 24) return `${diffHours} h ago`;
+  if (diffDays < 7) return `${diffDays} d ago`;
+
+  return value.toLocaleDateString();
+};
+
 export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [currentYear, setCurrentYear] = useState(2025);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New article published', time: '2 min ago', unread: true },
-    { id: 2, title: 'Event registration deadline', time: '1 hour ago', unread: true },
-    { id: 3, title: 'System maintenance scheduled', time: '3 hours ago', unread: false },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => notification.unread).length,
+    [notifications]
+  );
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoadingNotifications(true);
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .select('id, name, subject, status, created_at, updated_at')
+        .order('created_at', { ascending: false })
+        .limit(15);
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        return;
+      }
+
+      const mapped: NotificationItem[] = (data ?? []).map((message: ContactMessageRow) => ({
+        id: message.id,
+        recordId: message.id,
+        title:
+          message.status === 'new'
+            ? `New message from ${message.name}`
+            : `Message from ${message.name}`,
+        subtitle: message.subject ?? '',
+        time: formatRelativeTime(message.updated_at ?? message.created_at),
+        unread: message.status === 'new',
+        type: 'contact',
+      }));
+
+      setNotifications(mapped);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, [supabase]);
 
   const navigation = [
     { 
@@ -82,6 +160,15 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      )
+    },
+    {
+      name: 'Contact Inbox',
+      href: '/contact-management',
+      icon: (
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V8a2 2 0 00-2-2H3a2 2 0 00-2 2v6a2 2 0 002 2z" />
         </svg>
       )
     },
@@ -177,6 +264,34 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     loadProfile();
   }, [loadProfile]);
 
+  useEffect(() => {
+    if (!user) return;
+    loadNotifications();
+  }, [user, loadNotifications]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('contact_notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contact_messages',
+        },
+        () => {
+          loadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase, loadNotifications]);
+
   const handleLogout = async () => {
     try {
       localStorage.removeItem('admin_user');
@@ -193,23 +308,42 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     }
   };
 
-  const unreadCount = notifications.filter(n => n.unread).length;
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // Implement search functionality
     console.log('Searching for:', searchQuery);
   };
 
-  const markNotificationAsRead = (id: number) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === id 
-          ? { ...notification, unread: false }
-          : notification
-      )
-    );
-  };
+  const markNotificationAsRead = useCallback(
+    async (id: number) => {
+      const notification = notifications.find((item) => item.id === id);
+      if (!notification) return;
+
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, unread: false } : item
+        )
+      );
+
+      if (notification.type === 'contact' && notification.unread) {
+        try {
+          const { error } = await supabase
+            .from('contact_messages')
+            .update({ status: 'in_progress' })
+            .eq('id', notification.recordId);
+
+          if (error) {
+            console.error('Failed to update contact message status from notification:', error);
+          }
+        } catch (error) {
+          console.error('Unexpected notification read error:', error);
+        } finally {
+          loadNotifications();
+        }
+      }
+    },
+    [notifications, supabase, loadNotifications]
+  );
 
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
@@ -382,7 +516,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center">
                       {unreadCount}
                     </span>
                   )}
@@ -395,37 +529,59 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
                         {unreadCount > 0 && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
                             {unreadCount} new
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          onClick={() => markNotificationAsRead(notification.id)}
-                          className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
-                            notification.unread ? 'bg-blue-50' : ''
-                          }`}
-                        >
-                          <div className="flex items-start space-x-2 sm:space-x-3">
-                            <div className={`h-2 w-2 rounded-full mt-2 flex-shrink-0 ${
-                              notification.unread ? 'bg-blue-500' : 'bg-gray-300'
-                            }`}></div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 leading-tight">{notification.title}</p>
-                              <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                      {loadingNotifications ? (
+                        <div className="p-4 text-sm text-gray-500">Loading notifications…</div>
+                      ) : notifications.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-500 text-center">No notifications yet.</div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            onClick={() => markNotificationAsRead(notification.id)}
+                            className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
+                              notification.unread ? 'bg-emerald-50' : ''
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`h-2 w-2 rounded-full mt-2 flex-shrink-0 ${
+                                notification.unread ? 'bg-emerald-500' : 'bg-gray-300'
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 leading-tight">
+                                  {notification.title}
+                                </p>
+                                {notification.subtitle && (
+                                  <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                                    {notification.subtitle}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-xs text-gray-400 whitespace-nowrap">
+                                {notification.time}
+                              </span>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                     <div className="p-3 sm:p-4 border-t border-gray-200">
-                      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors duration-150">
-                        View all notifications
-                      </button>
+                      <Link
+                        href="/contact-management"
+                        className="inline-flex items-center text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors duration-150"
+                        onClick={() => setShowNotifications(false)}
+                      >
+                        View contact inbox
+                        <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
                     </div>
                   </div>
                 )}
