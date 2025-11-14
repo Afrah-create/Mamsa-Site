@@ -70,18 +70,29 @@ export default async function CommunityAboutPage() {
 
   return (
     <>
-      <header className="border-b border-emerald-100 bg-emerald-50/60 pb-12 pt-8">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 sm:px-10 lg:flex-row lg:items-center lg:gap-16">
-          <div className="space-y-6 text-center lg:text-left">
-            <p className="inline-flex items-center justify-center rounded-full bg-white px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600 shadow-sm sm:text-sm">
+      <header className="relative overflow-hidden border-b border-emerald-100 pb-12 pt-8 -mt-16">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/About.jpg"
+            alt="MAMSA Community"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
+        </div>
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 sm:px-10 lg:flex-row lg:items-center lg:gap-16">
+          <div className="space-y-6 text-center lg:text-left text-white">
+            <p className="inline-flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm sm:text-sm">
               About MAMSA
             </p>
-            <h1 className="text-pretty text-3xl font-semibold text-emerald-900 sm:text-[2.6rem]">
+            <h1 className="text-pretty text-3xl font-semibold text-white drop-shadow-lg sm:text-[2.6rem]">
               Our story, purpose, and people.
             </h1>
-            <p className="mx-auto max-w-2xl text-sm text-emerald-800/80 sm:text-base lg:mx-0 lg:text-lg">
-              From student leaders to alumni champions, MAMSA stands for collaboration, service, and academic excellence. Discover
-              how our mission and values have grown with every generation.
+            <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base lg:mx-0 lg:text-lg drop-shadow-md">
+              From student leaders to alumni champions, MAMSA unites students from the Madi region in West Nile studying at Makerere University. We stand for collaboration, service, and academic excellence. Discover how our mission and values have grown with every generation.
             </p>
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
               <Link
@@ -92,7 +103,7 @@ export default async function CommunityAboutPage() {
               </Link>
               <Link
                 href="/community/events"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 px-6 py-2.5 text-sm font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:bg-emerald-100 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/20 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
               >
                 Join an Event
               </Link>
@@ -101,7 +112,7 @@ export default async function CommunityAboutPage() {
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl">
             <div className="relative h-64 sm:h-72">
               <Image
-                src="/images/ivory tower2.jpeg"
+                src="/images/About.jpg"
                 alt="Makerere Ivory Tower"
                 fill
                 className="object-cover"
@@ -109,9 +120,9 @@ export default async function CommunityAboutPage() {
                 priority
               />
               <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/90 p-4 text-sm text-emerald-800 shadow-lg backdrop-blur">
-                <p className="font-semibold">Celebrating future medical leaders since 1990</p>
+                <p className="font-semibold">Celebrating Madi students at Makerere</p>
                 <p className="mt-1 text-xs text-emerald-700/70">
-                  MAMSA connects students, mentors, and alumni to shape the future of healthcare in Uganda and beyond.
+                  MAMSA connects students from the Madi region in West Nile, mentors, and alumni to support each other&apos;s academic journey and community development.
                 </p>
               </div>
             </div>
@@ -177,8 +188,7 @@ export default async function CommunityAboutPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Community Champions</p>
             <h2 className="text-3xl font-bold text-gray-900 sm:text-[2.2rem]">Notable Alumni</h2>
             <p className="max-w-3xl text-sm text-gray-600 sm:text-base">
-              Our alumni embody the spirit of MAMSA beyond campus. They lead in hospitals, research labs, policy circles, and
-              grassroots initiatives—creating ripple effects that inspire current students to keep aiming higher.
+              Our alumni embody the spirit of MAMSA beyond campus. They lead in various fields and sectors—creating ripple effects that inspire current Madi students at Makerere to keep aiming higher.
             </p>
           </div>
 

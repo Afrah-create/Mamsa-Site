@@ -113,14 +113,43 @@ export default function ContactPage() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const mapSrc = useMemo(() => {
-    if (settings?.map_embed_url && settings.map_embed_url.startsWith('https://')) {
-      return settings.map_embed_url;
+  // Function to extract URL from iframe HTML or validate URL
+  const extractMapUrl = (url: string | null | undefined): string | null => {
+    if (!url || !url.trim()) return null;
+    
+    const trimmed = url.trim();
+    
+    // If it's already a valid https URL, return it
+    if (trimmed.startsWith('https://')) {
+      return trimmed;
     }
+    
+    // Try to extract URL from iframe HTML
+    const iframeMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch && iframeMatch[1]) {
+      return iframeMatch[1];
+    }
+    
+    // Try to extract URL from src attribute
+    const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
+    if (srcMatch && srcMatch[1] && srcMatch[1].startsWith('https://')) {
+      return srcMatch[1];
+    }
+    
+    return null;
+  };
+
+  const mapSrc = useMemo(() => {
+    const extractedUrl = extractMapUrl(settings?.map_embed_url);
+    if (extractedUrl) {
+      return extractedUrl;
+    }
+    
     if (settings?.latitude && settings?.longitude) {
       const { latitude, longitude } = settings;
       return `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY ?? ''}&q=${latitude},${longitude}`;
     }
+    
     return DEFAULT_MAP_EMBED;
   }, [settings]);
 
@@ -128,8 +157,17 @@ export default function ContactPage() {
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
       <PublicNavbar />
       <main className="flex-1 pt-24">
-        <section className="bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-12 text-center sm:px-8 md:px-10 lg:px-12">
+        <section className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0">
+            <img
+              src="/images/IMG_4217.jpg"
+              alt="MAMSA Contact"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/80 via-emerald-600/75 to-emerald-500/80" />
+          </div>
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-12 text-center sm:px-8 md:px-10 lg:px-12">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">Get in touch</p>
             <h1 className="text-3xl font-bold sm:text-4xl md:text-5xl">We&apos;d Love to Hear From You</h1>
             <p className="mx-auto max-w-2xl text-sm text-emerald-50/90 sm:text-base">

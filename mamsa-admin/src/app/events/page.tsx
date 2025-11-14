@@ -671,10 +671,10 @@ export default function EventsPage() {
                           />
                         </div>
                         
-                        <div className="absolute top-3 right-3 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <div className="absolute top-3 right-3 flex space-x-2">
                           <button 
                             onClick={() => handleEditEvent(event)}
-                            className="p-2 text-white hover:text-green-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+                            className="p-2 text-white hover:text-green-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm bg-black/30"
                             title="Edit Event"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -683,7 +683,7 @@ export default function EventsPage() {
                           </button>
                           <button 
                             onClick={() => handleDeleteEvent(event)}
-                            className="p-2 text-white hover:text-red-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+                            className="p-2 text-white hover:text-red-200 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm bg-black/30"
                             title="Delete Event"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -791,20 +791,46 @@ export default function EventsPage() {
                           )}
                         </div>
                         
-                        {event.tags && event.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {event.tags.slice(0, 2).map((tag) => (
-                              <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
-                                #{tag}
-                              </span>
-                            ))}
-                            {event.tags.length > 2 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
-                                +{event.tags.length - 2}
-                              </span>
-                            )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {event.tags && event.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {event.tags.slice(0, 2).map((tag) => (
+                                <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
+                                  #{tag}
+                                </span>
+                              ))}
+                              {event.tags.length > 2 && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
+                                  +{event.tags.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2 ml-auto">
+                            <button
+                              onClick={() => handleEditEvent(event)}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 transition-colors"
+                              title="Edit Event"
+                            >
+                              <svg className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(event)}
+                              className="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                              title="Delete Event"
+                            >
+                              <svg className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              Delete
+                            </button>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>

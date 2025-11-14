@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Event } from '@/lib/public-content';
 import { formatDate, formatTime } from '@/lib/public-content-utils';
 
@@ -57,8 +58,9 @@ export default function EventCarousel({ events }: Props) {
           const hasDetails = Boolean(event.location || event.time || event.organizer);
 
           return (
-            <article key={event.id} className="w-full flex-none">
-              <div className="relative h-[320px] w-full overflow-hidden sm:h-[360px] lg:h-[420px]">
+            <Link key={event.id} href="/community/events" className="w-full flex-none block">
+              <article className="w-full h-full">
+                <div className="relative h-[320px] w-full overflow-hidden sm:h-[360px] lg:h-[420px] cursor-pointer">
                 {event.featured_image ? (
                   <Image
                     src={event.featured_image}
@@ -132,7 +134,8 @@ export default function EventCarousel({ events }: Props) {
                   )}
                 </div>
               </div>
-            </article>
+              </article>
+            </Link>
           );
         })}
       </div>

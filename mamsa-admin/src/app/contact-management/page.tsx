@@ -200,7 +200,7 @@ export default function ContactManagementPage() {
         setSettings({
           ...emptyContactSettings,
           ...data,
-          map_embed_url: data.map_embed_url?.trim() || DEFAULT_MAP_EMBED,
+          map_embed_url: data.map_embed_url?.trim() || null,
         });
       } else {
         setSettings(emptyContactSettings);
@@ -301,7 +301,7 @@ export default function ContactManagementPage() {
           phone: settings.phone || null,
           latitude: settings.latitude,
           longitude: settings.longitude,
-          map_embed_url: settings.map_embed_url?.trim() || DEFAULT_MAP_EMBED,
+          map_embed_url: settings.map_embed_url?.trim() || null,
           updated_by: user?.id ?? null,
         };
 
@@ -765,18 +765,32 @@ export default function ContactManagementPage() {
               <label className="text-sm font-medium text-gray-700">Map embed URL</label>
               <textarea
                 value={settings.map_embed_url ?? ''}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const value = event.target.value;
+                  // Extract URL from iframe HTML if pasted
+                  let extractedUrl = value;
+                  if (value.includes('<iframe')) {
+                    const iframeMatch = value.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+                    if (iframeMatch && iframeMatch[1]) {
+                      extractedUrl = iframeMatch[1];
+                    } else {
+                      const srcMatch = value.match(/src=["']([^"']+)["']/i);
+                      if (srcMatch && srcMatch[1]) {
+                        extractedUrl = srcMatch[1];
+                      }
+                    }
+                  }
+                  
                   setSettings((prev) => ({
                     ...prev,
-                    map_embed_url: event.target.value,
-                  }))
-                }
-                placeholder="Paste the Google Maps embed URL here"
+                    map_embed_url: extractedUrl.trim() || null,
+                  }));
+                }}
+                placeholder="Paste the Google Maps embed URL or full iframe HTML here"
                 className="mt-2 h-32 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
               />
               <p className="mt-1 text-xs text-gray-600">
-                Use Google Maps → Share → Embed a map → Copy HTML, then extract the <code>src</code> URL. Leaving this blank will
-                default to Makerere University.
+                Paste the Google Maps embed URL (starts with https://) or the full iframe HTML code. The URL will be automatically extracted. Leaving this blank will default to Makerere University.
               </p>
               <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
                 <iframe

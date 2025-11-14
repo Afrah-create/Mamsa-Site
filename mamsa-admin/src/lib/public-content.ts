@@ -344,7 +344,7 @@ export async function fetchAboutSnapshot() {
 export async function fetchHomeContent(): Promise<HomeContent> {
   const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
     fetchPublishedNews(3),
-    fetchActiveEvents(3),
+    fetchActiveEvents(), // Remove limit to fetch ALL upcoming and ongoing events
     fetchLeadership(4),
     fetchPublishedGallery(6),
     fetchAboutSnapshot(),

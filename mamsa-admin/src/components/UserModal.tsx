@@ -282,7 +282,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       value={formData.full_name}
                       onChange={handleInputChange}
                       required
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       placeholder="Enter full name..."
                     />
                   </div>
@@ -297,7 +297,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       placeholder="user@example.com"
                     />
                   </div>
@@ -318,7 +318,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       id="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -332,7 +332,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       id="department"
                       value={formData.department}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                       placeholder="IT, Admin, Academic..."
                     />
                   </div>
@@ -347,7 +347,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                     id="position"
                     value={formData.position}
                     onChange={handleInputChange}
-                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     placeholder="System Administrator, Content Manager..."
                   />
                 </div>
@@ -364,7 +364,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                   rows={3}
                   value={formData.bio}
                   onChange={handleInputChange}
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
                   placeholder="Brief description of the user's role and responsibilities..."
                 />
               </div>
@@ -445,7 +445,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className="block w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                          className="block w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                           placeholder="Enter password..."
                         />
                         <button
@@ -473,7 +473,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         required
-                        className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                         placeholder="Confirm password..."
                       />
                     </div>
@@ -497,7 +497,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       id="role"
                       value={formData.role}
                       onChange={handleInputChange}
-                      className="block w-full border border-indigo-200 rounded-md px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="block w-full border border-indigo-200 rounded-md px-3 py-2 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="moderator">🟢 Moderator</option>
                       <option value="admin">🔵 Admin</option>
@@ -518,7 +518,7 @@ export default function UserModal({ isOpen, onClose, onSave, editingItem }: User
                       id="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="block w-full border border-indigo-200 rounded-md px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="block w-full border border-indigo-200 rounded-md px-3 py-2 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       <option value="active">🟢 Active</option>
                       <option value="inactive">⏸️ Inactive</option>

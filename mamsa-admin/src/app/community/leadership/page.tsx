@@ -6,14 +6,27 @@ export default async function LeadershipPage() {
   const { data: leaders, error } = await fetchLeadership();
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
-      <div className="space-y-3 text-center">
-        <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Leadership</p>
-        <h1 className="text-4xl font-bold text-gray-900">Guiding the MAMSA Community</h1>
-        <p className="text-base text-gray-600">
-          Meet the dedicated students and mentors who steward our programs, events, and community outreach.
-        </p>
-      </div>
+    <>
+      <header className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white -mt-16">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0">
+            <img
+              src="/images/IMG-20250408-WA0154.jpg"
+              alt="MAMSA Leadership"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
+          </div>
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-6 py-16 text-center sm:px-8 md:px-10 lg:px-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100">Leadership</p>
+            <h1 className="text-3xl font-bold drop-shadow-lg sm:text-4xl md:text-5xl">Guiding the MAMSA Community</h1>
+            <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
+              Meet the dedicated Madi students at Makerere and mentors who steward our programs, events, and community outreach.
+            </p>
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-6xl px-6 py-12">
 
       {error && (
         <div className="mt-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -67,7 +80,8 @@ export default async function LeadershipPage() {
           ))}
         </div>
       )}
-    </div>
+        </div>
+    </>
   );
 }
 

@@ -69,10 +69,10 @@ export default async function HomePage() {
                 Madi Makerere University Students Association
               </p>
               <h1 className="text-balance text-[1.9rem] font-semibold leading-tight text-white drop-shadow-sm sm:text-[2.4rem] md:text-[2.9rem] md:leading-tight lg:text-[3.4rem] lg:leading-[1.05] xl:text-[3.6rem]">
-                Empowering medical students to lead, learn, and serve.
+                Uniting Madi students at Makerere to lead, learn, and serve.
               </h1>
               <p className="mx-auto max-w-2xl text-pretty text-sm text-emerald-50/95 sm:text-base lg:mx-0 lg:text-lg">
-                Stay updated with the latest news, events, and leadership insights from MAMSA. Explore our community-driven initiatives and discover how you can participate.
+                Stay updated with the latest news, events, and leadership insights from MAMSA. Connect with fellow students from the Madi region in West Nile studying at Makerere University.
               </p>
               <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start lg:gap-3">
                 <Link
@@ -103,7 +103,7 @@ export default async function HomePage() {
                   <div className="grid gap-4 rounded-2xl border border-white/60 bg-white/95 p-5 text-green-900 shadow-inner sm:gap-5">
                     <h2 className="text-left text-lg font-semibold text-emerald-700 sm:text-xl">This Week at MAMSA</h2>
                     <p className="text-left text-sm text-emerald-800/80 sm:text-base">
-                      Highlights from our vibrant community — fresh stories, upcoming events, and the leaders who make it happen.
+                      Highlights from our vibrant community of Madi students at Makerere — fresh stories, upcoming events, and the leaders who make it happen.
                     </p>
                     <dl className="grid grid-cols-3 gap-3 text-center text-sm font-medium text-emerald-900">
                       <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">

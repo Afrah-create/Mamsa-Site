@@ -324,7 +324,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       rows={3}
                       value={formData.description}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
                       placeholder="Describe the image..."
                     />
                   </div>
@@ -338,7 +338,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       id="alt_text"
                       value={formData.alt_text}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                       placeholder="Describe the image for screen readers..."
                     />
                   </div>
@@ -356,7 +356,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     placeholder="Add tag..."
                   />
                   <button
@@ -405,7 +405,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                   id="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className="block w-full border border-orange-200 rounded-md px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="block w-full border border-orange-200 rounded-md px-3 py-2 text-sm text-gray-900 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
                   <option value="events">📅 Events</option>
                   <option value="conferences">🎤 Conferences</option>
@@ -427,7 +427,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                   id="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
                   <option value="published">✅ Published</option>
                   <option value="draft">📝 Draft</option>
