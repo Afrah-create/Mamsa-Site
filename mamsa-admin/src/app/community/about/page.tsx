@@ -70,25 +70,25 @@ export default async function CommunityAboutPage() {
 
   return (
     <>
-      <header className="relative overflow-hidden border-b border-emerald-100 pb-12 pt-8 -mt-16">
+      <header className="relative overflow-hidden border-b border-emerald-100 pb-12 pt-20 -mt-16 sm:pt-24">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]">
           <Image
             src="/images/About.jpg"
             alt="MAMSA Community"
             fill
-            className="object-cover"
+            className="object-cover object-center"
             sizes="100vw"
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
         </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 sm:px-10 lg:flex-row lg:items-center lg:gap-16">
-          <div className="space-y-6 text-center lg:text-left text-white">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 sm:gap-10 sm:px-10 sm:py-12 lg:flex-row lg:items-center lg:gap-16 lg:py-16">
+          <div className="space-y-4 text-center lg:text-left text-white sm:space-y-6">
             <p className="inline-flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm sm:text-sm">
               About MAMSA
             </p>
-            <h1 className="text-pretty text-3xl font-semibold text-white drop-shadow-lg sm:text-[2.6rem]">
+            <h1 className="text-pretty text-2xl font-semibold text-white drop-shadow-lg sm:text-3xl lg:text-[2.6rem]">
               Our story, purpose, and people.
             </h1>
             <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base lg:mx-0 lg:text-lg drop-shadow-md">

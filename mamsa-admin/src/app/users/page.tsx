@@ -362,7 +362,10 @@ export default function UsersPage() {
         
         setUsers(prev => prev.map(u => u.id === editingItem.id ? data : u));
       } else {
-        if (!password) {
+        // For super_admin, use default password if not provided
+        const finalPassword = password || (userData.role === 'super_admin' ? 'adminmamsa' : null);
+        
+        if (!finalPassword) {
           alert('A password is required when creating a new user.');
           return { success: false };
         }
@@ -374,7 +377,7 @@ export default function UsersPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user: userData,
-            password,
+            password: finalPassword,
             createdBy: user?.id ?? null,
           }),
         });

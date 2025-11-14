@@ -34,6 +34,36 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        // Verify user is a super_admin
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
+          .select('role, status')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (adminError || !adminData) {
+          setError('Access denied. Only super admins can login.');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is super_admin
+        if (adminData.role !== 'super_admin') {
+          setError('Access denied. Only super admins can login.');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+
+        // Check if user is active
+        if (adminData.status !== 'active') {
+          setError('Your account is not active. Please contact an administrator.');
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+
         // Store session data
         if (rememberMe) {
           localStorage.setItem('admin_user', JSON.stringify({

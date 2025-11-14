@@ -140,6 +140,11 @@ export default function ContactPage() {
   };
 
   const mapSrc = useMemo(() => {
+    // Don't compute mapSrc until settings are loaded
+    if (loadingSettings) {
+      return DEFAULT_MAP_EMBED;
+    }
+    
     const extractedUrl = extractMapUrl(settings?.map_embed_url);
     if (extractedUrl) {
       return extractedUrl;
@@ -147,11 +152,14 @@ export default function ContactPage() {
     
     if (settings?.latitude && settings?.longitude) {
       const { latitude, longitude } = settings;
-      return `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY ?? ''}&q=${latitude},${longitude}`;
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY ?? '';
+      if (apiKey) {
+        return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${latitude},${longitude}`;
+      }
     }
     
     return DEFAULT_MAP_EMBED;
-  }, [settings]);
+  }, [settings, loadingSettings]);
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
@@ -338,14 +346,17 @@ export default function ContactPage() {
               </div>
 
               <div className="overflow-hidden rounded-3xl border border-emerald-100 shadow-sm">
-                <iframe
-                  title="MAMSA office location"
-                  src={mapSrc}
-                  loading="lazy"
-                  allowFullScreen
-                  className="h-[320px] w-full border-0"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                {mapSrc && mapSrc.trim() && (
+                  <iframe
+                    key={mapSrc}
+                    title="MAMSA office location"
+                    src={mapSrc}
+                    loading="lazy"
+                    allowFullScreen
+                    className="h-[320px] w-full border-0"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                )}
               </div>
             </div>
           </div>

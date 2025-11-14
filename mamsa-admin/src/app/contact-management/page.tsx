@@ -793,14 +793,20 @@ export default function ContactManagementPage() {
                 Paste the Google Maps embed URL (starts with https://) or the full iframe HTML code. The URL will be automatically extracted. Leaving this blank will default to Makerere University.
               </p>
               <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <iframe
-                  title="Contact map preview"
-                  src={(settings.map_embed_url && settings.map_embed_url.trim()) || DEFAULT_MAP_EMBED}
-                  loading="lazy"
-                  className="h-48 w-full border-0"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
+                {(() => {
+                  const mapUrl = (settings.map_embed_url && settings.map_embed_url.trim()) || DEFAULT_MAP_EMBED;
+                  return mapUrl && mapUrl.trim() ? (
+                    <iframe
+                      key={mapUrl}
+                      title="Contact map preview"
+                      src={mapUrl}
+                      loading="lazy"
+                      className="h-48 w-full border-0"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                    />
+                  ) : null;
+                })()}
               </div>
             </div>
 
