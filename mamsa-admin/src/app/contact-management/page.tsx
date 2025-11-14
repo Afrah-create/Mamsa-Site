@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
@@ -58,8 +59,10 @@ const statusDotStyles: Record<ContactMessage['status'], string> = {
   archived: 'bg-slate-400',
 };
 
+// Makerere University Main Gate - Default embedded map
+// This is hardcoded to ensure the map always displays even if settings fail to load
 const DEFAULT_MAP_EMBED =
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.569055274308636!3d0.32938786404163964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
+  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.5671!3d0.3364!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University%20Main%20Gate!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
 
 const emptyContactSettings: ContactSettings = {
   id: 0,
@@ -73,7 +76,8 @@ const emptyContactSettings: ContactSettings = {
   updated_at: new Date().toISOString(),
 };
 
-export default function ContactManagementPage() {
+function ContactManagementContent() {
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -287,6 +291,44 @@ export default function ContactManagementPage() {
     [updateMessage]
   );
 
+  const handleMarkAsRead = useCallback(
+    async (id: number) => {
+      const message = messages.find((m) => m.id === id);
+      if (message && message.status === 'new') {
+        await handleStatusChange(id, 'in_progress');
+      }
+    },
+    [messages, handleStatusChange]
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (id: number) => {
+      if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const { error } = await supabase.from('contact_messages').delete().eq('id', id);
+
+        if (error) {
+          console.error('Failed to delete message:', error);
+          showToast({ type: 'error', message: 'Failed to delete message.' });
+          return;
+        }
+
+        setMessages((prev) => prev.filter((item) => item.id !== id));
+        if (selectedMessageId === id) {
+          setSelectedMessageId(null);
+        }
+        showToast({ type: 'success', message: 'Message deleted successfully.' });
+      } catch (error) {
+        console.error('Unexpected error deleting message:', error);
+        showToast({ type: 'error', message: 'Unexpected error deleting message.' });
+      }
+    },
+    [supabase, selectedMessageId, showToast]
+  );
+
   const handleSettingsSave = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -356,6 +398,20 @@ export default function ContactManagementPage() {
     loadMessages();
     loadSettings();
   }, [user, loadMessages, loadSettings]);
+
+  // Handle message ID from URL query parameter (from notification drawer)
+  useEffect(() => {
+    const messageIdParam = searchParams.get('message');
+    if (messageIdParam && messages.length > 0) {
+      const messageId = parseInt(messageIdParam, 10);
+      const message = messages.find((m) => m.id === messageId);
+      if (message) {
+        handleSelectMessage(message);
+        // Clean up URL
+        window.history.replaceState({}, '', '/contact-management');
+      }
+    }
+  }, [searchParams, messages, handleSelectMessage]);
 
   useEffect(() => {
     const channel = supabase
@@ -521,44 +577,72 @@ export default function ContactManagementPage() {
                 filteredMessages.map((message) => {
                   const isSelected = selectedMessage?.id === message.id;
                   return (
-                    <button
+                    <div
                       key={message.id}
-                      onClick={() => handleSelectMessage(message)}
-                      className={`flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-gray-50 sm:px-6 ${
+                      className={`flex w-full items-start gap-3 px-4 py-4 transition hover:bg-gray-50 sm:px-6 ${
                         isSelected ? 'bg-emerald-50/60' : ''
                       }`}
                     >
-                      <div className="relative mt-0.5">
-                        <div className={`h-2 w-2 rounded-full ${statusDotStyles[message.status]}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{message.subject}</p>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                              {message.name} · {message.email}
-                            </p>
+                      <button
+                        onClick={() => handleSelectMessage(message)}
+                        className="flex-1 flex items-start gap-3 text-left"
+                      >
+                        <div className="relative mt-0.5 flex-shrink-0">
+                          <div className={`h-2 w-2 rounded-full ${statusDotStyles[message.status]}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{message.subject}</p>
+                              <p className="mt-0.5 text-xs text-gray-500">
+                                {message.name} · {message.email}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeStyles[message.status]}`}
+                            >
+                              {STATUS_OPTIONS.find((option) => option.value === message.status)?.label ?? message.status}
+                            </span>
                           </div>
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusBadgeStyles[message.status]}`}
+                          <p className="mt-3 line-clamp-2 text-sm text-gray-600">{message.message}</p>
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                            <span>
+                              Received{' '}
+                              {new Date(message.created_at).toLocaleString(undefined, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              })}
+                            </span>
+                            {message.phone && <span>Phone: {message.phone}</span>}
+                            {message.admin_notes && <span className="italic text-gray-500">Note added</span>}
+                          </div>
+                        </div>
+                      </button>
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        {message.status === 'new' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkAsRead(message.id);
+                            }}
+                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                            title="Mark as read"
                           >
-                            {STATUS_OPTIONS.find((option) => option.value === message.status)?.label ?? message.status}
-                          </span>
-                        </div>
-                        <p className="mt-3 line-clamp-2 text-sm text-gray-600">{message.message}</p>
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-400">
-                          <span>
-                            Received{' '}
-                            {new Date(message.created_at).toLocaleString(undefined, {
-                              dateStyle: 'medium',
-                              timeStyle: 'short',
-                            })}
-                          </span>
-                          {message.phone && <span>Phone: {message.phone}</span>}
-                          {message.admin_notes && <span className="italic text-gray-500">Note added</span>}
-                        </div>
+                            Mark read
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(message.id);
+                          }}
+                          className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                          title="Delete message"
+                        >
+                          Delete
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}
@@ -577,12 +661,30 @@ export default function ContactManagementPage() {
                         <p className="text-xs text-gray-500">Phone: {selectedMessage.phone}</p>
                       )}
                     </div>
-                    <button
-                      onClick={() => setSelectedMessageId(null)}
-                      className="hidden rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500 transition hover:border-emerald-200 hover:text-emerald-700 xl:block"
-                    >
-                      Close
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {selectedMessage.status === 'new' && (
+                        <button
+                          onClick={() => handleMarkAsRead(selectedMessage.id)}
+                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                          title="Mark as read"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteMessage(selectedMessage.id)}
+                        className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                        title="Delete message"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setSelectedMessageId(null)}
+                        className="hidden rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500 transition hover:border-emerald-200 hover:text-emerald-700 xl:block"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-4 space-y-2">
                     <label className="text-xs font-medium text-gray-500">Status</label>
@@ -879,6 +981,23 @@ export default function ContactManagementPage() {
         </section>
       </div>
     </AdminLayout>
+  );
+}
+
+export default function ContactManagementPage() {
+  return (
+    <Suspense fallback={
+      <AdminLayout user={null}>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading contact management...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    }>
+      <ContactManagementContent />
+    </Suspense>
   );
 }
 

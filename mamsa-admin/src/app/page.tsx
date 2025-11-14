@@ -9,7 +9,7 @@ import EventCarousel from '@/components/EventCarousel';
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const { news, events, leadership, about, hasError } = await fetchHomeContent();
+  const { news, events, leadership, about, hasError, stats } = await fetchHomeContent();
   const hasAboutContent = Object.values(about).some((value) => value?.trim().length);
   const aboutCards = [
     {
@@ -108,15 +108,15 @@ export default async function HomePage() {
                     <dl className="grid grid-cols-3 gap-3 text-center text-sm font-medium text-emerald-900">
                       <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
                         <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Stories</dt>
-                        <dd className="text-xl font-bold sm:text-2xl">{news.length}</dd>
+                        <dd className="text-xl font-bold sm:text-2xl">{stats.storiesCount}</dd>
                       </div>
                       <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
                         <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Events</dt>
-                        <dd className="text-xl font-bold sm:text-2xl">{events.length}</dd>
+                        <dd className="text-xl font-bold sm:text-2xl">{stats.eventsCount}</dd>
                       </div>
                       <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
                         <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Leaders</dt>
-                        <dd className="text-xl font-bold sm:text-2xl">{leadership.length}</dd>
+                        <dd className="text-xl font-bold sm:text-2xl">{stats.leadersCount}</dd>
                       </div>
                     </dl>
                   </div>

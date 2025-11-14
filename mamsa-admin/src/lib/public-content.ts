@@ -341,18 +341,85 @@ export async function fetchAboutSnapshot() {
   }
 }
 
-export async function fetchHomeContent(): Promise<HomeContent> {
-  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
+// Helper function to get total count of published news articles
+async function fetchPublishedNewsCount(): Promise<number> {
+  const supabase = await createServerClient();
+  if (!supabase) return 0;
+  
+  try {
+    const { count, error } = await supabase
+      .from('news_articles')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'published');
+    
+    return error ? 0 : (count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+// Helper function to get total count of active events
+async function fetchActiveEventsCount(): Promise<number> {
+  const supabase = await createServerClient();
+  if (!supabase) return 0;
+  
+  try {
+    const { count, error } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['upcoming', 'ongoing']);
+    
+    return error ? 0 : (count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+// Helper function to get total count of active leaders
+async function fetchLeadershipCount(): Promise<number> {
+  const supabase = await createServerClient();
+  if (!supabase) return 0;
+  
+  try {
+    const { count, error } = await supabase
+      .from('leadership')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+    
+    return error ? 0 : (count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+export type HomeContentStats = {
+  storiesCount: number;
+  eventsCount: number;
+  leadersCount: number;
+};
+
+export async function fetchHomeContent(): Promise<HomeContent & { stats: HomeContentStats }> {
+  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult, storiesCount, eventsCount, leadersCount] = await Promise.all([
     fetchPublishedNews(3),
     fetchActiveEvents(), // Remove limit to fetch ALL upcoming and ongoing events
     fetchLeadership(4),
     fetchPublishedGallery(6),
     fetchAboutSnapshot(),
+    fetchPublishedNewsCount(),
+    fetchActiveEventsCount(),
+    fetchLeadershipCount(),
   ]);
 
   const hasError = Boolean(
     newsResult.error || eventsResult.error || leadershipResult.error || galleryResult.error || aboutResult.error
   );
+
+  // Hardcoded fallback values if counts fail
+  const FALLBACK_STATS: HomeContentStats = {
+    storiesCount: 12,
+    eventsCount: 8,
+    leadersCount: 15,
+  };
 
   return {
     news: newsResult.data,
@@ -361,6 +428,11 @@ export async function fetchHomeContent(): Promise<HomeContent> {
     gallery: galleryResult.data,
     about: aboutResult.data,
     hasError,
+    stats: {
+      storiesCount: storiesCount || FALLBACK_STATS.storiesCount,
+      eventsCount: eventsCount || FALLBACK_STATS.eventsCount,
+      leadersCount: leadersCount || FALLBACK_STATS.leadersCount,
+    },
   };
 }
 

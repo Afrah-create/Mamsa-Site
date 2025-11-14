@@ -542,10 +542,14 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                         <div className="p-4 text-sm text-gray-500 text-center">No notifications yet.</div>
                       ) : (
                         notifications.map((notification) => (
-                          <div
+                          <Link
                             key={notification.id}
-                            onClick={() => markNotificationAsRead(notification.id)}
-                            className={`p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
+                            href={`/contact-management?message=${notification.recordId}`}
+                            onClick={() => {
+                              markNotificationAsRead(notification.id);
+                              setShowNotifications(false);
+                            }}
+                            className={`block p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
                               notification.unread ? 'bg-emerald-50' : ''
                             }`}
                           >
@@ -567,7 +571,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                                 {notification.time}
                               </span>
                             </div>
-                          </div>
+                          </Link>
                         ))
                       )}
                     </div>
