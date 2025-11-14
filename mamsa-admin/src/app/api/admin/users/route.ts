@@ -50,12 +50,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { user, password, createdBy }: { user: IncomingUser; password: string; createdBy?: string | null } =
+    const { user, password, createdBy }: { user: IncomingUser; password?: string; createdBy?: string | null } =
       await request.json();
 
-    if (!user || !user.email || !user.full_name || !password) {
+    if (!user || !user.email || !user.full_name) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
+
+    // For super_admin, use default password if not provided
+    const finalPassword = password || (user.role === 'super_admin' ? 'adminmamsa' : null);
+    
+    if (!finalPassword) {
+      return NextResponse.json({ error: 'Password is required for non-super-admin users.' }, { status: 400 });
+    }
+
+    // Log password creation (without exposing the actual password)
+    console.log(`[api/admin/users] Creating user ${user.email} with role ${user.role}, password ${finalPassword ? 'provided' : 'missing'}`);
 
     const normalizedPermissions: Permissions =
       user.role === 'super_admin'
@@ -76,6 +86,7 @@ export async function POST(request: Request) {
             reports: Boolean(user.permissions?.reports),
           };
 
+    // Create user in Supabase Auth with password
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: user.email,
       password: finalPassword,
@@ -87,8 +98,14 @@ export async function POST(request: Request) {
     });
 
     if (authError || !authData?.user) {
-      return NextResponse.json({ error: authError?.message ?? 'Failed to create authentication user.' }, { status: 400 });
+      console.error('[api/admin/users] Failed to create auth user:', authError);
+      return NextResponse.json({ 
+        error: authError?.message ?? 'Failed to create authentication user.',
+        details: authError 
+      }, { status: 400 });
     }
+
+    console.log(`[api/admin/users] Successfully created auth user ${authData.user.id} for ${user.email}`);
 
     const insertPayload = {
       user_id: authData.user.id,
@@ -112,11 +129,25 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError || !adminUser) {
+      console.error('[api/admin/users] Failed to insert admin user profile:', insertError);
+      // Clean up: delete the auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json({ error: insertError?.message ?? 'Failed to store admin profile.' }, { status: 400 });
+      return NextResponse.json({ 
+        error: insertError?.message ?? 'Failed to store admin profile.',
+        details: insertError 
+      }, { status: 400 });
     }
 
-    return NextResponse.json({ data: adminUser }, { status: 201 });
+    console.log(`[api/admin/users] Successfully created admin user profile ${adminUser.id} for ${user.email}`);
+    
+    // Note: Passwords are stored in Supabase Auth (auth.users table), NOT in admin_users table
+    // The admin_users table only stores profile information
+    // To verify password was set correctly, check Supabase Auth dashboard or test login
+
+    return NextResponse.json({ 
+      data: adminUser,
+      message: 'User created successfully. Password has been set in Supabase Auth.'
+    }, { status: 201 });
   } catch (error) {
     console.error('[api/admin/users] Unexpected error:', error);
     return NextResponse.json(
