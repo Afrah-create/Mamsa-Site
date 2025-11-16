@@ -11,9 +11,9 @@ export default function LeaderCard({ leader }: LeaderCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <article className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-md">
+    <article className="w-full max-w-md flex flex-col items-center rounded-xl border-2 border-emerald-200 bg-white p-6 shadow-sm transition-all hover:shadow-md hover:border-emerald-300">
       {/* Circular Profile Image */}
-      <div className="relative h-32 w-32 sm:h-40 sm:w-40 md:h-44 md:w-44 overflow-hidden rounded-full bg-gray-100 shadow-md ring-4 ring-emerald-50">
+      <div className="relative h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 overflow-hidden rounded-full bg-gray-100 border-2 border-emerald-100 shadow-md">
         {leader.image_url ? (
           <img
             src={leader.image_url}
@@ -22,26 +22,19 @@ export default function LeaderCard({ leader }: LeaderCardProps) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 text-2xl sm:text-3xl md:text-4xl font-semibold text-emerald-700">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 text-xl sm:text-2xl md:text-3xl font-semibold text-emerald-700">
             {leader.name.slice(0, 2).toUpperCase()}
           </div>
         )}
       </div>
 
       {/* Name and Position */}
-      <h2 className="mt-4 text-center text-lg sm:text-xl font-semibold text-gray-900">
+      <h2 className="mt-4 text-center text-base sm:text-lg md:text-xl font-semibold text-gray-900">
         {leader.name}
       </h2>
       <p className="mt-1 text-center text-sm sm:text-base font-medium text-emerald-600">
         {leader.position || 'Leadership Team'}
       </p>
-
-      {/* Department Badge */}
-      {leader.department && (
-        <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-          {leader.department}
-        </span>
-      )}
 
       {/* Collapsible Content */}
       <div className="mt-4 w-full">

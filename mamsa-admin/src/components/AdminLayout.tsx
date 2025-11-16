@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
+import { clearSessionData } from '@/lib/session-manager';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -324,19 +325,76 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     };
   }, [user, supabase, loadNotifications]);
 
+  // Monitor session validity and detect logout from other tabs
+  useEffect(() => {
+    if (!user) return;
+
+    // Check session validity periodically
+    const checkSession = async () => {
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
+      
+      if (error || !currentUser || currentUser.id !== user.id) {
+        // Session invalid, redirect to login
+        clearSessionData();
+        window.location.href = '/login';
+        return;
+      }
+
+      // Verify admin status is still valid
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('role, status')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (adminError || !adminData || adminData.role !== 'super_admin' || adminData.status !== 'active') {
+        clearSessionData();
+        window.location.href = '/login';
+      }
+    };
+
+    // Check immediately and then every 2 minutes
+    checkSession();
+    const intervalId = setInterval(checkSession, 120000);
+
+    // Listen for storage events (logout from other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === null || e.key.startsWith('sb-')) {
+        // Session was cleared, redirect to login
+        clearSessionData();
+        window.location.href = '/login';
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [user, supabase]);
+
   const handleLogout = async () => {
     try {
-      localStorage.removeItem('admin_user');
+      // Clear all storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('Logout error:', error);
       }
       
-      router.push('/login');
+      // Force redirect to login and clear any cached data
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout failed:', error);
-      router.push('/login');
+      // Force redirect even on error
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/login';
     }
   };
 

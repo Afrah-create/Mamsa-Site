@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
+import { clearSessionData } from '@/lib/session-manager';
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,21 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Clear session data on mount to ensure clean state
+  useEffect(() => {
+    clearSessionData();
+    
+    // Check for error messages from redirects
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'unauthorized') {
+      setError('Your session has expired or you do not have access. Please login again.');
+    } else if (errorParam === 'session_expired') {
+      setError('Your session has expired. Please login again.');
+    }
+  }, [searchParams]);
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -274,5 +289,20 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
