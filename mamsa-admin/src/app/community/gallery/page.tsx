@@ -42,8 +42,20 @@ export default async function GalleryPage() {
 
       <section className="mx-auto max-w-6xl px-6 py-12">
         {error && (
-          <div className="mb-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            We couldn&apos;t load the gallery at this time. Please refresh or try again later.
+          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-amber-900">Gallery Temporarily Unavailable</h3>
+                <p className="mt-1 text-sm text-amber-800">
+                  We&apos;re experiencing a temporary issue loading the photo gallery. This should be resolved soon. Please try refreshing the page, or come back in a few minutes to browse our collection of MAMSA moments.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

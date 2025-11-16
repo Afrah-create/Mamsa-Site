@@ -19,10 +19,26 @@ export const createServerClient = async (): Promise<SupabaseServerClient | null>
         return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, { ...options, secure: true })
-        );
+        try {
+          // Only set cookies if we're in a context where it's allowed
+          // (Server Actions or Route Handlers)
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, { ...options, secure: true })
+          );
+        } catch (error) {
+          // Silently ignore cookie setting errors in contexts where cookies can't be modified
+          // This happens during server component rendering when Supabase tries to refresh tokens
+          // The cookies will be set properly when the user interacts (login, etc.)
+          // No logging needed - this is expected behavior in server components
+        }
       },
+    },
+    auth: {
+      // Disable automatic token refresh in server components to prevent errors
+      // Tokens will be refreshed properly in client-side contexts
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
     },
     global: {
       headers: { 'x-hasura-role': 'anon' },

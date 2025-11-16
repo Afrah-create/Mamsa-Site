@@ -688,101 +688,107 @@ export default function GalleryPage() {
                   <label className="text-sm font-medium text-gray-700">Select All</label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
                   {filteredGallery.map((image) => (
-                    <div key={image.id} className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl hover:border-orange-200 transition-all duration-300 transform hover:-translate-y-1">
+                    <div key={image.id} className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-orange-300 transition-all duration-200">
                       {/* Image Container */}
-                      <div className="relative overflow-hidden">
-                        <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100">
+                      <div className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100">
+                        <div className="aspect-square relative">
                           {image.image_url ? (
-                            <img 
-                              src={image.image_url} 
-                              alt={image.alt_text || image.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                // Fallback for broken images
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent) {
-                                  parent.innerHTML = `
-                                    <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                      <div class="text-center">
-                                        <svg class="mx-auto h-16 w-16 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <>
+                              <img 
+                                src={image.image_url} 
+                                alt={image.alt_text || image.title}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const fallback = document.createElement('div');
+                                    fallback.className = 'h-full w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100';
+                                    fallback.innerHTML = `
+                                      <div class="text-center p-4">
+                                        <svg class="mx-auto h-12 w-12 text-emerald-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <p class="text-sm font-medium text-gray-600 mb-1">Gallery</p>
-                                        <p class="text-xs text-gray-500">Image not available</p>
+                                        <p class="text-xs font-medium text-emerald-700">Image unavailable</p>
                                       </div>
-                                    </div>
-                                  `;
-                                }
-                              }}
-                            />
+                                    `;
+                                    parent.appendChild(fallback);
+                                  }
+                                }}
+                              />
+                              {/* Subtle overlay on hover - no black */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-white/0 via-transparent to-transparent group-hover:from-white/5 transition-all duration-300 pointer-events-none" />
+                            </>
                           ) : (
-                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                              <div className="text-center">
-                                <svg className="mx-auto h-16 w-16 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100">
+                              <div className="text-center p-4">
+                                <svg className="mx-auto h-12 w-12 text-emerald-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                                <p className="text-sm font-medium text-gray-600 mb-1">Gallery</p>
-                                <p className="text-xs text-gray-500">No image available</p>
+                                <p className="text-xs font-medium text-emerald-700">No image</p>
                               </div>
                             </div>
                           )}
                         </div>
                         
-                        {/* Overlay with Checkbox and Badges */}
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300">
-                          {/* Checkbox */}
-                          <div className="absolute top-3 left-3">
+                        {/* Checkbox - Always visible when selected, visible on hover */}
+                        <div className={`absolute top-2 left-2 transition-opacity duration-200 ${
+                          selectedItems.includes(image.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}>
+                          <div className="bg-white rounded shadow-md p-1">
                             <input
                               type="checkbox"
                               checked={selectedItems.includes(image.id)}
                               onChange={() => handleSelectItem(image.id)}
-                              className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              className="h-4 w-4 text-orange-600 focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 border-gray-300 rounded cursor-pointer"
                             />
                           </div>
+                        </div>
 
-                          {/* Status and Featured badges */}
-                          <div className="absolute top-3 right-3 flex flex-col space-y-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shadow-sm backdrop-blur-sm ${
-                              image.status === 'published' ? 'bg-green-500/90 text-white' :
-                              image.status === 'draft' ? 'bg-yellow-500/90 text-white' :
-                              'bg-gray-500/90 text-white'
-                            }`}>
-                              {image.status === 'published' && '✅'}
-                              {image.status === 'draft' && '📝'}
-                              {image.status === 'archived' && '📦'}
+                        {/* Status and Featured badges - Always visible */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium shadow-sm ${
+                            image.status === 'published' ? 'bg-green-500 text-white' :
+                            image.status === 'draft' ? 'bg-yellow-500 text-white' :
+                            'bg-gray-500 text-white'
+                          }`}>
+                            {image.status === 'published' && '✅'}
+                            {image.status === 'draft' && '📝'}
+                            {image.status === 'archived' && '📦'}
+                          </span>
+                          {image.featured && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-orange-500 text-white shadow-sm">
+                              ⭐
                             </span>
-                            {image.featured && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-500/90 text-white shadow-sm backdrop-blur-sm">
-                                ⭐ Featured
-                              </span>
-                            )}
-                          </div>
+                          )}
+                        </div>
 
-                          {/* Category Badge */}
-                          <div className="absolute bottom-3 left-3">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/90 text-gray-700 shadow-sm backdrop-blur-sm capitalize">
-                              {image.category}
-                            </span>
-                          </div>
+                        {/* Category Badge */}
+                        <div className="absolute bottom-2 left-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-white/95 text-gray-700 shadow-sm backdrop-blur-sm capitalize border border-gray-200">
+                            {image.category}
+                          </span>
                         </div>
                       </div>
                       
                       {/* Content */}
-                      <div className="p-4 lg:p-5">
-                        <div className="space-y-3">
+                      <div className="p-3 sm:p-4">
+                        <div className="space-y-2">
                           {/* Title */}
-                          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
                             {image.title}
                           </h3>
                           
                           {/* Description */}
-                          <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
-                            {image.description}
-                          </p>
+                          {image.description && (
+                            <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+                              {image.description}
+                            </p>
+                          )}
                           
                           {/* Tags */}
                           {image.tags && image.tags.length > 0 && (
@@ -790,64 +796,61 @@ export default function GalleryPage() {
                               {image.tags.slice(0, 2).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200"
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200"
                                 >
                                   #{tag}
                                 </span>
                               ))}
                               {image.tags.length > 2 && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
                                   +{image.tags.length - 2}
                                 </span>
                               )}
                             </div>
                           )}
                           
-                          {/* Metadata */}
-                          <div className="space-y-2 pt-2 border-t border-gray-100">
-                            {/* File Size and Date */}
+                          {/* Metadata - Compact */}
+                          <div className="pt-2 border-t border-gray-100">
                             <div className="flex items-center justify-between text-xs text-gray-500">
                               {image.file_size && (
-                                <span className="flex items-center">
-                                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <span className="flex items-center gap-1">
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                   </svg>
                                   {formatFileSize(image.file_size)}
                                 </span>
                               )}
                               {image.event_date && (
-                                <span className="flex items-center">
-                                  <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <span className="flex items-center gap-1">
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                   </svg>
-                                  {new Date(image.event_date).toLocaleDateString()}
+                                  {new Date(image.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
                               )}
                             </div>
-
-                            {/* Photographer */}
                             {image.photographer && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <svg className="h-3 w-3 mr-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                <svg className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span className="truncate">by {image.photographer}</span>
+                                <span className="truncate">{image.photographer}</span>
                               </div>
                             )}
                           </div>
                         </div>
                         
                         {/* Action Buttons */}
-                        <div className="mt-4 flex justify-center space-x-2">
+                        <div className="mt-3 flex gap-2">
                           <button 
                             onClick={() => handleEditImage(image)}
-                            className="flex-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-xs font-medium px-3 py-2 rounded-lg border border-orange-200 hover:border-orange-300 transition-all duration-200"
+                            className="flex-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-xs font-medium px-2 py-1.5 rounded-md border border-orange-200 hover:border-orange-300 transition-colors"
                           >
                             Edit
                           </button>
                           <button 
                             onClick={() => handleDeleteImage(image)}
-                            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium px-3 py-2 rounded-lg border border-red-200 hover:border-red-300 transition-all duration-200"
+                            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium px-2 py-1.5 rounded-md border border-red-200 hover:border-red-300 transition-colors"
                           >
                             Delete
                           </button>

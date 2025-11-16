@@ -1,4 +1,5 @@
 import { fetchLeadership, type Leader } from '@/lib/public-content';
+import LeaderCard from '@/components/LeaderCard';
 
 export const revalidate = 300;
 
@@ -26,11 +27,22 @@ export default async function LeadershipPage() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-6xl px-6 py-12">
-
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {error && (
-        <div className="mt-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          We couldn&apos;t load the leadership directory. Please refresh or try again later.
+        <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-900">Unable to Load Leadership Directory</h3>
+              <p className="mt-1 text-sm text-amber-800">
+                We&apos;re having trouble loading the leadership profiles right now. This is usually temporary. Please try refreshing the page in a moment, or check back later.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -42,42 +54,13 @@ export default async function LeadershipPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {leaders.map((leader: Leader) => (
-            <article
-              key={leader.id}
-              className="flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="relative aspect-[3/4] w-full max-w-[220px] overflow-hidden rounded-2xl bg-gray-100 shadow-sm">
-                {leader.image_url ? (
-                  <img
-                    src={leader.image_url}
-                    alt={leader.name}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-emerald-50 text-3xl font-semibold text-emerald-700">
-                    {leader.name.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <h2 className="mt-6 text-xl font-semibold text-gray-900">{leader.name}</h2>
-              <p className="mt-2 text-sm font-medium text-emerald-600">{leader.position || 'Leadership Team'}</p>
-              {leader.department && (
-                <span className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-                  {leader.department}
-                </span>
-              )}
-              <p className="mt-4 line-clamp-4 text-sm text-gray-600">
-                {leader.bio || 'Biography coming soon.'}
-              </p>
-              <div className="mt-4 flex flex-col gap-1 text-xs text-gray-500">
-                {leader.email && <span>{leader.email}</span>}
-                {leader.phone && <span>{leader.phone}</span>}
-              </div>
-            </article>
-          ))}
+        <div className="mt-12">
+          {/* Hierarchical Layout - Responsive Grid */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {leaders.map((leader: Leader) => (
+              <LeaderCard key={leader.id} leader={leader} />
+            ))}
+          </div>
         </div>
       )}
         </div>

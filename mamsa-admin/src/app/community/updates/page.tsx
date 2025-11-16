@@ -31,8 +31,20 @@ export default async function UpdatesPage() {
         <div className="mx-auto max-w-5xl px-6 py-12">
 
       {error && (
-        <div className="mt-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          We couldn&apos;t load the latest articles right now. Please try again shortly.
+        <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-900">News & Stories Temporarily Unavailable</h3>
+              <p className="mt-1 text-sm text-amber-800">
+                We&apos;re having a brief issue loading the latest updates. This is usually resolved quickly. Please refresh the page in a moment, or check back shortly for the latest MAMSA news and stories.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

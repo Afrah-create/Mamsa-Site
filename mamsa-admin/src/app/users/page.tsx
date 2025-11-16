@@ -386,7 +386,10 @@ export default function UsersPage() {
 
         if (!response.ok) {
           console.error('API error creating user:', payload);
-          alert(`Failed to create user: ${payload?.error ?? 'Unknown error'}`);
+          const errorMessage = payload?.message 
+            ? `${payload.error}\n\n${payload.message}` 
+            : payload?.error ?? 'Unknown error';
+          alert(`Failed to create user: ${errorMessage}`);
           return { success: false, error: payload?.error };
         }
 

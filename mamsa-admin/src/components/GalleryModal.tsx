@@ -310,7 +310,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       value={formData.title}
                       onChange={handleInputChange}
                       required
-                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                      className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
                       placeholder="Enter image title..."
                     />
                   </div>
@@ -460,7 +460,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       name="photographer"
                       value={formData.photographer}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                       placeholder="Photographer name..."
                     />
                   </div>
@@ -473,7 +473,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       name="location"
                       value={formData.location}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                       placeholder="Where was this taken?"
                     />
                   </div>
@@ -486,7 +486,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
                       name="event_date"
                       value={formData.event_date}
                       onChange={handleInputChange}
-                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                      className="block w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
                     />
                   </div>
                 </div>

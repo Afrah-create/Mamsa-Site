@@ -269,7 +269,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500">
-            © 2024 MAMSA. All rights reserved.
+            © {new Date().getFullYear()} MAMSA. All rights reserved.
           </p>
         </div>
       </div>

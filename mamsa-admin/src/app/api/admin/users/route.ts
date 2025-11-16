@@ -46,7 +46,15 @@ type IncomingUser = {
 
 export async function POST(request: Request) {
   if (!supabaseAdmin) {
-    return NextResponse.json({ error: 'Supabase service role client is not configured.' }, { status: 500 });
+    const missingVars: string[] = [];
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!serviceRoleKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+    
+    return NextResponse.json({ 
+      error: 'Supabase service role client is not configured.',
+      message: `Missing environment variables: ${missingVars.join(', ')}. Please add ${missingVars.join(' and ')} to your .env.local file. You can find the Service Role Key in your Supabase Dashboard under Settings > API.`,
+      missingVariables: missingVars
+    }, { status: 500 });
   }
 
   try {
