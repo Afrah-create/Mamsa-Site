@@ -6,7 +6,7 @@ import { fetchHomeContent } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
 import EventCarousel from '@/components/EventCarousel';
 
-export const revalidate = 60;
+export const revalidate = 180; // Increase to 3 minutes - home page content changes moderately
 
 export default async function HomePage() {
   const { news, events, leadership, about, hasError, stats } = await fetchHomeContent();

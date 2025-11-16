@@ -342,53 +342,80 @@ export async function fetchAboutSnapshot() {
 }
 
 // Helper function to get total count of published news articles
+// Optimized with timeout to prevent blocking
 async function fetchPublishedNewsCount(): Promise<number> {
   const supabase = await createServerClient();
   if (!supabase) return 0;
+  
+  const timeout = createTimeoutController('news-count');
   
   try {
     const { count, error } = await supabase
       .from('news_articles')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'published');
+      .eq('status', 'published')
+      .abortSignal(timeout.controller.signal);
     
     return error ? 0 : (count ?? 0);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return 0; // Return 0 on timeout to not block page rendering
+    }
     return 0;
+  } finally {
+    timeout.clear();
   }
 }
 
 // Helper function to get total count of active events
+// Optimized with timeout to prevent blocking
 async function fetchActiveEventsCount(): Promise<number> {
   const supabase = await createServerClient();
   if (!supabase) return 0;
+  
+  const timeout = createTimeoutController('events-count');
   
   try {
     const { count, error } = await supabase
       .from('events')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['upcoming', 'ongoing']);
+      .in('status', ['upcoming', 'ongoing'])
+      .abortSignal(timeout.controller.signal);
     
     return error ? 0 : (count ?? 0);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return 0; // Return 0 on timeout to not block page rendering
+    }
     return 0;
+  } finally {
+    timeout.clear();
   }
 }
 
 // Helper function to get total count of active leaders
+// Optimized with timeout to prevent blocking
 async function fetchLeadershipCount(): Promise<number> {
   const supabase = await createServerClient();
   if (!supabase) return 0;
+  
+  const timeout = createTimeoutController('leadership-count');
   
   try {
     const { count, error } = await supabase
       .from('leadership')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .abortSignal(timeout.controller.signal);
     
     return error ? 0 : (count ?? 0);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return 0; // Return 0 on timeout to not block page rendering
+    }
     return 0;
+  } finally {
+    timeout.clear();
   }
 }
 
@@ -399,12 +426,17 @@ export type HomeContentStats = {
 };
 
 export async function fetchHomeContent(): Promise<HomeContent & { stats: HomeContentStats }> {
-  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult, storiesCount, eventsCount, leadersCount] = await Promise.all([
+  // Optimize: Limit events to 10 most recent for home page, fetch counts in parallel but don't block on them
+  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
     fetchPublishedNews(3),
-    fetchActiveEvents(), // Remove limit to fetch ALL upcoming and ongoing events
+    fetchActiveEvents(10), // Limit to 10 most recent events for home page
     fetchLeadership(4),
     fetchPublishedGallery(6),
     fetchAboutSnapshot(),
+  ]);
+
+  // Fetch counts in parallel but don't block page rendering on them
+  const [storiesCount, eventsCount, leadersCount] = await Promise.all([
     fetchPublishedNewsCount(),
     fetchActiveEventsCount(),
     fetchLeadershipCount(),

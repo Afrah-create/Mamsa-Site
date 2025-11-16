@@ -1,20 +1,25 @@
+import Image from 'next/image';
 import { fetchLeadership, type Leader } from '@/lib/public-content';
 import OrgChart from '@/components/OrgChart';
 
-export const revalidate = 300;
+export const revalidate = 600; // Increase to 10 minutes - leadership changes infrequently
 
 export default async function LeadershipPage() {
-  const { data: leaders, error } = await fetchLeadership();
+  // Limit to 50 leaders - add pagination later if needed
+  const { data: leaders, error } = await fetchLeadership(50);
 
   return (
     <>
       <header className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white -mt-16 pt-20 sm:pt-24">
           {/* Background Image with Overlay */}
           <div className="absolute inset-0 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]">
-            <img
+            <Image
               src="/images/IMG-20250408-WA0154.jpg"
               alt="MAMSA Leadership"
-              className="h-full w-full object-cover object-center"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
           </div>

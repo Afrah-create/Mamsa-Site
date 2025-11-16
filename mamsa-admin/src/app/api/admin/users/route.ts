@@ -155,14 +155,19 @@ export async function POST(request: Request) {
       created_by: createdBy ?? null,
     };
 
+    // Use upsert (ON CONFLICT DO UPDATE) because the database trigger might have already created a record
+    // This ensures we update the record with complete data if the trigger created it first
     const { data: adminUser, error: insertError } = await supabaseAdmin
       .from('admin_users')
-      .insert(insertPayload)
+      .upsert(insertPayload, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false
+      })
       .select('*')
       .single();
 
     if (insertError || !adminUser) {
-      console.error('[api/admin/users] Failed to insert admin user profile:', insertError);
+      console.error('[api/admin/users] Failed to upsert admin user profile:', insertError);
       // Clean up: delete the auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json({ 
