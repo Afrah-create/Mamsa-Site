@@ -50,10 +50,17 @@ export async function POST(request: Request) {
     if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
     if (!serviceRoleKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
     
+    const isServiceRoleKeyMissing = missingVars.includes('SUPABASE_SERVICE_ROLE_KEY');
+    
+    const errorMessage = isServiceRoleKeyMissing 
+      ? `The Supabase Service Role Key is missing. This is required to create admin users.\n\nTo fix this:\n1. Go to your Supabase Dashboard\n2. Navigate to Settings > API\n3. Copy the service_role key (keep it secret!)\n4. Add it to your .env.local file as:\n   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key\n5. Restart your development server`
+      : `Missing environment variables: ${missingVars.join(', ')}. Please add them to your .env.local file and restart the server.`;
+    
     return NextResponse.json({ 
-      error: 'Supabase service role client is not configured.',
-      message: `Missing environment variables: ${missingVars.join(', ')}. Please add ${missingVars.join(' and ')} to your .env.local file. You can find the Service Role Key in your Supabase Dashboard under Settings > API.`,
-      missingVariables: missingVars
+      error: 'Configuration Required',
+      message: errorMessage,
+      missingVariables: missingVars,
+      helpUrl: 'https://supabase.com/dashboard/project/_/settings/api'
     }, { status: 500 });
   }
 

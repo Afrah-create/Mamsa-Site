@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
+import AdminLoadingState from '@/components/AdminLoadingState';
 
 const INITIAL_STATS = {
   news: 0,
@@ -358,12 +359,10 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <AdminLayout user={user}>
-        <div className="flex h-full items-center justify-center py-16">
-          <div className="text-center text-gray-600">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-            <p className="font-medium">Loading dashboard data…</p>
-          </div>
-        </div>
+        <AdminLoadingState 
+          message="Loading dashboard..." 
+          subMessage="Fetching statistics and recent activity"
+        />
       </AdminLayout>
     );
   }

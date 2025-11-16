@@ -214,6 +214,18 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const loadProfile = useCallback(async () => {
     if (!user?.id) return;
     
+    // Try to load from sessionStorage first for instant display
+    const PROFILE_CACHE_KEY = `admin_profile_${user.id}`;
+    try {
+      const cached = sessionStorage.getItem(PROFILE_CACHE_KEY);
+      if (cached) {
+        const cachedProfile = JSON.parse(cached);
+        setProfile(cachedProfile);
+      }
+    } catch (e) {
+      // Ignore cache errors
+    }
+    
     try {
       const { data, error } = await supabase
         .from('admin_users')
@@ -232,14 +244,27 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
             email: user.email || '',
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
             role: 'admin',
+            avatar_url: user.user_metadata?.avatar_url,
             created_at: new Date().toISOString()
           };
           setProfile(fallbackProfile);
+          // Cache the fallback profile
+          try {
+            sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
+          } catch (e) {
+            // Ignore storage errors
+          }
         }
         return;
       }
 
       setProfile(data);
+      // Cache the profile for faster loading on navigation
+      try {
+        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+      } catch (e) {
+        // Ignore storage errors
+      }
     } catch (error) {
       console.error('Failed to load profile in AdminLayout:', error);
       // Create fallback profile even if there's an error
@@ -249,11 +274,18 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         email: user.email || '',
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
         role: 'admin',
+        avatar_url: user.user_metadata?.avatar_url,
         created_at: new Date().toISOString()
       };
       setProfile(fallbackProfile);
+      // Cache the fallback profile
+      try {
+        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
+      } catch (e) {
+        // Ignore storage errors
+      }
     }
-  }, [user?.id, supabase, user?.email, user?.user_metadata]);
+  }, [user?.id, supabase, user?.email, user?.user_metadata, user?.user_metadata?.avatar_url]);
 
   // Set current year on client side to avoid hydration mismatch
   useEffect(() => {

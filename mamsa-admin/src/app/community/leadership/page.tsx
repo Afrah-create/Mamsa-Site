@@ -1,5 +1,5 @@
 import { fetchLeadership, type Leader } from '@/lib/public-content';
-import LeaderCard from '@/components/LeaderCard';
+import OrgChart from '@/components/OrgChart';
 
 export const revalidate = 300;
 
@@ -27,7 +27,7 @@ export default async function LeadershipPage() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-2 sm:px-4 py-8 sm:py-12 lg:px-8">
       {error && (
         <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
           <div className="flex items-start gap-3">
@@ -55,12 +55,8 @@ export default async function LeadershipPage() {
         </div>
       ) : (
         <div className="mt-12">
-          {/* Hierarchical Layout - Responsive Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {leaders.map((leader: Leader) => (
-              <LeaderCard key={leader.id} leader={leader} />
-            ))}
-          </div>
+          {/* Hierarchical Organizational Chart */}
+          <OrgChart leaders={leaders} />
         </div>
       )}
         </div>

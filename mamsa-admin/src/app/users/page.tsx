@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AdminLayout from '@/components/AdminLayout';
+import AdminLoadingState from '@/components/AdminLoadingState';
 import UserModal from '@/components/UserModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Image from 'next/image';
@@ -386,10 +387,21 @@ export default function UsersPage() {
 
         if (!response.ok) {
           console.error('API error creating user:', payload);
-          const errorMessage = payload?.message 
-            ? `${payload.error}\n\n${payload.message}` 
-            : payload?.error ?? 'Unknown error';
-          alert(`Failed to create user: ${errorMessage}`);
+          
+          // Format error message for better readability
+          let errorMessage = payload?.error ?? 'Unknown error occurred';
+          
+          if (payload?.message) {
+            // For configuration errors, show a cleaner message
+            if (payload.error === 'Configuration Required') {
+              errorMessage = `${payload.error}\n\n${payload.message}`;
+            } else {
+              errorMessage = `${payload.error}\n\n${payload.message}`;
+            }
+          }
+          
+          // Show error in alert (will be improved with toast notification later)
+          alert(`Unable to Create User\n\n${errorMessage}`);
           return { success: false, error: payload?.error };
         }
 
@@ -619,7 +631,12 @@ export default function UsersPage() {
             )}
 
             {/* Users List */}
-            {filteredUsers.length === 0 ? (
+            {loading ? (
+              <AdminLoadingState 
+                message="Loading admin users..." 
+                subMessage="Fetching user data from the database"
+              />
+            ) : filteredUsers.length === 0 ? (
               <div className="text-center py-12">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
