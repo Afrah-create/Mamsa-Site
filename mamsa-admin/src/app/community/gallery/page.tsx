@@ -40,7 +40,7 @@ export default async function GalleryPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
         {error && (
           <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
             <div className="flex items-start gap-3">

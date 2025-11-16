@@ -12,6 +12,7 @@ const normalize = (value: string) => value.toLowerCase().trim();
 export default function PublicGalleryBrowser({ images }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   const categories = useMemo(() => {
     const unique = new Set<string>();
@@ -49,10 +50,10 @@ export default function PublicGalleryBrowser({ images }: Props) {
   const nothingMatches = !nothingToShow && filteredImages.length === 0;
 
   return (
-    <div className="space-y-10">
-      <div className="grid gap-4 md:grid-cols-[2fr,1fr] md:items-center">
+    <div className="space-y-6 sm:space-y-8 md:space-y-10">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-[2fr,1fr] md:items-center">
         <label className="flex w-full flex-col">
-          <span className="text-sm font-medium text-gray-700">Search gallery</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700">Search gallery</span>
           <div className="relative mt-2">
             <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -64,16 +65,16 @@ export default function PublicGalleryBrowser({ images }: Props) {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by title, theme, or description..."
-              className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 sm:py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
             />
           </div>
         </label>
         <label className="flex flex-col">
-          <span className="text-sm font-medium text-gray-700">Filter by category</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700">Filter by category</span>
           <select
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
-            className="mt-2 rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
+            className="mt-2 rounded-lg border border-gray-300 bg-white py-2 sm:py-2.5 px-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
           >
             <option value="all">All categories</option>
             {categories.map((category) => (
@@ -98,41 +99,78 @@ export default function PublicGalleryBrowser({ images }: Props) {
           <p className="mt-2 text-sm text-gray-500">Try a different keyword or choose another category.</p>
         </div>
       ) : (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredImages.map((item) => (
-            <figure
-              key={item.id}
-              className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">
-                    <span className="text-sm font-medium uppercase tracking-wide">Image pending</span>
-                  </div>
-                )}
-              </div>
-              <figcaption className="flex flex-1 flex-col gap-3 px-5 py-6 text-left">
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                    {item.category || 'MAMSA Community'}
-                  </p>
-                  <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>
+        <div className="grid gap-4 sm:gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredImages.map((item) => {
+            const isExpanded = expandedItems.has(item.id);
+            const hasDescription = item.description && item.description.trim().length > 0;
+            const descriptionLength = item.description?.length || 0;
+            const shouldShowToggle = hasDescription && descriptionLength > 80;
+
+            return (
+              <figure
+                key={item.id}
+                className="group flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <div className="relative aspect-square sm:aspect-[4/3] overflow-hidden bg-gray-100">
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">
+                      <span className="text-xs sm:text-sm font-medium uppercase tracking-wide">Image pending</span>
+                    </div>
+                  )}
                 </div>
-                {item.description && (
-                  <p className="text-sm text-gray-600 line-clamp-3">
-                    {item.description}
-                  </p>
-                )}
-              </figcaption>
-            </figure>
-          ))}
+                <figcaption className="flex flex-1 flex-col gap-2 sm:gap-3 px-4 py-3 sm:px-5 sm:py-4 text-left">
+                  <div className="space-y-1">
+                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                      {item.category || 'MAMSA Community'}
+                    </p>
+                    <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-tight">{item.title}</h2>
+                  </div>
+                  {hasDescription && (
+                    <div className="space-y-2">
+                      <p className={`text-xs sm:text-sm text-gray-600 leading-relaxed transition-all duration-200 ${
+                        isExpanded ? '' : 'line-clamp-2'
+                      }`}>
+                        {item.description}
+                      </p>
+                      {shouldShowToggle && (
+                        <button
+                          onClick={() => {
+                            setExpandedItems(prev => {
+                              const next = new Set(prev);
+                              if (isExpanded) {
+                                next.delete(item.id);
+                              } else {
+                                next.add(item.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
+                        >
+                          <span>{isExpanded ? 'Show less' : 'Read more'}</span>
+                          <svg
+                            className={`h-3 w-3 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
       )}
     </div>
