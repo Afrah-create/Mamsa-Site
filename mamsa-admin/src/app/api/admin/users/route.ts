@@ -53,8 +53,26 @@ export async function POST(request: Request) {
     const isServiceRoleKeyMissing = missingVars.includes('SUPABASE_SERVICE_ROLE_KEY');
     
     const errorMessage = isServiceRoleKeyMissing 
-      ? `The Supabase Service Role Key is missing. This is required to create admin users.\n\nTo fix this:\n1. Go to your Supabase Dashboard\n2. Navigate to Settings > API\n3. Copy the service_role key (keep it secret!)\n4. Add it to your .env.local file as:\n   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key\n5. Restart your development server`
-      : `Missing environment variables: ${missingVars.join(', ')}. Please add them to your .env.local file and restart the server.`;
+      ? {
+          title: 'Service Role Key Required',
+          summary: 'The Supabase Service Role Key is missing. This is required to create admin users.',
+          steps: [
+            'Go to your Supabase Dashboard',
+            'Navigate to Settings > API',
+            'Copy the service_role key (keep it secret!)',
+            'Add it to your .env.local file as: SUPABASE_SERVICE_ROLE_KEY=your-key',
+            'Restart your development server'
+          ],
+          note: 'This key provides elevated permissions needed for user management.'
+        }
+      : {
+          title: 'Configuration Required',
+          summary: `Missing environment variables: ${missingVars.join(', ')}`,
+          steps: [
+            'Add the missing variables to your .env.local file',
+            'Restart your development server'
+          ]
+        };
     
     return NextResponse.json({ 
       error: 'Configuration Required',

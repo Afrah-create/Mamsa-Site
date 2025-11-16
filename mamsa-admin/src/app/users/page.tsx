@@ -7,6 +7,7 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import UserModal from '@/components/UserModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import ConfigurationErrorModal from '@/components/ConfigurationErrorModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
@@ -50,6 +51,14 @@ export default function UsersPage() {
   const [editingItem, setEditingItem] = useState<AdminUser | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<AdminUser | null>(null);
+  const [showConfigError, setShowConfigError] = useState(false);
+  const [configError, setConfigError] = useState<{
+    title: string;
+    summary: string;
+    steps: string[];
+    note?: string;
+  } | null>(null);
+  const [configErrorHelpUrl, setConfigErrorHelpUrl] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'super_admin' | 'admin' | 'moderator'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
@@ -392,19 +401,20 @@ export default function UsersPage() {
         if (!response.ok) {
           console.error('API error creating user:', payload);
           
-          // Format error message for better readability
-          let errorMessage = payload?.error ?? 'Unknown error occurred';
-          
-          if (payload?.message) {
-            // For configuration errors, show a cleaner message
-            if (payload.error === 'Configuration Required') {
-              errorMessage = `${payload.error}\n\n${payload.message}`;
-            } else {
-              errorMessage = `${payload.error}\n\n${payload.message}`;
-            }
+          // For configuration errors, show the detailed modal
+          if (payload?.error === 'Configuration Required' && typeof payload?.message === 'object') {
+            setConfigError(payload.message);
+            setConfigErrorHelpUrl(payload.helpUrl);
+            setShowConfigError(true);
+            return { success: false, error: payload?.error };
           }
           
-          // Show error in toast
+          // For other errors, show toast
+          let errorMessage = payload?.error ?? 'Unknown error occurred';
+          if (payload?.message && typeof payload.message === 'string') {
+            errorMessage = `${payload.error}\n\n${payload.message}`;
+          }
+          
           showToast(`Unable to create user: ${errorMessage}`, 'error');
           return { success: false, error: payload?.error };
         }
@@ -807,6 +817,18 @@ export default function UsersPage() {
           isVisible={toast.isVisible}
           onClose={hideToast}
         />
+        {configError && (
+          <ConfigurationErrorModal
+            isOpen={showConfigError}
+            onClose={() => {
+              setShowConfigError(false);
+              setConfigError(null);
+              setConfigErrorHelpUrl(undefined);
+            }}
+            error={configError}
+            helpUrl={configErrorHelpUrl}
+          />
+        )}
       </div>
     </AdminLayout>
   );
