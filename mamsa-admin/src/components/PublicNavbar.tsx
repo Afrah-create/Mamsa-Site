@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const navigation = [
@@ -16,12 +16,18 @@ const navigation = [
 
 export default function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before showing mobile menu to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleMobile = () => setMobileOpen((open) => !open);
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur" suppressHydrationWarning>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
@@ -69,8 +75,8 @@ export default function PublicNavbar() {
         </button>
       </div>
 
-      {mobileOpen && (
-        <nav className="border-t border-emerald-100 bg-white py-4 md:hidden">
+      {mounted && mobileOpen && (
+        <nav className="border-t border-emerald-100 bg-white py-4 md:hidden" suppressHydrationWarning>
           <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6">
             {navigation.map((item) => (
               <Link

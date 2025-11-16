@@ -16,9 +16,15 @@ export default function EventCarousel({ events }: Props) {
   const slides = useMemo(() => events.filter((event) => Boolean(event.title)), [events]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before starting carousel to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (slides.length <= 1) {
+    if (!mounted || slides.length <= 1) {
       return;
     }
 
@@ -29,7 +35,7 @@ export default function EventCarousel({ events }: Props) {
     }, SLIDE_DELAY);
 
     return () => clearInterval(timer);
-  }, [slides.length, isPaused]);
+  }, [mounted, slides.length, isPaused]);
 
   if (slides.length === 0) {
     return (

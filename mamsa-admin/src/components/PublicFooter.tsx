@@ -35,7 +35,7 @@ export default function PublicFooter() {
         </nav>
       </div>
       <div className="bg-emerald-900/40 py-4 text-center text-xs text-emerald-200/80">
-        © {new Date().getFullYear()} MAMSA. All rights reserved.
+        © {typeof window !== 'undefined' ? new Date().getFullYear() : 2025} MAMSA. All rights reserved.
       </div>
     </footer>
   );

@@ -98,7 +98,14 @@ export async function POST(request: Request) {
     }
 
     // Log password creation (without exposing the actual password)
-    console.log(`[api/admin/users] Creating user ${user.email} with role ${user.role}, password ${finalPassword ? 'provided' : 'missing'}`);
+    console.log(`[api/admin/users] Creating user ${user.email} with role ${user.role}, password length: ${finalPassword?.length || 0}`);
+    
+    // Validate password meets requirements (if Supabase has password policies)
+    if (finalPassword && finalPassword.length < 6) {
+      return NextResponse.json({ 
+        error: 'Password must be at least 6 characters long.' 
+      }, { status: 400 });
+    }
 
     const normalizedPermissions: Permissions =
       user.role === 'super_admin'
@@ -119,9 +126,12 @@ export async function POST(request: Request) {
             reports: Boolean(user.permissions?.reports),
           };
 
+    // Normalize email to lowercase
+    const normalizedEmail = user.email.trim().toLowerCase();
+    
     // Create user in Supabase Auth with password
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: user.email,
+      email: normalizedEmail,
       password: finalPassword,
       email_confirm: true,
       user_metadata: {
@@ -131,7 +141,12 @@ export async function POST(request: Request) {
     });
 
     if (authError || !authData?.user) {
-      console.error('[api/admin/users] Failed to create auth user:', authError);
+      console.error('[api/admin/users] Failed to create auth user:', {
+        error: authError,
+        message: authError?.message,
+        status: authError?.status,
+        email: normalizedEmail
+      });
       return NextResponse.json({ 
         error: authError?.message ?? 'Failed to create authentication user.',
         details: authError 
@@ -143,7 +158,7 @@ export async function POST(request: Request) {
     const insertPayload = {
       user_id: authData.user.id,
       full_name: user.full_name,
-      email: user.email,
+      email: normalizedEmail, // Use normalized email to match auth.users
       avatar_url: user.avatar_url ?? null,
       phone: user.phone ?? null,
       bio: user.bio ?? null,

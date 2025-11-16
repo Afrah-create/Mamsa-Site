@@ -38,13 +38,28 @@ function LoginForm() {
     setError('');
 
     try {
+      console.log('[Login] Attempting login for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
-        setError(error.message);
+        console.error('[Login] Authentication error:', {
+          code: error.status,
+          message: error.message,
+          email: email.trim().toLowerCase()
+        });
+        
+        // Provide more helpful error messages
+        let errorMessage = error.message;
+        if (error.message === 'Invalid login credentials' || error.status === 400) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        }
+        
+        setError(errorMessage);
+        setLoading(false);
         return;
       }
 
