@@ -347,7 +347,10 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         .eq('user_id', currentUser.id)
         .single();
 
-      if (adminError || !adminData || adminData.role !== 'super_admin' || adminData.status !== 'active') {
+      // Valid admin roles
+      const validRoles = ['super_admin', 'admin', 'moderator'];
+
+      if (adminError || !adminData || !validRoles.includes(adminData.role) || adminData.status !== 'active') {
         clearSessionData();
         window.location.href = '/login';
       }

@@ -7,6 +7,8 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import UserModal from '@/components/UserModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
 
 interface AdminUser {
@@ -54,6 +56,7 @@ export default function UsersPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const supabase = createClient();
+  const { toast, showToast, hideToast } = useToast();
 
   // Static data for demonstration
   const staticUsers: AdminUser[] = [
@@ -349,25 +352,26 @@ export default function UsersPage() {
 
         if (error) {
           console.error('Error updating user:', error);
-          alert(`Failed to update user: ${error.message}`);
+          showToast(`Failed to update user: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from update operation');
-          alert('Failed to update user: No data returned');
+          showToast('Failed to update user: No data returned', 'error');
           return;
         }
 
         console.log('Successfully updated user:', data);
         
         setUsers(prev => prev.map(u => u.id === editingItem.id ? data : u));
+        showToast('User updated successfully', 'success');
       } else {
         // For super_admin, use default password if not provided
         const finalPassword = password || (userData.role === 'super_admin' ? 'adminmamsa' : null);
         
         if (!finalPassword) {
-          alert('A password is required when creating a new user.');
+          showToast('A password is required when creating a new user.', 'error');
           return { success: false };
         }
 
@@ -400,26 +404,27 @@ export default function UsersPage() {
             }
           }
           
-          // Show error in alert (will be improved with toast notification later)
-          alert(`Unable to Create User\n\n${errorMessage}`);
+          // Show error in toast
+          showToast(`Unable to create user: ${errorMessage}`, 'error');
           return { success: false, error: payload?.error };
         }
 
         if (!payload?.data) {
-          alert('Failed to create user: invalid response');
+          showToast('Failed to create user: invalid response', 'error');
           return { success: false };
         }
 
         setUsers((prev) => [payload.data, ...prev]);
+        showToast('User created successfully', 'success');
       }
       
       return { success: true };
     } catch (error) {
       console.error('Failed to save user:', error);
       if (error instanceof Error) {
-        alert(`Failed to save user: ${error.message}`);
+        showToast(`Failed to save user: ${error.message}`, 'error');
       } else {
-        alert('Failed to save user. Please try again.');
+        showToast('Failed to save user. Please try again.', 'error');
       }
       return { success: false, error };
     }
@@ -446,9 +451,10 @@ export default function UsersPage() {
         setUsers(prev => prev.filter(u => u.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
+        showToast('User deleted successfully', 'success');
       } catch (error) {
         console.error('Failed to delete user:', error);
-        alert('Failed to delete user. Please try again.');
+        showToast('Failed to delete user. Please try again.', 'error');
       }
     }
   };
@@ -472,9 +478,10 @@ export default function UsersPage() {
       // Update local state
       setUsers(prev => prev.filter(u => !selectedItems.includes(u.id)));
       setSelectedItems([]);
+      showToast(`${selectedItems.length} user(s) deleted successfully`, 'success');
     } catch (error) {
       console.error('Failed to delete selected users:', error);
-      alert('Failed to delete selected users. Please try again.');
+      showToast('Failed to delete selected users. Please try again.', 'error');
     }
   };
 
@@ -793,6 +800,12 @@ export default function UsersPage() {
           message={`Are you sure you want to delete "${itemToDelete?.full_name}"? This action cannot be undone.`}
           confirmText="Delete"
           type="danger"
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
         />
       </div>
     </AdminLayout>

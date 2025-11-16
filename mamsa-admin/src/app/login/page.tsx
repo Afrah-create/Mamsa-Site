@@ -49,7 +49,7 @@ function LoginForm() {
       }
 
       if (data.user) {
-        // Verify user is a super_admin
+        // Verify user is an admin (super_admin, admin, or moderator)
         const { data: adminData, error: adminError } = await supabase
           .from('admin_users')
           .select('role, status')
@@ -57,15 +57,16 @@ function LoginForm() {
           .single();
 
         if (adminError || !adminData) {
-          setError('Access denied. Only super admins can login.');
+          setError('Access denied. You do not have admin privileges.');
           await supabase.auth.signOut();
           setLoading(false);
           return;
         }
 
-        // Check if user is super_admin
-        if (adminData.role !== 'super_admin') {
-          setError('Access denied. Only super admins can login.');
+        // Check if user has a valid admin role (super_admin, admin, or moderator)
+        const validRoles = ['super_admin', 'admin', 'moderator'];
+        if (!validRoles.includes(adminData.role)) {
+          setError('Access denied. You do not have admin privileges.');
           await supabase.auth.signOut();
           setLoading(false);
           return;

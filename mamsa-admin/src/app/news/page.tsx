@@ -7,6 +7,8 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import NewsModal from '@/components/NewsModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 interface NewsItem {
   id: number;
@@ -40,6 +42,7 @@ export default function NewsPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const supabase = createClient();
+  const { toast, showToast, hideToast } = useToast();
 
   // Function to seed initial news data
   const seedInitialNews = useCallback(async () => {
@@ -267,13 +270,13 @@ export default function NewsPage() {
 
         if (error) {
           console.error('Error updating news article:', error);
-          alert(`Failed to update news article: ${error.message}`);
+          showToast(`Failed to update news article: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from update operation');
-          alert('Failed to update news article: No data returned');
+          showToast('Failed to update news article: No data returned', 'error');
           return;
         }
 
@@ -281,6 +284,7 @@ export default function NewsPage() {
         
         // Update local state
         setNews(prev => prev.map(item => item.id === editingItem.id ? data : item));
+        showToast('News article updated successfully', 'success');
       } else {
         // Create new item
         console.log('Creating new article...');
@@ -305,13 +309,13 @@ export default function NewsPage() {
 
         if (error) {
           console.error('Error creating news article:', error);
-          alert(`Failed to create news article: ${error.message}`);
+          showToast(`Failed to create news article: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from create operation');
-          alert('Failed to create news article: No data returned');
+          showToast('Failed to create news article: No data returned', 'error');
           return;
         }
 
@@ -319,6 +323,7 @@ export default function NewsPage() {
         
         // Update local state
         setNews(prev => [data, ...prev]);
+        showToast('News article created successfully', 'success');
       }
       
       console.log('Closing modal after successful operation');
@@ -330,9 +335,9 @@ export default function NewsPage() {
       console.error('Failed to save news:', error);
       // Only show generic error if we haven't already shown a specific error
       if (error instanceof Error) {
-        alert(`Failed to save news article: ${error.message}`);
+        showToast(`Failed to save news article: ${error.message}`, 'error');
       } else {
-        alert('Failed to save news article. Please try again.');
+        showToast('Failed to save news article. Please try again.', 'error');
       }
       
       // Return error indicator
@@ -361,9 +366,10 @@ export default function NewsPage() {
         setNews(prev => prev.filter(item => item.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
+        showToast('News article deleted successfully', 'success');
       } catch (error) {
         console.error('Failed to delete news:', error);
-        alert('Failed to delete news article. Please try again.');
+        showToast('Failed to delete news article. Please try again.', 'error');
       }
     }
   };
@@ -387,9 +393,10 @@ export default function NewsPage() {
       // Update local state
       setNews(prev => prev.filter(item => !selectedItems.includes(item.id)));
       setSelectedItems([]);
+      showToast(`${selectedItems.length} article(s) deleted successfully`, 'success');
     } catch (error) {
       console.error('Failed to delete selected items:', error);
-      alert('Failed to delete selected articles. Please try again.');
+      showToast('Failed to delete selected articles. Please try again.', 'error');
     }
   };
 
@@ -809,6 +816,12 @@ export default function NewsPage() {
           message={`Are you sure you want to delete "${itemToDelete?.title}"? This action cannot be undone.`}
           confirmText="Delete"
           type="danger"
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
         />
       </div>
     </AdminLayout>

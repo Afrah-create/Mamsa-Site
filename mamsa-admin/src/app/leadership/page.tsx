@@ -7,6 +7,8 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import LeadershipModal from '@/components/LeadershipModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
 
 interface LeadershipMember {
@@ -48,6 +50,7 @@ export default function LeadershipPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const supabase = createClient();
+  const { toast, showToast, hideToast } = useToast();
 
   // Static data for demonstration
   const staticLeadership: LeadershipMember[] = [
@@ -306,13 +309,13 @@ export default function LeadershipPage() {
 
         if (error) {
           console.error('Error updating member:', error);
-          alert(`Failed to update member: ${error.message}`);
+          showToast(`Failed to update member: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from update operation');
-          alert('Failed to update member: No data returned');
+          showToast('Failed to update member: No data returned', 'error');
           return;
         }
 
@@ -320,6 +323,7 @@ export default function LeadershipPage() {
         
         // Update local state
         setLeadership(prev => prev.map(member => member.id === editingItem.id ? data : member));
+        showToast('Leadership member updated successfully', 'success');
       } else {
         // Create new member
         console.log('Creating new member...');
@@ -347,13 +351,13 @@ export default function LeadershipPage() {
 
         if (error) {
           console.error('Error creating member:', error);
-          alert(`Failed to create member: ${error.message}`);
+          showToast(`Failed to create member: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from create operation');
-          alert('Failed to create member: No data returned');
+          showToast('Failed to create member: No data returned', 'error');
           return;
         }
 
@@ -361,6 +365,7 @@ export default function LeadershipPage() {
         
         // Update local state
         setLeadership(prev => [data, ...prev]);
+        showToast('Leadership member created successfully', 'success');
       }
       
       console.log('Closing modal after successful operation');
@@ -372,9 +377,9 @@ export default function LeadershipPage() {
       console.error('Failed to save member:', error);
       // Only show generic error if we haven't already shown a specific error
       if (error instanceof Error) {
-        alert(`Failed to save member: ${error.message}`);
+        showToast(`Failed to save member: ${error.message}`, 'error');
       } else {
-        alert('Failed to save member. Please try again.');
+        showToast('Failed to save member. Please try again.', 'error');
       }
       
       // Return error indicator
@@ -403,9 +408,10 @@ export default function LeadershipPage() {
         setLeadership(prev => prev.filter(member => member.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
+        showToast('Leadership member deleted successfully', 'success');
       } catch (error) {
         console.error('Failed to delete member:', error);
-        alert('Failed to delete member. Please try again.');
+        showToast('Failed to delete member. Please try again.', 'error');
       }
     }
   };
@@ -429,9 +435,10 @@ export default function LeadershipPage() {
       // Update local state
       setLeadership(prev => prev.filter(member => !selectedItems.includes(member.id)));
       setSelectedItems([]);
+      showToast(`${selectedItems.length} member(s) deleted successfully`, 'success');
     } catch (error) {
       console.error('Failed to delete selected members:', error);
-      alert('Failed to delete selected members. Please try again.');
+      showToast('Failed to delete selected members. Please try again.', 'error');
     }
   };
 
@@ -785,6 +792,12 @@ export default function LeadershipPage() {
           message={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
           confirmText="Delete"
           type="danger"
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
         />
       </div>
     </AdminLayout>

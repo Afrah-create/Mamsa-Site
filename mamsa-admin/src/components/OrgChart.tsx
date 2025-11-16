@@ -18,33 +18,33 @@ function getHierarchyLevel(position: string | null): number {
   if (!position) return 3;
   const pos = position.toLowerCase();
   
-  // Top level - Board, President, Chair, Executive
-  if (pos.includes('board') || pos.includes('president') || pos.includes('chair') || pos.includes('executive') || pos.includes('ceo')) {
+  // Top level - Board, President, Chair
+  if (pos.includes('board') || pos.includes('president') || pos.includes('chair')) {
     return 0;
   }
   
-  // Second level - Directors, Vice Presidents, Coordinators
-  if (pos.includes('director') || pos.includes('vice') || pos.includes('coordinator') || pos.includes('head') || pos.includes('chief')) {
+  // Second level - CEO, Executive Director
+  if (pos.includes('ceo') || pos.includes('executive') || pos.includes('secretary general')) {
     return 1;
   }
   
-  // Third level - Managers, Officers, Secretaries
-  if (pos.includes('manager') || pos.includes('officer') || pos.includes('secretary') || pos.includes('treasurer') || pos.includes('minister')) {
+  // Third level - Directors
+  if (pos.includes('director') || pos.includes('coordinator') || pos.includes('head') || pos.includes('minister')) {
     return 2;
   }
   
-  // Fourth level - Specialists, Members, Assistants
+  // Fourth level - Specialists, Officers, Members
   return 3;
 }
 
 // Build hierarchy tree from flat list
 function buildHierarchy(leaders: Leader[]): HierarchyNode[] {
-  // Sort by hierarchy level and then by order_position
+  // Sort by hierarchy level first, then by order_position
   const sorted = [...leaders].sort((a, b) => {
     const levelA = getHierarchyLevel(a.position);
     const levelB = getHierarchyLevel(b.position);
     if (levelA !== levelB) return levelA - levelB;
-    // If same level, maintain original order
+    // If same level, use order_position if available
     return 0;
   });
 
@@ -54,18 +54,24 @@ function buildHierarchy(leaders: Leader[]): HierarchyNode[] {
     level: getHierarchyLevel(leader.position),
   }));
 
-  // Build parent-child relationships based on department and level
+  // Build parent-child relationships
   const rootNodes: HierarchyNode[] = [];
   
   nodes.forEach(node => {
     if (node.level === 0) {
+      // Top level nodes are roots
       rootNodes.push(node);
     } else {
-      // Find parent (closest node one level above in same department)
-      const parent = nodes.find(p => 
-        p.level === node.level - 1 && 
-        (p.leader.department === node.leader.department || !node.leader.department || !p.leader.department)
-      );
+      // Find parent (one level above, prefer same department)
+      const parent = nodes.find(p => {
+        if (p.level !== node.level - 1) return false;
+        // If both have departments, match by department
+        if (p.leader.department && node.leader.department) {
+          return p.leader.department === node.leader.department;
+        }
+        // If no department match, assign to first available parent at correct level
+        return true;
+      });
       
       if (parent) {
         parent.children.push(node);
@@ -76,40 +82,58 @@ function buildHierarchy(leaders: Leader[]): HierarchyNode[] {
     }
   });
 
+  // Sort children by order_position within each parent
+  const sortChildren = (node: HierarchyNode) => {
+    node.children.sort((a, b) => {
+      // Sort by level first, then by position
+      if (a.level !== b.level) return a.level - b.level;
+      return 0;
+    });
+    node.children.forEach(sortChildren);
+  };
+  
+  rootNodes.forEach(sortChildren);
+
   return rootNodes;
 }
 
 export default function OrgChart({ leaders }: OrgChartProps) {
   const hierarchy = useMemo(() => buildHierarchy(leaders), [leaders]);
 
-  const renderNode = (node: HierarchyNode, index: number, total: number, isRoot: boolean = false) => {
+  const renderNode = (node: HierarchyNode, parentHasSiblings: boolean = false) => {
     const { leader, children } = node;
     const hasChildren = children.length > 0;
     const level = node.level;
 
     // Determine box styling based on level
     const boxClasses = level === 0
-      ? 'bg-white border-2 border-emerald-600 shadow-lg'
+      ? 'bg-white border-2 border-gray-300 shadow-lg'
       : level === 1
+      ? 'bg-blue-50 border-2 border-blue-400 shadow-md'
+      : level === 2
       ? 'bg-blue-50 border-2 border-blue-400 shadow-md'
       : 'bg-emerald-50 border border-emerald-300 shadow-sm';
 
     const textClasses = level === 0
-      ? 'text-emerald-700'
+      ? 'text-gray-700'
       : level === 1
+      ? 'text-blue-700'
+      : level === 2
       ? 'text-blue-700'
       : 'text-emerald-600';
 
+    const imageSize = level === 0
+      ? 'h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28'
+      : level === 1 || level === 2
+      ? 'h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24'
+      : 'h-14 w-14 sm:h-16 sm:w-16 md:h-20 md:w-20';
+
     return (
-      <div key={leader.id} className="flex flex-col items-center relative w-full sm:w-auto">
+      <div key={leader.id} className="flex flex-col items-center relative">
         {/* Leader Card */}
-        <div className={`${boxClasses} rounded-lg p-2.5 sm:p-3 md:p-4 w-full max-w-[140px] sm:max-w-[180px] md:max-w-[200px] transition-all hover:scale-105 cursor-pointer mx-auto`}>
+        <div className={`${boxClasses} rounded-lg p-3 sm:p-4 md:p-5 w-full max-w-[160px] sm:max-w-[180px] md:max-w-[200px] transition-all hover:scale-105`}>
           {/* Circular Image */}
-          <div className={`relative mx-auto mb-1.5 sm:mb-2 md:mb-3 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md ${
-            level === 0 ? 'h-16 w-16 sm:h-24 sm:w-24 md:h-28 md:w-28' : 
-            level === 1 ? 'h-14 w-14 sm:h-20 sm:w-20 md:h-24 md:w-24' : 
-            'h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20'
-          }`}>
+          <div className={`relative mx-auto mb-2 sm:mb-3 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md ${imageSize}`}>
             {leader.image_url ? (
               <img
                 src={leader.image_url}
@@ -119,9 +143,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
               />
             ) : (
               <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold text-emerald-700 ${
-                level === 0 ? 'text-base sm:text-xl md:text-2xl' : 
-                level === 1 ? 'text-sm sm:text-lg md:text-xl' : 
-                'text-xs sm:text-base md:text-lg'
+                level === 0 ? 'text-lg sm:text-xl md:text-2xl' : 
+                level <= 2 ? 'text-base sm:text-lg md:text-xl' : 
+                'text-sm sm:text-base md:text-lg'
               }`}>
                 {leader.name.slice(0, 2).toUpperCase()}
               </div>
@@ -129,66 +153,56 @@ export default function OrgChart({ leaders }: OrgChartProps) {
           </div>
 
           {/* Name */}
-          <h3 className={`text-gray-900 text-center mb-0.5 sm:mb-1 font-semibold line-clamp-2 leading-tight ${
-            level === 0 ? 'text-xs sm:text-base' : 
-            level === 1 ? 'text-[10px] sm:text-sm' : 
-            'text-[10px] sm:text-xs'
+          <h3 className={`text-gray-900 text-center mb-1 font-semibold line-clamp-2 leading-tight ${
+            level === 0 ? 'text-sm sm:text-base md:text-lg' : 
+            level <= 2 ? 'text-xs sm:text-sm md:text-base' : 
+            'text-xs sm:text-sm'
           }`}>
             {leader.name}
           </h3>
 
           {/* Position */}
           <p className={`font-medium text-center ${textClasses} line-clamp-2 leading-tight ${
-            level === 0 ? 'text-[10px] sm:text-sm' : 'text-[9px] sm:text-xs'
+            level === 0 ? 'text-xs sm:text-sm' : 'text-[10px] sm:text-xs md:text-sm'
           }`}>
             {leader.position || 'Member'}
           </p>
-
-          {/* Department */}
-          {leader.department && level > 0 && (
-            <p className="text-[9px] sm:text-xs text-gray-500 text-center mt-0.5 sm:mt-1 line-clamp-1">
-              {leader.department}
-            </p>
-          )}
         </div>
 
         {/* Children */}
         {hasChildren && (
-          <>
-            {/* Vertical Connecting Line */}
-            <div className="w-0.5 h-3 sm:h-5 md:h-6 bg-gray-400 my-1.5 sm:my-2"></div>
+          <div className="flex flex-col items-center w-full">
+            {/* Vertical Connecting Line from parent to horizontal connector */}
+            <div className="w-0.5 h-4 sm:h-6 md:h-8 bg-gray-400"></div>
             
-            {/* Horizontal Connecting Line (if multiple children) - Hidden on mobile */}
-            {children.length > 1 && (
-              <div className="hidden sm:block absolute top-[90px] sm:top-[120px] md:top-[140px] left-1/2 transform -translate-x-1/2 w-full max-w-[calc(100%-20px)] sm:max-w-[calc(100%-40px)] h-0.5 bg-gray-400"></div>
-            )}
-            
-            {/* Children Container */}
-            <div className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mt-1 sm:mt-2 relative w-full ${
-              children.length > 1 ? 'pt-1 sm:pt-2' : ''
-            }`}>
-              {children.map((child, childIndex) => (
-                <div key={child.leader.id} className="flex flex-col items-center relative flex-1 min-w-0 sm:flex-none">
-                  {/* Horizontal line to child (if multiple children) - Hidden on mobile */}
-                  {children.length > 1 && (
-                    <>
-                      <div className="hidden sm:block absolute -top-1 sm:-top-2 left-1/2 w-0.5 h-1 sm:h-2 bg-gray-400"></div>
-                      {childIndex === 0 && (
-                        <div className="hidden sm:block absolute -top-1 sm:-top-2 left-1/2 w-1/2 h-0.5 bg-gray-400"></div>
-                      )}
-                      {childIndex === children.length - 1 && childIndex > 0 && (
-                        <div className="hidden sm:block absolute -top-1 sm:-top-2 right-1/2 w-1/2 h-0.5 bg-gray-400"></div>
-                      )}
-                      {childIndex > 0 && childIndex < children.length - 1 && (
-                        <div className="hidden sm:block absolute -top-1 sm:-top-2 left-0 w-full h-0.5 bg-gray-400"></div>
-                      )}
-                    </>
-                  )}
-                  {renderNode(child, childIndex, children.length, false)}
-                </div>
-              ))}
+            {/* Horizontal container for children with connector lines */}
+            <div className="relative w-full flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mt-2 pb-2">
+              {/* Horizontal connector line - spans across all children */}
+              {children.length > 1 && (
+                <div 
+                  className="absolute top-0 left-0 right-0 h-0.5 bg-gray-400"
+                  style={{
+                    left: '10%',
+                    right: '10%',
+                  }}
+                ></div>
+              )}
+              
+              {children.map((child, childIndex) => {
+                return (
+                  <div key={child.leader.id} className="flex flex-col items-center relative z-10">
+                    {/* Vertical line from horizontal connector to child (only if multiple children) */}
+                    {children.length > 1 && (
+                      <div className="absolute -top-2 sm:-top-3 md:-top-4 left-1/2 transform -translate-x-1/2 w-0.5 h-2 sm:h-3 md:h-4 bg-gray-400"></div>
+                    )}
+                    
+                    {/* Render child node */}
+                    {renderNode(child, children.length > 1)}
+                  </div>
+                );
+              })}
             </div>
-          </>
+          </div>
         )}
       </div>
     );
@@ -203,23 +217,14 @@ export default function OrgChart({ leaders }: OrgChartProps) {
   }
 
   return (
-    <div className="w-full py-4 sm:py-6 md:py-8">
-      {/* Mobile: Vertical scroll, Desktop: Horizontal scroll if needed */}
-      <div className="w-full overflow-x-auto overflow-y-visible -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex flex-col items-center min-w-0 sm:min-w-max">
-          {hierarchy.length > 0 && (
-            <div className="flex flex-col items-center w-full max-w-full">
-              {/* Render all root nodes */}
-              {hierarchy.map((node, index) => (
-                <div key={node.leader.id} className="flex flex-col items-center mb-6 sm:mb-10 md:mb-12 w-full">
-                  {renderNode(node, index, hierarchy.length, true)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+    <div className="w-full py-6 sm:py-8 md:py-12 overflow-x-auto">
+      <div className="flex flex-col items-center min-w-max px-4 sm:px-8">
+        {hierarchy.map((rootNode) => (
+          <div key={rootNode.leader.id} className="flex flex-col items-center">
+            {renderNode(rootNode)}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
-

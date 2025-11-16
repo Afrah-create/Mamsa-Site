@@ -58,15 +58,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Verify user is an admin
+    // Verify user is an admin (super_admin, admin, or moderator)
     const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .select('role, status')
       .eq('user_id', user.id)
       .single();
 
+    // Valid admin roles
+    const validRoles = ['super_admin', 'admin', 'moderator'];
+
     // If not an admin or account is inactive, redirect to login
-    if (adminError || !adminData || adminData.role !== 'super_admin' || adminData.status !== 'active') {
+    if (adminError || !adminData || !validRoles.includes(adminData.role) || adminData.status !== 'active') {
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('error', 'unauthorized');
       return NextResponse.redirect(redirectUrl);

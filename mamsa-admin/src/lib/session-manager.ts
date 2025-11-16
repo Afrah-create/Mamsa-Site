@@ -38,7 +38,7 @@ export async function validateSession(): Promise<SessionData | null> {
       return null;
     }
 
-    // Verify user is still an admin
+    // Verify user is still an admin (super_admin, admin, or moderator)
     const { data: adminData, error: adminError } = await supabase
       .from('admin_users')
       .select('role, status, id')
@@ -50,8 +50,11 @@ export async function validateSession(): Promise<SessionData | null> {
       return null;
     }
 
-    // Check if user is still active and super_admin
-    if (adminData.role !== 'super_admin' || adminData.status !== 'active') {
+    // Valid admin roles
+    const validRoles = ['super_admin', 'admin', 'moderator'];
+
+    // Check if user is still active and has a valid admin role
+    if (!validRoles.includes(adminData.role) || adminData.status !== 'active') {
       clearSessionData();
       return null;
     }

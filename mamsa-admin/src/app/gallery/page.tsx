@@ -7,6 +7,8 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import GalleryModal from '@/components/GalleryModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 interface GalleryImage {
   id: number;
@@ -49,6 +51,7 @@ export default function GalleryPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const supabase = createClient();
+  const { toast, showToast, hideToast } = useToast();
 
   const resolveImageUrl = (url?: string | null) => {
     if (!url) return '';
@@ -398,13 +401,13 @@ export default function GalleryPage() {
 
         if (error) {
           console.error('Error updating image:', error);
-          alert(`Failed to update image: ${error.message}`);
+          showToast(`Failed to update image: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from update operation');
-          alert('Failed to update image: No data returned');
+          showToast('Failed to update image: No data returned', 'error');
           return;
         }
 
@@ -412,6 +415,7 @@ export default function GalleryPage() {
         
         // Update local state
         setGallery(prev => prev.map(image => image.id === editingItem.id ? normalizeGalleryImage(data as GalleryImage) : image));
+        showToast('Gallery image updated successfully', 'success');
       } else {
         // Create new image
         console.log('Creating new image...');
@@ -441,13 +445,13 @@ export default function GalleryPage() {
 
         if (error) {
           console.error('Error creating image:', error);
-          alert(`Failed to create image: ${error.message}`);
+          showToast(`Failed to create image: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from create operation');
-          alert('Failed to create image: No data returned');
+          showToast('Failed to create image: No data returned', 'error');
           return;
         }
 
@@ -455,6 +459,7 @@ export default function GalleryPage() {
         
         // Update local state
         setGallery(prev => [normalizeGalleryImage(data as GalleryImage), ...prev]);
+        showToast('Gallery image created successfully', 'success');
       }
       
       console.log('Closing modal after successful operation');
@@ -466,9 +471,9 @@ export default function GalleryPage() {
       console.error('Failed to save image:', error);
       // Only show generic error if we haven't already shown a specific error
       if (error instanceof Error) {
-        alert(`Failed to save image: ${error.message}`);
+        showToast(`Failed to save image: ${error.message}`, 'error');
       } else {
-        alert('Failed to save image. Please try again.');
+        showToast('Failed to save image. Please try again.', 'error');
       }
       
       // Return error indicator
@@ -497,9 +502,10 @@ export default function GalleryPage() {
         setGallery(prev => prev.filter(image => image.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
+        showToast('Gallery image deleted successfully', 'success');
       } catch (error) {
         console.error('Failed to delete image:', error);
-        alert('Failed to delete image. Please try again.');
+        showToast('Failed to delete image. Please try again.', 'error');
       }
     }
   };
@@ -523,9 +529,10 @@ export default function GalleryPage() {
       // Update local state
       setGallery(prev => prev.filter(image => !selectedItems.includes(image.id)));
       setSelectedItems([]);
+      showToast(`${selectedItems.length} image(s) deleted successfully`, 'success');
     } catch (error) {
       console.error('Failed to delete selected images:', error);
-      alert('Failed to delete selected images. Please try again.');
+      showToast('Failed to delete selected images. Please try again.', 'error');
     }
   };
 
@@ -917,6 +924,12 @@ export default function GalleryPage() {
           message={`Are you sure you want to delete "${itemToDelete?.title}"? This action cannot be undone.`}
           confirmText="Delete"
           type="danger"
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
         />
       </div>
     </AdminLayout>

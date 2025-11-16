@@ -7,6 +7,8 @@ import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import EventModal from '@/components/EventModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import Toast from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 
 interface Event {
   id: number;
@@ -46,6 +48,7 @@ export default function EventsPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const supabase = createClient();
+  const { toast, showToast, hideToast } = useToast();
 
   const formatTimeForDisplay = (rawTime?: string | null) => {
     if (!rawTime) return '';
@@ -358,13 +361,13 @@ export default function EventsPage() {
 
         if (error) {
           console.error('Error updating event:', error);
-          alert(`Failed to update event: ${error.message}`);
+          showToast(`Failed to update event: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from update operation');
-          alert('Failed to update event: No data returned');
+          showToast('Failed to update event: No data returned', 'error');
           return;
         }
 
@@ -372,6 +375,7 @@ export default function EventsPage() {
         
         // Update local state
         setEvents(prev => prev.map(event => event.id === editingItem.id ? normalizeEvent(data as Event) : event));
+        showToast('Event updated successfully', 'success');
       } else {
         // Create new event
         console.log('Creating new event...');
@@ -402,13 +406,13 @@ export default function EventsPage() {
 
         if (error) {
           console.error('Error creating event:', error);
-          alert(`Failed to create event: ${error.message}`);
+          showToast(`Failed to create event: ${error.message}`, 'error');
           return;
         }
 
         if (!data) {
           console.error('No data returned from create operation');
-          alert('Failed to create event: No data returned');
+          showToast('Failed to create event: No data returned', 'error');
           return;
         }
 
@@ -416,6 +420,7 @@ export default function EventsPage() {
         
         // Update local state
         setEvents(prev => [normalizeEvent(data as Event), ...prev]);
+        showToast('Event created successfully', 'success');
       }
       
       console.log('Closing modal after successful operation');
@@ -427,9 +432,9 @@ export default function EventsPage() {
       console.error('Failed to save event:', error);
       // Only show generic error if we haven't already shown a specific error
       if (error instanceof Error) {
-        alert(`Failed to save event: ${error.message}`);
+        showToast(`Failed to save event: ${error.message}`, 'error');
       } else {
-        alert('Failed to save event. Please try again.');
+        showToast('Failed to save event. Please try again.', 'error');
       }
       
       // Return error indicator
@@ -458,9 +463,10 @@ export default function EventsPage() {
         setEvents(prev => prev.filter(event => event.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
+        showToast('Event deleted successfully', 'success');
       } catch (error) {
         console.error('Failed to delete event:', error);
-        alert('Failed to delete event. Please try again.');
+        showToast('Failed to delete event. Please try again.', 'error');
       }
     }
   };
@@ -484,9 +490,10 @@ export default function EventsPage() {
       // Update local state
       setEvents(prev => prev.filter(event => !selectedItems.includes(event.id)));
       setSelectedItems([]);
+      showToast(`${selectedItems.length} event(s) deleted successfully`, 'success');
     } catch (error) {
       console.error('Failed to delete selected events:', error);
-      alert('Failed to delete selected events. Please try again.');
+      showToast('Failed to delete selected events. Please try again.', 'error');
     }
   };
 
@@ -934,6 +941,12 @@ export default function EventsPage() {
           message={`Are you sure you want to delete "${itemToDelete?.title}"? This action cannot be undone.`}
           confirmText="Delete"
           type="danger"
+        />
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={hideToast}
         />
       </div>
     </AdminLayout>
