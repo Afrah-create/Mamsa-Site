@@ -49,32 +49,37 @@ function LoginForm() {
       }
 
       if (data.user) {
-        // Verify user is an admin (super_admin, admin, or moderator)
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('role, status')
-          .eq('user_id', data.user.id)
-          .single();
+        // Verify user is an admin using API route (bypasses RLS issues)
+        try {
+          const verifyResponse = await fetch('/api/auth/verify-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: data.user.id }),
+          });
 
-        if (adminError || !adminData) {
-          setError('Access denied. You do not have admin privileges.');
-          await supabase.auth.signOut();
-          setLoading(false);
-          return;
-        }
+          const verifyData = await verifyResponse.json();
 
-        // Check if user has a valid admin role (super_admin, admin, or moderator)
-        const validRoles = ['super_admin', 'admin', 'moderator'];
-        if (!validRoles.includes(adminData.role)) {
-          setError('Access denied. You do not have admin privileges.');
-          await supabase.auth.signOut();
-          setLoading(false);
-          return;
-        }
+          if (!verifyResponse.ok || !verifyData.isAdmin) {
+            const errorMsg = verifyData.message || verifyData.error || 'Access denied. You do not have admin privileges.';
+            console.error('[Login] Admin verification failed:', {
+              userId: data.user.id,
+              email: data.user.email,
+              response: verifyData
+            });
+            setError(errorMsg);
+            await supabase.auth.signOut();
+            setLoading(false);
+            return;
+          }
 
-        // Check if user is active
-        if (adminData.status !== 'active') {
-          setError('Your account is not active. Please contact an administrator.');
+          console.log('[Login] Successfully authenticated admin user:', {
+            email: data.user.email,
+            role: verifyData.role,
+            status: verifyData.status
+          });
+        } catch (verifyError) {
+          console.error('[Login] Error verifying admin status:', verifyError);
+          setError('Unable to verify admin status. Please try again or contact an administrator.');
           await supabase.auth.signOut();
           setLoading(false);
           return;
