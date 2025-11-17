@@ -74,53 +74,58 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     switch (level) {
       case 0: // President
         return {
-          card: 'bg-white border-2 border-emerald-500 shadow-lg',
+          card: 'bg-white border-2 border-emerald-500 shadow-md',
           text: 'text-emerald-700',
           name: 'text-emerald-900',
-          imageSize: 'h-20 w-20 sm:h-24 sm:w-24 md:h-28 md:w-28',
-          nameSize: 'text-sm sm:text-base md:text-lg',
-          positionSize: 'text-xs sm:text-sm',
-          cardWidth: 'w-[140px] sm:w-[160px] md:w-[180px]',
+          imageSize: 'h-16 w-16 sm:h-16 sm:w-16 md:h-20 md:w-20',
+          nameSize: 'text-xs sm:text-sm md:text-base',
+          positionSize: 'text-[10px] sm:text-xs',
+          cardWidth: 'w-[110px] sm:w-[125px] md:w-[140px]',
+          padding: 'p-2 sm:p-2.5 md:p-3',
         };
       case 1: // Vice President, Secretary General
         return {
           card: 'bg-white border-2 border-blue-400 shadow-md',
           text: 'text-blue-700',
           name: 'text-blue-900',
-          imageSize: 'h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24',
-          nameSize: 'text-sm sm:text-base',
-          positionSize: 'text-xs',
-          cardWidth: 'w-[130px] sm:w-[150px] md:w-[170px]',
+          imageSize: 'h-14 w-14 sm:h-16 sm:w-16 md:h-16 md:w-16',
+          nameSize: 'text-xs sm:text-sm',
+          positionSize: 'text-[10px] sm:text-xs',
+          cardWidth: 'w-[100px] sm:w-[115px] md:w-[130px]',
+          padding: 'p-2 sm:p-2.5 md:p-3',
         };
       case 2: // Ministers, Directors
         return {
-          card: 'bg-white border-2 border-purple-400 shadow-md',
+          card: 'bg-white border-2 border-purple-400 shadow-sm',
           text: 'text-purple-700',
           name: 'text-purple-900',
-          imageSize: 'h-16 w-16 sm:h-16 sm:w-16 md:h-20 md:w-20',
-          nameSize: 'text-xs sm:text-sm',
-          positionSize: 'text-xs',
-          cardWidth: 'w-[120px] sm:w-[140px] md:w-[160px]',
+          imageSize: 'h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16',
+          nameSize: 'text-[11px] sm:text-xs',
+          positionSize: 'text-[10px]',
+          cardWidth: 'w-[90px] sm:w-[105px] md:w-[120px]',
+          padding: 'p-2 sm:p-2.5',
         };
       case 3: // Representatives, Officers
         return {
           card: 'bg-white border-2 border-amber-400 shadow-sm',
           text: 'text-amber-700',
           name: 'text-amber-900',
-          imageSize: 'h-14 w-14 sm:h-16 sm:w-16 md:h-16 md:w-16',
-          nameSize: 'text-xs sm:text-sm',
-          positionSize: 'text-xs',
-          cardWidth: 'w-[110px] sm:w-[130px] md:w-[150px]',
+          imageSize: 'h-12 w-12 sm:h-12 sm:w-12 md:h-14 md:w-14',
+          nameSize: 'text-[11px] sm:text-xs',
+          positionSize: 'text-[10px]',
+          cardWidth: 'w-[85px] sm:w-[100px] md:w-[115px]',
+          padding: 'p-1.5 sm:p-2',
         };
       default: // Others
         return {
           card: 'bg-white border-2 border-gray-400 shadow-sm',
           text: 'text-gray-700',
           name: 'text-gray-900',
-          imageSize: 'h-14 w-14 sm:h-14 sm:w-14 md:h-16 md:w-16',
-          nameSize: 'text-xs',
-          positionSize: 'text-xs',
-          cardWidth: 'w-[100px] sm:w-[120px] md:w-[140px]',
+          imageSize: 'h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14',
+          nameSize: 'text-[11px]',
+          positionSize: 'text-[10px]',
+          cardWidth: 'w-[80px] sm:w-[95px] md:w-[110px]',
+          padding: 'p-1.5 sm:p-2',
         };
     }
   };
@@ -131,10 +136,10 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     return (
       <div
         key={leader.id}
-        className={`${styles.card} rounded-xl p-3 sm:p-4 md:p-5 transition-all hover:scale-105 hover:shadow-xl flex flex-col items-center ${styles.cardWidth} flex-shrink-0`}
+        className={`${styles.card} rounded-lg ${styles.padding} transition-all hover:scale-105 hover:shadow-lg flex flex-col items-center ${styles.cardWidth} flex-shrink-0`}
       >
         {/* Circular Profile Image */}
-        <div className={`relative mx-auto mb-2 sm:mb-3 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-lg ${styles.imageSize}`}>
+        <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border border-white shadow-md ${styles.imageSize}`}>
           {leader.image_url ? (
             <img
               src={leader.image_url}
@@ -144,9 +149,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             />
           ) : (
             <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold ${styles.text} ${
-              level === 0 ? 'text-xl sm:text-2xl md:text-3xl' : 
-              level <= 2 ? 'text-lg sm:text-xl md:text-2xl' : 
-              'text-base sm:text-lg md:text-xl'
+              level === 0 ? 'text-base sm:text-lg md:text-xl' : 
+              level <= 2 ? 'text-sm sm:text-base md:text-lg' : 
+              'text-xs sm:text-sm md:text-base'
             }`}>
               {leader.name.slice(0, 2).toUpperCase()}
             </div>
@@ -154,12 +159,12 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         </div>
 
         {/* Name */}
-        <h3 className={`${styles.name} text-center mb-1 font-bold line-clamp-2 leading-tight ${styles.nameSize}`}>
+        <h3 className={`${styles.name} text-center mb-0.5 font-bold line-clamp-2 leading-tight ${styles.nameSize}`}>
           {leader.name}
         </h3>
 
         {/* Position */}
-        <p className={`${styles.text} font-semibold text-center line-clamp-2 leading-tight ${styles.positionSize}`}>
+        <p className={`${styles.text} font-medium text-center line-clamp-2 leading-tight ${styles.positionSize}`}>
           {leader.position || 'Member'}
         </p>
       </div>
@@ -171,16 +176,16 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     const isLastLevel = level === sortedLevels[sortedLevels.length - 1];
 
     return (
-      <div key={level} className="w-full flex flex-col items-center mb-4 sm:mb-6 md:mb-8">
+      <div key={level} className="w-full flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
         {/* Centered horizontal layout - pyramid structure */}
-        <div className="flex flex-wrap justify-center items-start gap-3 sm:gap-4 md:gap-5 lg:gap-6 px-2 sm:px-4">
+        <div className="flex flex-wrap justify-center items-start gap-2 sm:gap-2.5 md:gap-3 px-2 sm:px-3">
           {leaders.map(leader => renderLeaderCard(leader, level))}
         </div>
 
         {/* Connecting line between levels */}
         {!isLastLevel && (
-          <div className="flex justify-center mt-4 sm:mt-5 md:mt-6 mb-2">
-            <div className="w-0.5 h-6 sm:h-8 md:h-10 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 rounded-full"></div>
+          <div className="flex justify-center mt-3 sm:mt-3.5 md:mt-4 mb-1.5">
+            <div className="w-0.5 h-4 sm:h-5 md:h-6 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 rounded-full"></div>
           </div>
         )}
       </div>
@@ -199,8 +204,8 @@ export default function OrgChart({ leaders }: OrgChartProps) {
   const sortedLevels = Array.from(groupedLeaders.keys()).sort((a, b) => a - b);
 
   return (
-    <div className="w-full py-6 sm:py-8 md:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full py-4 sm:py-6 md:py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
         {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
       </div>
     </div>
