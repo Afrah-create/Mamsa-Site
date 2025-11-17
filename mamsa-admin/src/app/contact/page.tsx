@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PublicNavbar from '@/components/PublicNavbar';
 import PublicFooter from '@/components/PublicFooter';
 
@@ -31,10 +31,6 @@ const DEFAULT_FORM: ContactFormState = {
   message: '',
 };
 
-// Makerere University Main Gate - Default embedded map
-// This is hardcoded to ensure the map always displays even if settings fail to load
-const DEFAULT_MAP_EMBED =
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.5671!3d0.3364!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University%20Main%20Gate!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
 
 export default function ContactPage() {
   const [settings, setSettings] = useState<ContactSettings | null>(null);
@@ -115,56 +111,6 @@ export default function ContactPage() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  // Function to extract URL from iframe HTML or validate URL
-  const extractMapUrl = (url: string | null | undefined): string | null => {
-    if (!url || !url.trim()) return null;
-    
-    const trimmed = url.trim();
-    
-    // If it's already a valid https URL, return it
-    if (trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-    
-    // Try to extract URL from iframe HTML
-    const iframeMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch && iframeMatch[1]) {
-      return iframeMatch[1];
-    }
-    
-    // Try to extract URL from src attribute
-    const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
-    if (srcMatch && srcMatch[1] && srcMatch[1].startsWith('https://')) {
-      return srcMatch[1];
-    }
-    
-    return null;
-  };
-
-  const mapSrc = useMemo(() => {
-    // Always start with default map (Makerere University Main Gate)
-    // This ensures the map is always visible, even during loading or if settings fail
-    
-    // If settings are loaded and a custom map URL is provided, use it
-    if (!loadingSettings && settings?.map_embed_url) {
-      const extractedUrl = extractMapUrl(settings.map_embed_url);
-      if (extractedUrl) {
-        return extractedUrl;
-      }
-    }
-    
-    // If settings have coordinates but no embed URL, try to build one (requires API key)
-    if (!loadingSettings && settings?.latitude && settings?.longitude) {
-      const { latitude, longitude } = settings;
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY ?? '';
-      if (apiKey) {
-        return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${latitude},${longitude}`;
-      }
-    }
-    
-    // Default: Always return Makerere University Main Gate map
-    return DEFAULT_MAP_EMBED;
-  }, [settings, loadingSettings]);
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
@@ -350,17 +296,6 @@ export default function ContactPage() {
                 </dl>
               </div>
 
-              <div className="overflow-hidden rounded-3xl border border-emerald-100 shadow-sm">
-                <iframe
-                  key={mapSrc}
-                  title="MAMSA office location - Makerere University Main Gate"
-                  src={mapSrc}
-                  loading="lazy"
-                  allowFullScreen
-                  className="h-[320px] w-full border-0"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
             </div>
           </div>
         </section>

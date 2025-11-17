@@ -59,10 +59,6 @@ const statusDotStyles: Record<ContactMessage['status'], string> = {
   archived: 'bg-slate-400',
 };
 
-// Makerere University Main Gate - Default embedded map
-// This is hardcoded to ensure the map always displays even if settings fail to load
-const DEFAULT_MAP_EMBED =
-  'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.807365637741!2d32.5671!3d0.3364!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x177dbb26aacc49bd%3A0x30cb354b3437ea8c!2sMakerere%20University%20Main%20Gate!5e0!3m2!1sen!2sug!4v1700000000000!5m2!1sen!2sug';
 
 const emptyContactSettings: ContactSettings = {
   id: 0,
@@ -72,7 +68,7 @@ const emptyContactSettings: ContactSettings = {
   phone: '',
   latitude: null,
   longitude: null,
-  map_embed_url: DEFAULT_MAP_EMBED,
+  map_embed_url: null,
   updated_at: new Date().toISOString(),
 };
 
@@ -863,54 +859,6 @@ function ContactManagementContent() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
-              <label className="text-sm font-medium text-gray-700">Map embed URL</label>
-              <textarea
-                value={settings.map_embed_url ?? ''}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  // Extract URL from iframe HTML if pasted
-                  let extractedUrl = value;
-                  if (value.includes('<iframe')) {
-                    const iframeMatch = value.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-                    if (iframeMatch && iframeMatch[1]) {
-                      extractedUrl = iframeMatch[1];
-                    } else {
-                      const srcMatch = value.match(/src=["']([^"']+)["']/i);
-                      if (srcMatch && srcMatch[1]) {
-                        extractedUrl = srcMatch[1];
-                      }
-                    }
-                  }
-                  
-                  setSettings((prev) => ({
-                    ...prev,
-                    map_embed_url: extractedUrl.trim() || null,
-                  }));
-                }}
-                placeholder="Paste the Google Maps embed URL or full iframe HTML here"
-                className="mt-2 h-32 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-              />
-              <p className="mt-1 text-xs text-gray-600">
-                Paste the Google Maps embed URL (starts with https://) or the full iframe HTML code. The URL will be automatically extracted. Leaving this blank will default to Makerere University.
-              </p>
-              <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
-                {(() => {
-                  const mapUrl = (settings.map_embed_url && settings.map_embed_url.trim()) || DEFAULT_MAP_EMBED;
-                  return mapUrl && mapUrl.trim() ? (
-                    <iframe
-                      key={mapUrl}
-                      title="Contact map preview"
-                      src={mapUrl}
-                      loading="lazy"
-                      className="h-48 w-full border-0"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      allowFullScreen
-                    />
-                  ) : null;
-                })()}
-              </div>
-            </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               <div>
