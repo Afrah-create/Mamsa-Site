@@ -136,15 +136,21 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     return (
       <div
         key={leader.id}
-        className={`${styles.card} rounded-lg ${styles.padding} transition-all hover:scale-105 hover:shadow-lg flex flex-col items-center ${styles.cardWidth} flex-shrink-0`}
+        className={`${styles.card} rounded-lg ${styles.padding} transition-all duration-300 hover:scale-105 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center ${styles.cardWidth} flex-shrink-0 group`}
       >
         {/* Circular Profile Image */}
-        <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border border-white shadow-md ${styles.imageSize}`}>
+        <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md group-hover:shadow-lg transition-all duration-300 ${styles.imageSize} ${
+          level === 0 ? 'group-hover:ring-2 group-hover:ring-emerald-500/20' : 
+          level === 1 ? 'group-hover:ring-2 group-hover:ring-blue-500/20' : 
+          level === 2 ? 'group-hover:ring-2 group-hover:ring-purple-500/20' : 
+          level === 3 ? 'group-hover:ring-2 group-hover:ring-amber-500/20' : 
+          'group-hover:ring-2 group-hover:ring-gray-500/20'
+        }`}>
           {leader.image_url ? (
             <img
               src={leader.image_url}
               alt={leader.name}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
             />
           ) : (
@@ -179,13 +185,28 @@ export default function OrgChart({ leaders }: OrgChartProps) {
       <div key={level} className="w-full flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
         {/* Centered horizontal layout - pyramid structure */}
         <div className="flex flex-wrap justify-center items-start gap-2 sm:gap-2.5 md:gap-3 px-2 sm:px-3">
-          {leaders.map(leader => renderLeaderCard(leader, level))}
+          {leaders.map((leader, index) => (
+            <div
+              key={leader.id}
+              style={{
+                animation: `fadeIn 0.3s ease-out ${index * 50}ms both`,
+              }}
+            >
+              {renderLeaderCard(leader, level)}
+            </div>
+          ))}
         </div>
 
         {/* Connecting line between levels */}
         {!isLastLevel && (
-          <div className="flex justify-center mt-3 sm:mt-3.5 md:mt-4 mb-1.5">
-            <div className="w-0.5 h-4 sm:h-5 md:h-6 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 rounded-full"></div>
+          <div className="flex justify-center items-center mt-3 sm:mt-3.5 md:mt-4 mb-1.5">
+            {/* Decorative connector */}
+            <div className="relative flex flex-col items-center">
+              {/* Main vertical line */}
+              <div className="w-0.5 h-5 sm:h-6 md:h-7 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 rounded-full"></div>
+              {/* Small decorative circle */}
+              <div className="absolute -bottom-1 w-2 h-2 rounded-full bg-gray-300 border-2 border-white shadow-sm"></div>
+            </div>
           </div>
         )}
       </div>
@@ -204,9 +225,21 @@ export default function OrgChart({ leaders }: OrgChartProps) {
   const sortedLevels = Array.from(groupedLeaders.keys()).sort((a, b) => a - b);
 
   return (
-    <div className="w-full py-4 sm:py-6 md:py-8">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6">
-        {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
+    <div className="w-full py-6 sm:py-8 md:py-10">
+      {/* Subtle background with pattern */}
+      <div className="relative bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Decorative pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+          style={{
+            backgroundImage: `radial-gradient(circle at 2px 2px, rgb(16, 185, 129) 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+        
+        {/* Content */}
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
+          {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
+        </div>
       </div>
     </div>
   );
