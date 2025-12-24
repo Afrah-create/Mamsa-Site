@@ -131,7 +131,10 @@ mamsa-admin/
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    ```
+   
+   **Important:** The `SUPABASE_SERVICE_ROLE_KEY` is required for admin user management. You can find it in your Supabase Dashboard under **Settings > API > Service Role Key** (keep this secret and never commit it to version control).
 
 5. **Run the development server**
    ```bash
