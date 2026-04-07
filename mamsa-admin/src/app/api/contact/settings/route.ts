@@ -2,32 +2,73 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 
+type ContactRow = {
+  id: number;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  office_hours: string | null;
+  social_media: Record<string, unknown> | null;
+  updated_at: string | null;
+};
+
+type ContactSettingsResponse = {
+  id: number;
+  office_name: string | null;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  map_embed_url: string | null;
+  updated_at: string | null;
+};
+
+const asNumberOrNull = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const asStringOrNull = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+};
+
+const mapRowToResponse = (row: ContactRow | null): ContactSettingsResponse | null => {
+  if (!row) return null;
+
+  const meta = row.social_media ?? {};
+  return {
+    id: row.id,
+    office_name: asStringOrNull(meta.office_name),
+    address: row.address,
+    email: row.email,
+    phone: row.phone,
+    latitude: asNumberOrNull(meta.latitude),
+    longitude: asNumberOrNull(meta.longitude),
+    map_embed_url: asStringOrNull(meta.map_embed_url),
+    updated_at: row.updated_at,
+  };
+};
+
 export async function GET() {
   try {
-    const rows = await sql<{
-      id: number;
-      office_name: string | null;
-      address: string | null;
-      email: string | null;
-      phone: string | null;
-      latitude: number | null;
-      longitude: number | null;
-      map_embed_url: string | null;
-    }[]>`
-      SELECT id, office_name, address, email, phone, latitude, longitude, map_embed_url
+    const rows = await sql<ContactRow[]>`
+      SELECT id, phone, email, address, office_hours, social_media, updated_at
       FROM contact
-      ORDER BY updated_at DESC
+      ORDER BY updated_at DESC NULLS LAST, id DESC
       LIMIT 1
     `;
 
-    const row = rows[0] ?? null;
-    return NextResponse.json({ data: row });
+    return NextResponse.json({ data: mapRowToResponse(rows[0] ?? null) });
   } catch (error) {
     console.error('Unexpected contact settings error:', error);
-    return NextResponse.json(
-      { error: 'Unexpected error loading contact settings.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Unexpected error loading contact settings.' }, { status: 500 });
   }
 }
 
@@ -37,39 +78,49 @@ export async function PATCH(request: Request) {
   try {
     const body = await request.json();
 
-    const rows = await sql<{
-      id: number;
-      office_name: string | null;
-      address: string | null;
-      email: string | null;
-      phone: string | null;
-      latitude: number | null;
-      longitude: number | null;
-      map_embed_url: string | null;
-      updated_at: string;
-    }[]>`
-      INSERT INTO contact_settings (office_name, address, email, phone, latitude, longitude, map_embed_url, updated_at)
-      VALUES (${body.office_name ?? null}, ${body.address ?? null}, ${body.email ?? null}, ${body.phone ?? null}, ${body.latitude ?? null}, ${body.longitude ?? null}, ${body.map_embed_url ?? null}, ${new Date().toISOString()})
-      ON CONFLICT (id)
-      DO UPDATE SET
-        office_name = EXCLUDED.office_name,
-        address = EXCLUDED.address,
-        email = EXCLUDED.email,
-        phone = EXCLUDED.phone,
-        latitude = EXCLUDED.latitude,
-        longitude = EXCLUDED.longitude,
-        map_embed_url = EXCLUDED.map_embed_url,
-        updated_at = EXCLUDED.updated_at
-      RETURNING id, office_name, address, email, phone, latitude, longitude, map_embed_url, updated_at
+    const existingRows = await sql<ContactRow[]>`
+      SELECT id, phone, email, address, office_hours, social_media, updated_at
+      FROM contact
+      ORDER BY updated_at DESC NULLS LAST, id DESC
+      LIMIT 1
     `;
 
-    return NextResponse.json({ data: rows[0] ?? null });
+    const existing = existingRows[0] ?? null;
+    const existingSocial = (existing?.social_media ?? {}) as Record<string, unknown>;
+
+    const mergedSocial: Record<string, unknown> = {
+      ...existingSocial,
+      office_name: body.office_name ?? existingSocial.office_name ?? null,
+      latitude: body.latitude ?? existingSocial.latitude ?? null,
+      longitude: body.longitude ?? existingSocial.longitude ?? null,
+      map_embed_url: body.map_embed_url ?? existingSocial.map_embed_url ?? null,
+    };
+    const mergedSocialJson = JSON.stringify(mergedSocial);
+
+    if (existing) {
+      const updatedRows = await sql<ContactRow[]>`
+        UPDATE contact
+        SET address = ${body.address ?? existing.address ?? null},
+            email = ${body.email ?? existing.email ?? null},
+            phone = ${body.phone ?? existing.phone ?? null},
+            social_media = ${mergedSocialJson}::jsonb,
+            updated_at = NOW()
+        WHERE id = ${existing.id}
+        RETURNING id, phone, email, address, office_hours, social_media, updated_at
+      `;
+
+      return NextResponse.json({ data: mapRowToResponse(updatedRows[0] ?? null) });
+    }
+
+    const insertedRows = await sql<ContactRow[]>`
+      INSERT INTO contact (address, email, phone, office_hours, social_media)
+      VALUES (${body.address ?? null}, ${body.email ?? null}, ${body.phone ?? null}, ${null}, ${mergedSocialJson}::jsonb)
+      RETURNING id, phone, email, address, office_hours, social_media, updated_at
+    `;
+
+    return NextResponse.json({ data: mapRowToResponse(insertedRows[0] ?? null) });
   } catch (error) {
     console.error('Unexpected contact settings patch error:', error);
-    return NextResponse.json(
-      { error: 'Unexpected error saving contact settings.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Unexpected error saving contact settings.' }, { status: 500 });
   }
 }
-
