@@ -12,20 +12,21 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const numericId = Number(id);
     const body = await request.json();
 
-    const existing = await sql<{ image: string | null }[]>`
-      SELECT image
+    const existing = await sql<{ image_url: string | null }[]>`
+      SELECT image_url
       FROM leadership
       WHERE id = ${numericId}
       LIMIT 1
     `;
 
-    let image = body.image ?? body.image_url ?? existing[0]?.image ?? null;
-    if (isBase64Image(body.image ?? body.image_url ?? null)) {
-      if (isCloudinaryPublicId(existing[0]?.image)) {
-        await cloudinary.uploader.destroy(existing[0].image as string);
+    const imageValue = body.image ?? body.image_url ?? null;
+    let image = imageValue ?? existing[0]?.image_url ?? null;
+    if (isBase64Image(imageValue)) {
+      if (isCloudinaryPublicId(existing[0]?.image_url)) {
+        await cloudinary.uploader.destroy(existing[0].image_url as string);
       }
 
-      const uploaded = await cloudinary.uploader.upload(body.image ?? body.image_url, {
+      const uploaded = await cloudinary.uploader.upload(imageValue, {
         folder: 'mamsa/leadership',
         resource_type: 'image',
         transformation: [{ quality: 'auto', fetch_format: 'auto' }],
@@ -38,9 +39,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       SET name = ${body.name},
           position = ${body.position ?? null},
           bio = ${body.bio ?? null},
-          image = ${image},
+          image_url = ${image},
+          email = ${body.email ?? null},
+          phone = ${body.phone ?? null},
+          department = ${body.department ?? null},
+          year = ${body.year ?? null},
+          social_links = ${body.social_links ?? null},
           status = ${body.status ?? 'active'},
-          "order" = ${body.order ?? body.order_position ?? 0},
+          order_position = ${body.order_position ?? 0},
+          updated_by = ${body.updated_by ?? null},
           updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
       RETURNING *
@@ -59,8 +66,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   try {
     const { id } = await params;
     const numericId = Number(id);
-    const existing = await sql<{ image: string | null }[]>`
-      SELECT image
+    const existing = await sql<{ image_url: string | null }[]>`
+      SELECT image_url
       FROM leadership
       WHERE id = ${numericId}
       LIMIT 1
@@ -68,8 +75,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
     await sql`DELETE FROM leadership WHERE id = ${numericId}`;
 
-    if (isCloudinaryPublicId(existing[0]?.image)) {
-      await cloudinary.uploader.destroy(existing[0].image as string);
+    if (isCloudinaryPublicId(existing[0]?.image_url)) {
+      await cloudinary.uploader.destroy(existing[0].image_url as string);
     }
 
     return NextResponse.json({ data: true });

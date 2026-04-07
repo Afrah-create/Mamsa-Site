@@ -19,13 +19,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       LIMIT 1
     `;
 
-    let featuredImage = body.featured_image ?? existing[0]?.featured_image ?? null;
-    if (isBase64Image(body.featured_image ?? null)) {
+    const imageValue = body.image ?? body.featured_image ?? null;
+    let featuredImage = imageValue ?? existing[0]?.featured_image ?? null;
+    if (isBase64Image(imageValue)) {
       if (isCloudinaryPublicId(existing[0]?.featured_image)) {
         await cloudinary.uploader.destroy(existing[0].featured_image as string);
       }
 
-      const uploaded = await cloudinary.uploader.upload(body.featured_image, {
+      const uploaded = await cloudinary.uploader.upload(imageValue, {
         folder: 'mamsa/events',
         resource_type: 'image',
         transformation: [{ quality: 'auto', fetch_format: 'auto' }],
@@ -42,7 +43,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           location = ${body.location ?? null},
           status = ${body.status ?? 'upcoming'},
           featured_image = ${featuredImage},
+            capacity = ${body.capacity ?? null},
+            registration_required = ${body.registration_required ?? false},
+            registration_deadline = ${body.registration_deadline ?? null},
           organizer = ${body.organizer ?? null},
+            contact_email = ${body.contact_email ?? null},
+            contact_phone = ${body.contact_phone ?? null},
+            tags = ${body.tags ?? []},
+            updated_by = ${body.updated_by ?? null},
           updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
       RETURNING *

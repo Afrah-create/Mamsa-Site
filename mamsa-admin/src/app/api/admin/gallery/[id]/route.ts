@@ -12,34 +12,44 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const numericId = Number(id);
     const body = await request.json();
 
-    const existing = await sql<{ cover_image: string | null }[]>`
-      SELECT cover_image
+    const existing = await sql<{ image_url: string | null }[]>`
+      SELECT image_url
       FROM gallery
       WHERE id = ${numericId}
       LIMIT 1
     `;
 
-    let coverImage = body.cover_image ?? body.image_url ?? existing[0]?.cover_image ?? null;
-    if (isBase64Image(body.cover_image ?? body.image_url ?? null)) {
-      if (isCloudinaryPublicId(existing[0]?.cover_image)) {
-        await cloudinary.uploader.destroy(existing[0].cover_image as string);
+    const imageValue = body.image ?? body.image_url ?? null;
+    let imageUrl = imageValue ?? existing[0]?.image_url ?? null;
+    if (isBase64Image(imageValue)) {
+      if (isCloudinaryPublicId(existing[0]?.image_url)) {
+        await cloudinary.uploader.destroy(existing[0].image_url as string);
       }
 
-      const uploaded = await cloudinary.uploader.upload(body.cover_image ?? body.image_url, {
+      const uploaded = await cloudinary.uploader.upload(imageValue, {
         folder: 'mamsa/gallery',
         resource_type: 'image',
         transformation: [{ quality: 'auto', fetch_format: 'auto' }],
       });
-      coverImage = uploaded.public_id;
+      imageUrl = uploaded.public_id;
     }
 
     const rows = await sql`
       UPDATE gallery
       SET title = ${body.title},
           description = ${body.description ?? null},
+          image_url = ${imageUrl},
           category = ${body.category ?? null},
-          cover_image = ${coverImage},
+          tags = ${body.tags ?? []},
+          photographer = ${body.photographer ?? null},
+          location = ${body.location ?? null},
+          event_date = ${body.event_date ?? null},
+          file_size = ${body.file_size ?? null},
+          dimensions = ${body.dimensions ?? null},
           status = ${body.status ?? 'active'},
+          featured = ${body.featured ?? false},
+          alt_text = ${body.alt_text ?? null},
+          updated_by = ${body.updated_by ?? null},
           updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
       RETURNING *
@@ -59,30 +69,16 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     const numericId = Number(id);
 
-    const galleryRows = await sql<{ cover_image: string | null }[]>`
-      SELECT cover_image
+    const galleryRows = await sql<{ image_url: string | null }[]>`
+      SELECT image_url
       FROM gallery
       WHERE id = ${numericId}
       LIMIT 1
     `;
-
-    const imageRows = await sql<{ image: string | null }[]>`
-      SELECT image
-      FROM gallery_images
-      WHERE gallery_id = ${numericId}
-    `;
-
-    await sql`DELETE FROM gallery_images WHERE gallery_id = ${numericId}`;
     await sql`DELETE FROM gallery WHERE id = ${numericId}`;
 
-    if (isCloudinaryPublicId(galleryRows[0]?.cover_image)) {
-      await cloudinary.uploader.destroy(galleryRows[0].cover_image as string);
-    }
-
-    for (const row of imageRows) {
-      if (isCloudinaryPublicId(row.image)) {
-        await cloudinary.uploader.destroy(row.image as string);
-      }
+    if (isCloudinaryPublicId(galleryRows[0]?.image_url)) {
+      await cloudinary.uploader.destroy(galleryRows[0].image_url as string);
     }
 
     return NextResponse.json({ data: true });

@@ -160,7 +160,7 @@ export default function ProfilePage() {
               phone: formData.phone,
               bio: formData.bio,
               email: formData.email,
-              avatar_url: base64String,
+              image: base64String,
             }),
           });
 

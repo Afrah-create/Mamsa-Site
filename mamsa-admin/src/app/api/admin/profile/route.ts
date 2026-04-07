@@ -58,13 +58,14 @@ export async function PATCH(request: Request) {
       LIMIT 1
     `;
 
-    let avatarUrl = body.avatar_url ?? existing[0]?.avatar_url ?? '';
-    if (isBase64Image(body.avatar_url ?? null)) {
+    const imageValue = body.image ?? body.avatar_url ?? null;
+    let avatarUrl = imageValue ?? existing[0]?.avatar_url ?? '';
+    if (isBase64Image(imageValue)) {
       if (isCloudinaryPublicId(existing[0]?.avatar_url)) {
         await cloudinary.uploader.destroy(existing[0].avatar_url as string);
       }
 
-      const uploaded = await cloudinary.uploader.upload(body.avatar_url, {
+      const uploaded = await cloudinary.uploader.upload(imageValue, {
         folder: 'mamsa/admin_users',
         resource_type: 'image',
         transformation: [{ quality: 'auto', fetch_format: 'auto' }],

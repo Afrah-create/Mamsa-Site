@@ -26,19 +26,20 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const featuredImage = isBase64Image(body.featured_image ?? null)
+    const imageValue = body.image ?? body.featured_image ?? null;
+    const featuredImage = isBase64Image(imageValue)
       ? (
-          await cloudinary.uploader.upload(body.featured_image, {
+          await cloudinary.uploader.upload(imageValue, {
             folder: 'mamsa/events',
             resource_type: 'image',
             transformation: [{ quality: 'auto', fetch_format: 'auto' }],
           })
         ).public_id
-      : (body.featured_image ?? null);
+      : imageValue;
 
     const rows = await sql`
-      INSERT INTO events (title, description, date, time, location, status, featured_image, organizer)
-      VALUES (${body.title}, ${body.description ?? null}, ${body.date ?? null}, ${body.time ?? null}, ${body.location ?? null}, ${body.status ?? 'upcoming'}, ${featuredImage}, ${body.organizer ?? null})
+      INSERT INTO events (title, description, date, time, location, status, featured_image, capacity, registration_required, registration_deadline, organizer, contact_email, contact_phone, tags, created_by, updated_by)
+      VALUES (${body.title}, ${body.description ?? null}, ${body.date ?? null}, ${body.time ?? null}, ${body.location ?? null}, ${body.status ?? 'upcoming'}, ${featuredImage}, ${body.capacity ?? null}, ${body.registration_required ?? false}, ${body.registration_deadline ?? null}, ${body.organizer ?? null}, ${body.contact_email ?? null}, ${body.contact_phone ?? null}, ${body.tags ?? []}, ${body.created_by ?? null}, ${body.updated_by ?? null})
       RETURNING *
     `;
 

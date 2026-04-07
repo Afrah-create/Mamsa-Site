@@ -199,27 +199,23 @@ export default function NewsPage() {
       if (editingItem) {
         // Update existing item
         console.log('Updating existing article with ID:', editingItem.id);
-        const formData = new FormData();
-        formData.append('title', newsData.title);
-        formData.append('content', newsData.content);
-        formData.append('author', newsData.author);
-        formData.append('category', newsData.category);
-        formData.append('date', newsData.published_at);
-        formData.append('status', newsData.status);
-        formData.append('excerpt', newsData.excerpt ?? '');
-        formData.append('tags', JSON.stringify(newsData.tags ?? []));
-        formData.append('published_at', newsData.status === 'published' ? new Date().toISOString() : editingItem.published_at);
-        if (newsData.featured_image) {
-          formData.append('featured_image', newsData.featured_image);
-        }
-        if (newsData.featured_image_file) {
-          formData.append('featured_image_file', newsData.featured_image_file);
-        }
+        const payload = {
+          title: newsData.title,
+          content: newsData.content,
+          author: newsData.author,
+          category: newsData.category,
+          date: newsData.published_at,
+          excerpt: newsData.excerpt ?? '',
+          tags: newsData.tags ?? [],
+          image: newsData.featured_image ?? null,
+          featured: newsData.status === 'published',
+        };
 
         const response = await fetch(`/api/admin/news/${editingItem.id}`, {
           method: 'PATCH',
           credentials: 'include',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -227,8 +223,8 @@ export default function NewsPage() {
           throw new Error(text || 'Failed to update news article.');
         }
 
-        const payload = await response.json();
-        const data = payload.data as NewsItem;
+        const result = await response.json();
+        const data = result.data as NewsItem;
 
         if (!data) {
           showToast('Failed to update news article: No data returned', 'error');
@@ -238,31 +234,35 @@ export default function NewsPage() {
         console.log('Successfully updated news article:', data);
         
         // Update local state
-        setNews(prev => prev.map(item => item.id === editingItem.id ? data : item));
+        const normalized = {
+          ...data,
+          featured_image:
+            data.featured_image && !data.featured_image.startsWith('http')
+              ? (getPublicUrl(data.featured_image) || data.featured_image)
+              : data.featured_image,
+        };
+        setNews(prev => prev.map(item => item.id === editingItem.id ? normalized : item));
         showToast('News article updated successfully', 'success');
       } else {
         // Create new item
         console.log('Creating new article...');
-        const formData = new FormData();
-        formData.append('title', newsData.title);
-        formData.append('content', newsData.content);
-        formData.append('author', newsData.author);
-        formData.append('category', newsData.category);
-        formData.append('date', newsData.published_at);
-        formData.append('status', newsData.status);
-        formData.append('excerpt', newsData.excerpt ?? '');
-        formData.append('tags', JSON.stringify(newsData.tags ?? []));
-        if (newsData.featured_image) {
-          formData.append('featured_image', newsData.featured_image);
-        }
-        if (newsData.featured_image_file) {
-          formData.append('featured_image_file', newsData.featured_image_file);
-        }
+        const payload = {
+          title: newsData.title,
+          content: newsData.content,
+          author: newsData.author,
+          category: newsData.category,
+          date: newsData.published_at,
+          excerpt: newsData.excerpt ?? '',
+          tags: newsData.tags ?? [],
+          image: newsData.featured_image ?? null,
+          featured: newsData.status === 'published',
+        };
 
         const response = await fetch('/api/admin/news', {
           method: 'POST',
           credentials: 'include',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
@@ -270,8 +270,8 @@ export default function NewsPage() {
           throw new Error(text || 'Failed to create news article.');
         }
 
-        const payload = await response.json();
-        const data = payload.data as NewsItem;
+        const result = await response.json();
+        const data = result.data as NewsItem;
 
         if (!data) {
           showToast('Failed to create news article: No data returned', 'error');
@@ -281,7 +281,14 @@ export default function NewsPage() {
         console.log('Successfully created news article:', data);
         
         // Update local state
-        setNews(prev => [data, ...prev]);
+        const normalized = {
+          ...data,
+          featured_image:
+            data.featured_image && !data.featured_image.startsWith('http')
+              ? (getPublicUrl(data.featured_image) || data.featured_image)
+              : data.featured_image,
+        };
+        setNews(prev => [normalized, ...prev]);
         showToast('News article created successfully', 'success');
       }
       
