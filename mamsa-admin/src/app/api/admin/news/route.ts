@@ -4,7 +4,13 @@ import sql from '@/lib/db';
 import { isBase64Image } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
-let newsColumnsCache: { hasStatus: boolean; hasFeaturedImage: boolean } | null = null;
+const allowedCategories = new Set(['general', 'events', 'announcements']);
+
+let newsColumnsCache: {
+  hasStatus: boolean;
+  hasImageUrl: boolean;
+  hasFeaturedImage: boolean;
+} | null = null;
 
 const getNewsColumnInfo = async () => {
   if (newsColumnsCache) return newsColumnsCache;
@@ -14,16 +20,23 @@ const getNewsColumnInfo = async () => {
     FROM information_schema.columns
     WHERE table_schema = 'public'
       AND table_name = 'news'
-      AND column_name IN ('status', 'featured_image')
+      AND column_name IN ('status', 'image_url', 'featured_image')
   `;
 
   const set = new Set(rows.map((row) => row.column_name));
   newsColumnsCache = {
     hasStatus: set.has('status'),
+    hasImageUrl: set.has('image_url'),
     hasFeaturedImage: set.has('featured_image'),
   };
 
   return newsColumnsCache;
+};
+
+const getNewsImageColumn = (columns: NonNullable<typeof newsColumnsCache>) => {
+  if (columns.hasImageUrl) return 'image_url' as const;
+  if (columns.hasFeaturedImage) return 'featured_image' as const;
+  return null;
 };
 
 const uploadNewsImageIfNeeded = async (value?: string | null) => {
@@ -92,19 +105,20 @@ export async function GET() {
 
   try {
     const columns = await getNewsColumnInfo();
+    const imageSelection = columns.hasImageUrl
+      ? sql`image_url AS featured_image`
+      : columns.hasFeaturedImage
+        ? sql`featured_image AS featured_image`
+        : sql`NULL::text AS featured_image`;
 
     const rows = columns.hasStatus
       ? await sql`
-          SELECT id, title, content, category, date, author, status,
-            ${columns.hasFeaturedImage ? sql`featured_image` : sql`NULL::text AS featured_image`},
-            created_at, updated_at
+          SELECT id, title, content, category, date, author, status, ${imageSelection}, created_at, updated_at
           FROM news
           ORDER BY created_at DESC
         `
       : await sql`
-          SELECT id, title, content, category, date, author,
-            ${columns.hasFeaturedImage ? sql`featured_image` : sql`NULL::text AS featured_image`},
-            created_at, updated_at
+          SELECT id, title, content, category, date, author, ${imageSelection}, created_at, updated_at
           FROM news
           ORDER BY created_at DESC
         `;
@@ -122,44 +136,73 @@ export async function POST(request: Request) {
   try {
     const body = await readNewsPayload(request);
 
-    if (!body.category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
+    if (!body.title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
+    if (!body.content) {
+      return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+    }
+
+    const category = body.category || 'general';
+    if (!allowedCategories.has(category)) {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+    }
+
+    const date = body.date || new Date().toISOString();
+    const status = body.status || 'published';
     const columns = await getNewsColumnInfo();
+    const imageColumn = getNewsImageColumn(columns);
 
     const uploadedFromFile = await uploadFileToCloudinary(body.featured_image_file);
-    const uploadedFromValue = uploadedFromFile ?? (columns.hasFeaturedImage ? await uploadNewsImageIfNeeded(body.featured_image ?? null) : null);
-    const featuredImage = uploadedFromValue ?? body.featured_image ?? null;
+    const uploadedFromValue = uploadedFromFile ?? (body.featured_image ? await uploadNewsImageIfNeeded(body.featured_image) : null);
+    const imageUrl = uploadedFromValue;
 
-    const newsImageColumnValue = uploadedFromFile ?? featuredImage;
+    if (columns.hasStatus && imageColumn === 'image_url') {
+      const rows = await sql`
+        INSERT INTO news (title, content, category, date, author, status, image_url)
+        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${status}, ${imageUrl})
+        RETURNING *
+      `;
 
-    let rows;
-    if (columns.hasStatus && columns.hasFeaturedImage) {
-      rows = await sql`
-        INSERT INTO news (title, content, category, date, author, status, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'}, ${newsImageColumnValue})
-        RETURNING *
-      `;
-    } else if (columns.hasStatus) {
-      rows = await sql`
-        INSERT INTO news (title, content, category, date, author, status)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'})
-        RETURNING *
-      `;
-    } else if (columns.hasFeaturedImage) {
-      rows = await sql`
-        INSERT INTO news (title, content, category, date, author, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${newsImageColumnValue})
-        RETURNING *
-      `;
-    } else {
-      rows = await sql`
-        INSERT INTO news (title, content, category, date, author)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null})
-        RETURNING *
-      `;
+      return NextResponse.json({ data: rows[0] }, { status: 201 });
     }
+
+    if (columns.hasStatus && imageColumn === 'featured_image') {
+      const rows = await sql`
+        INSERT INTO news (title, content, category, date, author, status, featured_image)
+        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${status}, ${imageUrl})
+        RETURNING *
+      `;
+
+      return NextResponse.json({ data: rows[0] }, { status: 201 });
+    }
+
+    if (imageColumn === 'image_url') {
+      const rows = await sql`
+        INSERT INTO news (title, content, category, date, author, image_url)
+        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${imageUrl})
+        RETURNING *
+      `;
+
+      return NextResponse.json({ data: rows[0] }, { status: 201 });
+    }
+
+    if (imageColumn === 'featured_image') {
+      const rows = await sql`
+        INSERT INTO news (title, content, category, date, author, featured_image)
+        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${imageUrl})
+        RETURNING *
+      `;
+
+      return NextResponse.json({ data: rows[0] }, { status: 201 });
+    }
+
+    const rows = await sql`
+      INSERT INTO news (title, content, category, date, author)
+      VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null})
+      RETURNING *
+    `;
 
     return NextResponse.json({ data: rows[0] }, { status: 201 });
   } catch (error) {

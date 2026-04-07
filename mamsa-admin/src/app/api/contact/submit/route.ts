@@ -33,20 +33,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const storedMessage = JSON.stringify({
+      subject,
+      phone: phone || null,
+      status: 'new',
+      admin_notes: null,
+      responded_at: null,
+      message,
+    });
+
     const rows = await sql<{
       id: number;
       name: string;
       email: string;
-      phone: string | null;
-      subject: string;
       message: string;
-      status: string;
       created_at: string;
-      updated_at: string | null;
     }[]>`
-      INSERT INTO contact_messages (name, email, phone, subject, message, status)
-      VALUES (${name}, ${email}, ${phone || null}, ${subject}, ${message}, 'new')
-      RETURNING id, name, email, phone, subject, message, status, created_at, updated_at
+      INSERT INTO contact_messages (name, email, message)
+      VALUES (${name}, ${email}, ${storedMessage})
+      RETURNING id, name, email, message, created_at
     `;
 
     const data = rows[0] ?? null;

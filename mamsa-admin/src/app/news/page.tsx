@@ -204,6 +204,7 @@ export default function NewsPage() {
         formData.append('content', newsData.content);
         formData.append('author', newsData.author);
         formData.append('category', newsData.category);
+        formData.append('date', newsData.published_at);
         formData.append('status', newsData.status);
         formData.append('excerpt', newsData.excerpt ?? '');
         formData.append('tags', JSON.stringify(newsData.tags ?? []));
@@ -247,6 +248,7 @@ export default function NewsPage() {
         formData.append('content', newsData.content);
         formData.append('author', newsData.author);
         formData.append('category', newsData.category);
+        formData.append('date', newsData.published_at);
         formData.append('status', newsData.status);
         formData.append('excerpt', newsData.excerpt ?? '');
         formData.append('tags', JSON.stringify(newsData.tags ?? []));

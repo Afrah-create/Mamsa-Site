@@ -14,11 +14,25 @@ export async function adminRequest<T>(input: RequestInfo | URL, init?: RequestIn
     },
   });
 
-  const payload = (await response.json().catch(() => ({}))) as AdminApiResponse<T>;
+  const responseText = await response.text();
+  let payload = {} as AdminApiResponse<T>;
 
-  if (!response.ok) {
-    throw new Error(payload.error || payload.message || 'Request failed.');
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText) as AdminApiResponse<T>;
+    } catch {
+      payload = {} as AdminApiResponse<T>;
+    }
   }
 
-  return (payload.data ?? (payload as T)) as T;
+  if (!response.ok) {
+    console.error('API Error:', response.status, responseText);
+    throw new Error(payload.error || payload.message || responseText || 'Request failed.');
+  }
+
+  if (payload.data !== undefined) {
+    return payload.data;
+  }
+
+  return (payload as T) ?? (undefined as T);
 }

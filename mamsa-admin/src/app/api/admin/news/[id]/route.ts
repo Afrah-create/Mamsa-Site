@@ -6,7 +6,11 @@ import { cloudinary } from '@/lib/cloudinary-server';
 
 const allowedCategories = new Set(['general', 'events', 'announcements']);
 
-let newsColumnsCache: { hasStatus: boolean; hasFeaturedImage: boolean } | null = null;
+let newsColumnsCache: {
+  hasStatus: boolean;
+  hasImageUrl: boolean;
+  hasFeaturedImage: boolean;
+} | null = null;
 
 const getNewsColumnInfo = async () => {
   if (newsColumnsCache) return newsColumnsCache;
@@ -16,16 +20,23 @@ const getNewsColumnInfo = async () => {
     FROM information_schema.columns
     WHERE table_schema = 'public'
       AND table_name = 'news'
-      AND column_name IN ('status', 'featured_image')
+      AND column_name IN ('status', 'image_url', 'featured_image')
   `;
 
   const set = new Set(rows.map((row) => row.column_name));
   newsColumnsCache = {
     hasStatus: set.has('status'),
+    hasImageUrl: set.has('image_url'),
     hasFeaturedImage: set.has('featured_image'),
   };
 
   return newsColumnsCache;
+};
+
+const getNewsImageColumn = (columns: NonNullable<typeof newsColumnsCache>) => {
+  if (columns.hasImageUrl) return 'image_url' as const;
+  if (columns.hasFeaturedImage) return 'featured_image' as const;
+  return null;
 };
 
 const uploadValueToCloudinary = async (value?: string | null) => {
@@ -89,10 +100,17 @@ const readNewsPayload = async (request: Request) => {
   };
 };
 
-const getNewsById = async (id: number, hasFeaturedImage: boolean) => {
-  if (hasFeaturedImage) {
+const getNewsById = async (id: number) => {
+  const columns = await getNewsColumnInfo();
+  const imageSelection = columns.hasImageUrl
+    ? sql`image_url AS featured_image`
+    : columns.hasFeaturedImage
+      ? sql`featured_image AS featured_image`
+      : sql`NULL::text AS featured_image`;
+
+  if (columns.hasStatus) {
     const rows = await sql`
-      SELECT id, title, content, category, date, author, status, featured_image, created_at, updated_at
+      SELECT id, title, content, category, date, author, status, ${imageSelection}, created_at, updated_at
       FROM news
       WHERE id = ${id}
       LIMIT 1
@@ -102,7 +120,7 @@ const getNewsById = async (id: number, hasFeaturedImage: boolean) => {
   }
 
   const rows = await sql`
-    SELECT id, title, content, category, date, author, status, created_at, updated_at
+    SELECT id, title, content, category, date, author, ${imageSelection}, created_at, updated_at
     FROM news
     WHERE id = ${id}
     LIMIT 1
@@ -132,34 +150,52 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
-    if (!body.category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
-    }
-
-    if (!allowedCategories.has(body.category)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
-    }
-
     const columns = await getNewsColumnInfo();
-    const existing = await getNewsById(id, columns.hasFeaturedImage);
+    const existing = await getNewsById(id);
 
     if (!existing) {
       return NextResponse.json({ error: 'News article not found' }, { status: 404 });
     }
 
+    const category = body.category || existing.category || 'general';
+    if (!allowedCategories.has(category)) {
+      return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+    }
+
+    const imageColumn = getNewsImageColumn(columns);
+    const date = body.date || existing.date || new Date().toISOString();
+    const status = body.status || existing.status || 'published';
     const uploadedFileUrl = await uploadFileToCloudinary(body.featured_image_file);
     const uploadedImageUrl = uploadedFileUrl ?? (body.featured_image ? await uploadValueToCloudinary(body.featured_image) : null);
-    const nextFeaturedImage = uploadedImageUrl ?? (columns.hasFeaturedImage ? existing.featured_image ?? null : null);
+    const nextFeaturedImage = uploadedImageUrl ?? existing.featured_image ?? null;
 
-    if (columns.hasStatus && columns.hasFeaturedImage) {
+    if (columns.hasStatus && imageColumn === 'image_url') {
       const rows = await sql`
         UPDATE news
         SET title = ${body.title},
             content = ${body.content},
-            category = ${body.category},
-            date = ${body.date ?? null},
+            category = ${category},
+            date = ${date},
             author = ${body.author ?? null},
-            status = ${body.status || 'published'},
+            status = ${status},
+            image_url = ${nextFeaturedImage},
+            updated_at = NOW()
+        WHERE id = ${id}
+        RETURNING id, title, content, category, date, author, status, image_url AS featured_image, created_at, updated_at
+      `;
+
+      return NextResponse.json({ data: rows[0] });
+    }
+
+    if (columns.hasStatus && imageColumn === 'featured_image') {
+      const rows = await sql`
+        UPDATE news
+        SET title = ${body.title},
+            content = ${body.content},
+            category = ${category},
+            date = ${date},
+            author = ${body.author ?? null},
+            status = ${status},
             featured_image = ${nextFeaturedImage},
             updated_at = NOW()
         WHERE id = ${id}
@@ -169,30 +205,30 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ data: rows[0] });
     }
 
-    if (columns.hasStatus) {
+    if (imageColumn === 'image_url') {
       const rows = await sql`
         UPDATE news
         SET title = ${body.title},
             content = ${body.content},
-            category = ${body.category},
-            date = ${body.date ?? null},
+            category = ${category},
+            date = ${date},
             author = ${body.author ?? null},
-            status = ${body.status || 'published'},
+            image_url = ${nextFeaturedImage},
             updated_at = NOW()
         WHERE id = ${id}
-        RETURNING id, title, content, category, date, author, status, created_at, updated_at
+        RETURNING id, title, content, category, date, author, image_url AS featured_image, created_at, updated_at
       `;
 
       return NextResponse.json({ data: rows[0] });
     }
 
-    if (columns.hasFeaturedImage) {
+    if (imageColumn === 'featured_image') {
       const rows = await sql`
         UPDATE news
         SET title = ${body.title},
             content = ${body.content},
-            category = ${body.category},
-            date = ${body.date ?? null},
+            category = ${category},
+            date = ${date},
             author = ${body.author ?? null},
             featured_image = ${nextFeaturedImage},
             updated_at = NOW()
@@ -207,8 +243,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       UPDATE news
       SET title = ${body.title},
           content = ${body.content},
-          category = ${body.category},
-          date = ${body.date ?? null},
+          category = ${category},
+          date = ${date},
           author = ${body.author ?? null},
           updated_at = NOW()
       WHERE id = ${id}
