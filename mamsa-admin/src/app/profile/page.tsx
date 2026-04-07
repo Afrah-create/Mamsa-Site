@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
+import { adminRequest } from '@/lib/admin-api';
 
 interface ProfileData {
   id: string;
@@ -19,7 +20,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,131 +35,72 @@ export default function ProfilePage() {
     email: ''
   });
 
-  const supabase = createClient();
-
+  const { isLoaded, user: clerkUser } = useUser();
   useEffect(() => {
-    checkAuth();
-  }, []);
+    const verifyAndLoad = async () => {
+      if (!isLoaded) return;
 
-  const checkAuth = async () => {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      setUser(user);
-      await loadProfile(user.id);
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      window.location.href = '/login';
-    }
-  };
+      try {
+        await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+        setUser(clerkUser);
+        await loadProfile(clerkUser.id);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '/login';
+      }
+    };
+
+    void verifyAndLoad();
+  }, [clerkUser, isLoaded]);
 
   const loadProfile = async (userId: string) => {
     try {
       console.log('Loading profile for user:', userId);
-      
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
 
-      console.log('Profile query result:', { data, error });
+      const data = await adminRequest<ProfileData | null>('/api/admin/profile');
 
-      if (error) {
-        console.error('Error loading profile:', error);
-        
-        // If no profile exists (PGRST116 is the "no rows found" error), create one
-        if (error.code === 'PGRST116' || error.message.includes('No rows found') || error.message.includes('No rows returned')) {
-          console.log('No profile found, creating new profile...');
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('admin_users')
-            .insert({
-              user_id: userId,
-              email: user?.email || '',
-              full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
-              role: 'admin'
-            })
-            .select()
-            .single();
+      console.log('Profile query result:', { data });
 
-          console.log('Profile creation result:', { newProfile, createError });
-
-          if (createError) {
-            console.error('Failed to create profile:', createError);
-            // Even if profile creation fails, we'll show the form with user data
-            const fallbackProfile = {
-              id: userId,
-              user_id: userId,
-              email: user?.email || '',
-              full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
-              avatar_url: '',
-              phone: '',
-              bio: '',
-              role: 'admin',
-              created_at: new Date().toISOString()
-            };
-            setProfile(fallbackProfile);
-            setFormData({
-              full_name: fallbackProfile.full_name,
-              phone: '',
-              bio: '',
-              email: fallbackProfile.email || user?.email || ''
-            });
-          } else {
-            setProfile(newProfile);
-            setFormData({
-              full_name: newProfile.full_name || '',
-              phone: newProfile.phone || '',
-              bio: newProfile.bio || '',
-              email: newProfile.email || user?.email || ''
-            });
-          }
-        } else {
-          // For other errors, show a fallback profile
-          console.error('Unexpected error loading profile:', error);
-          const fallbackProfile = {
-            id: userId,
-            user_id: userId,
-            email: user?.email || '',
-            full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
-            avatar_url: '',
-            phone: '',
-            bio: '',
-            role: 'admin',
-            created_at: new Date().toISOString()
-          };
-          setProfile(fallbackProfile);
-          setFormData({
-            full_name: fallbackProfile.full_name,
-            phone: '',
-            bio: '',
-            email: fallbackProfile.email || user?.email || ''
-          });
-        }
-      } else {
-        console.log('Profile loaded successfully:', data);
-        setProfile(data);
+      if (!data) {
+        const fallbackProfile = {
+          id: userId,
+          email: clerkUser?.emailAddresses?.[0]?.emailAddress || '',
+          full_name: clerkUser?.firstName || clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || '',
+          avatar_url: '',
+          phone: '',
+          bio: '',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        };
+        setProfile(fallbackProfile);
         setFormData({
-          full_name: data.full_name || '',
-          phone: data.phone || '',
-          bio: data.bio || '',
-          email: data.email || user?.email || ''
+          full_name: fallbackProfile.full_name,
+          phone: '',
+          bio: '',
+          email: fallbackProfile.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
         });
+        setLoading(false);
+        return;
       }
+
+      setProfile(data);
+      setFormData({
+        full_name: data.full_name || '',
+        phone: data.phone || '',
+        bio: data.bio || '',
+        email: data.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
+      });
     } catch (error) {
       console.error('Failed to load profile:', error);
-      // Even if everything fails, show a basic profile
       const fallbackProfile = {
         id: userId,
-        user_id: userId,
-        email: user?.email || '',
-        full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || '',
+        email: clerkUser?.emailAddresses?.[0]?.emailAddress || '',
+        full_name: clerkUser?.firstName || clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || '',
         avatar_url: '',
         phone: '',
         bio: '',
@@ -170,7 +112,7 @@ export default function ProfilePage() {
         full_name: fallbackProfile.full_name,
         phone: '',
         bio: '',
-        email: fallbackProfile.email || user?.email || ''
+        email: fallbackProfile.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
       });
     } finally {
       setLoading(false);
@@ -212,14 +154,16 @@ export default function ProfilePage() {
         
         try {
           // Update profile with base64 image data
-          const { error: updateError } = await supabase
-            .from('admin_users')
-            .update({ avatar_url: base64String })
-            .eq('user_id', user?.id);
-
-          if (updateError) {
-            throw updateError;
-          }
+          await adminRequest('/api/admin/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({
+              full_name: formData.full_name,
+              phone: formData.phone,
+              bio: formData.bio,
+              email: formData.email,
+              avatar_url: base64String,
+            }),
+          });
 
           // Update local state
           setProfile(prev => prev ? { ...prev, avatar_url: base64String } : null);
@@ -265,67 +209,13 @@ export default function ProfilePage() {
 
       console.log('Update payload:', updatePayload);
 
-      const { data: updateData, error } = await supabase
-        .from('admin_users')
-        .update(updatePayload)
-        .eq('user_id', user.id)
-        .select();
+      const updatedProfile = await adminRequest<ProfileData>('/api/admin/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(updatePayload),
+      });
 
-      console.log('Update result:', { updateData, error });
-
-      if (error) {
-        console.error('Database update error:', error);
-        
-        // If the profile doesn't exist, try to create it
-        if (error.code === 'PGRST116' || error.message.includes('No rows found')) {
-          console.log('Profile not found, attempting to create new profile...');
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('admin_users')
-            .insert({
-              user_id: user.id,
-              full_name: formData.full_name || null,
-              phone: formData.phone || null,
-              bio: formData.bio || null,
-              email: formData.email || user.email,
-              role: 'admin'
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Failed to create profile:', createError);
-            throw new Error(`Failed to create profile: ${createError.message}`);
-          }
-
-          console.log('Profile created successfully:', newProfile);
-          setProfile(newProfile);
-          setMessage({ type: 'success', text: 'Profile created successfully!' });
-        } else {
-          throw new Error(`Database update failed: ${error.message}`);
-        }
-      } else {
-        if (!updateData || updateData.length === 0) {
-          throw new Error('No rows were updated. Profile might not exist.');
-        }
-
-        console.log('Profile updated successfully:', updateData[0]);
-        setProfile(updateData[0]);
-        setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      }
-
-      // Update email in auth if it changed
-      if (formData.email !== user?.email) {
-        console.log('Updating email in auth from', user?.email, 'to', formData.email);
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: formData.email
-        });
-
-        if (emailError) {
-          console.warn('Email update failed:', emailError);
-          setMessage({ type: 'error', text: 'Profile updated but email change failed. Please verify your new email.' });
-        }
-      }
+      setProfile(updatedProfile);
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
 
     } catch (error) {
       console.error('Update failed with detailed error:', error);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
@@ -9,6 +9,7 @@ import EventModal from '@/components/EventModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { adminRequest } from '@/lib/admin-api';
 
 interface Event {
   id: number;
@@ -29,12 +30,6 @@ interface Event {
   created_at: string;
 }
 
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new?: Event;
-  old?: { id: number };
-}
-
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,8 +42,8 @@ export default function EventsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'ongoing' | 'completed' | 'cancelled'>('all');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
-  const supabase = createClient();
   const { toast, showToast, hideToast } = useToast();
+  const { isLoaded, user: clerkUser } = useUser();
 
   const formatTimeForDisplay = (rawTime?: string | null) => {
     if (!rawTime) return '';
@@ -208,68 +203,26 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
-  // Set up real-time subscription for events
   useEffect(() => {
     if (!user) return;
+    const interval = window.setInterval(() => {
+      loadEvents();
+    }, 30000);
 
-    const channel = supabase
-      .channel('events_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'events'
-        },
-        (payload: RealtimePayload) => {
-          console.log('Events change received:', payload);
-          
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setEvents(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new!.id);
-              if (!exists) {
-                return [normalizeEvent(payload.new as Event), ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            setEvents(prev => prev.map(item => 
-              item.id === payload.new!.id ? normalizeEvent(payload.new as Event) : item
-            ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setEvents(prev => prev.filter(item => item.id !== payload.old!.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
+    return () => window.clearInterval(interval);
+  }, [user]);
 
   const checkAuth = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      if (!isLoaded) return;
+
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser as unknown as User);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
@@ -281,26 +234,21 @@ export default function EventsPage() {
       setLoading(true);
       console.log('Loading events from database...');
 
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const data = await adminRequest<Event[]>('/api/admin/events');
 
-      if (error) {
-        console.error('Error loading events:', error);
-        
-        // If table doesn't exist or has issues, fall back to static data
+        if (data && data.length > 0) {
+          console.log('Loaded events from database:', data.length, 'events');
+          setEvents(data.map(normalizeEvent));
+        } else {
+          console.log('No events found in database');
+          setEvents([]);
+        }
+      } catch (loadError) {
+        console.error('Error loading events:', loadError);
         console.log('Falling back to static data...');
         setEvents(staticEvents.map(normalizeEvent));
         return;
-      }
-
-      if (data && data.length > 0) {
-        console.log('Loaded events from database:', data.length, 'events');
-        setEvents(data.map(normalizeEvent));
-      } else {
-        console.log('No events found in database');
-        setEvents([]);
       }
     } catch (error) {
       console.error('Failed to load events:', error);
@@ -352,21 +300,12 @@ export default function EventsPage() {
           updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('events')
-          .update(updateData)
-          .eq('id', editingItem.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating event:', error);
-          showToast(`Failed to update event: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<Event>(`/api/admin/events/${editingItem.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updateData),
+        });
 
         if (!data) {
-          console.error('No data returned from update operation');
           showToast('Failed to update event: No data returned', 'error');
           return;
         }
@@ -398,20 +337,12 @@ export default function EventsPage() {
           created_by: user?.id
         };
 
-        const { data, error } = await supabase
-          .from('events')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating event:', error);
-          showToast(`Failed to create event: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<Event>('/api/admin/events', {
+          method: 'POST',
+          body: JSON.stringify(insertData),
+        });
 
         if (!data) {
-          console.error('No data returned from create operation');
           showToast('Failed to create event: No data returned', 'error');
           return;
         }
@@ -447,15 +378,7 @@ export default function EventsPage() {
       try {
         console.log('Deleting event with ID:', itemToDelete.id);
         
-        const { error } = await supabase
-          .from('events')
-          .delete()
-          .eq('id', itemToDelete.id);
-
-        if (error) {
-          console.error('Error deleting event:', error);
-          throw error;
-        }
+        await adminRequest(`/api/admin/events/${itemToDelete.id}`, { method: 'DELETE' });
 
         console.log('Successfully deleted event');
         
@@ -475,15 +398,7 @@ export default function EventsPage() {
     try {
       console.log('Bulk deleting events:', selectedItems);
       
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .in('id', selectedItems);
-
-      if (error) {
-        console.error('Error bulk deleting events:', error);
-        throw error;
-      }
+      await Promise.all(selectedItems.map((id) => adminRequest(`/api/admin/events/${id}`, { method: 'DELETE' })));
 
       console.log('Successfully bulk deleted events');
       

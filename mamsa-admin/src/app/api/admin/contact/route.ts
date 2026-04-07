@@ -34,9 +34,13 @@ export async function PATCH(request: Request) {
   await requireAdmin();
 
   try {
-    const { id, status } = (await request.json()) as {
+    const { id, status, updates } = (await request.json()) as {
       id: number;
       status: 'new' | 'in_progress' | 'resolved' | 'archived';
+      updates?: {
+        admin_notes?: string | null;
+        responded_at?: string | null;
+      };
     };
 
     const rows = await sql<{
@@ -48,7 +52,10 @@ export async function PATCH(request: Request) {
       updated_at: string | null;
     }[]>`
       UPDATE contact_messages
-      SET status = ${status}
+      SET status = ${status},
+          admin_notes = ${updates?.admin_notes ?? null},
+          responded_at = ${updates?.responded_at ?? null},
+          updated_at = ${new Date().toISOString()}
       WHERE id = ${id}
       RETURNING id, name, subject, status, created_at, updated_at
     `;
@@ -56,6 +63,24 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
   } catch (error) {
     console.error('[api/admin/contact][PATCH] Unexpected error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unexpected error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  await requireAdmin();
+
+  try {
+    const { id } = (await request.json()) as { id: number };
+
+    await sql`DELETE FROM contact_messages WHERE id = ${id}`;
+
+    return NextResponse.json({ data: true }, { status: 200 });
+  } catch (error) {
+    console.error('[api/admin/contact][DELETE] Unexpected error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unexpected error' },
       { status: 500 }

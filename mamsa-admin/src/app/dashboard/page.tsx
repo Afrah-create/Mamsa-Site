@@ -1,11 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
+import { adminRequest } from '@/lib/admin-api';
 
 const INITIAL_STATS = {
   news: 0,
@@ -30,7 +31,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(INITIAL_STATS);
   
@@ -54,79 +55,26 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   
-  const supabase = createClient();
   const [snapshotReady, setSnapshotReady] = useState(false);
   const [hasSnapshot, setHasSnapshot] = useState(false);
+  const { isLoaded, user: clerkUser } = useUser();
 
   const checkAuth = useCallback(async () => {
-    try {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+    if (!isLoaded) return;
 
-      if (error || !authUser) {
-        console.log('No authenticated user found:', error);
-        window.location.href = '/login';
-        return;
-      }
-
-      console.log('Authenticated user found:', authUser.email);
-
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
-
-      if (adminError) {
-        console.log('Admin check error:', adminError);
-
-        if (adminError.code === 'PGRST116' || adminError.message.includes('relation "admin_users" does not exist')) {
-          console.log('Admin table not found, creating admin user...');
-          const { error: createError } = await supabase
-            .from('admin_users')
-            .insert({
-              user_id: authUser.id,
-              full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Admin User',
-              email: authUser.email || '',
-              role: 'super_admin',
-              permissions: {
-                news: true,
-                events: true,
-                leadership: true,
-                gallery: true,
-                users: true,
-                reports: true
-              },
-              status: 'active'
-            });
-
-          if (createError) {
-            console.error('Failed to create admin user:', createError);
-            setUser(authUser);
-            return;
-          }
-
-          console.log('Admin user created successfully');
-          setUser(authUser);
-          return;
-        }
-
-        console.log('User not found in admin table');
-        window.location.href = '/login';
-        return;
-      }
-
-      if (!adminData) {
-        console.log('No admin data found');
-        window.location.href = '/login';
-        return;
-      }
-
-      console.log('Admin access granted for:', adminData.full_name);
-      setUser(authUser);
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    if (!clerkUser) {
+      window.location.href = '/login';
+      return;
     }
-  }, [supabase]);
+
+    try {
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser);
+    } catch (error) {
+      console.error('Admin check failed:', error);
+      window.location.href = '/login';
+    }
+  }, [clerkUser, isLoaded]);
 
   useEffect(() => {
     checkAuth();
@@ -163,131 +111,51 @@ export default function DashboardPage() {
 
   const fetchStats = useCallback(async (): Promise<typeof INITIAL_STATS> => {
     try {
-      const [newsResult, eventsResult, leadershipResult, galleryResult, usersResult] = await Promise.all([
-        supabase.from('news').select('id', { count: 'exact', head: true }),
-        supabase.from('events').select('id', { count: 'exact', head: true }),
-        supabase.from('leadership').select('id', { count: 'exact', head: true }),
-        supabase.from('gallery').select('id', { count: 'exact', head: true }),
-        supabase.from('admin_users').select('id', { count: 'exact', head: true })
-      ]);
+      const response = await adminRequest<{
+        stats: typeof INITIAL_STATS;
+        recentActivity: Activity[];
+        upcomingEvents: UpcomingEvent[];
+      }>('/api/admin/dashboard');
 
-      return {
-        news: newsResult.count || 0,
-        events: eventsResult.count || 0,
-        leadership: leadershipResult.count || 0,
-        gallery: galleryResult.count || 0,
-        totalUsers: usersResult.count || 0,
-        totalViews: 15420
-      };
+      return response.stats;
     } catch (error) {
       console.error('Failed to load stats:', error);
       return INITIAL_STATS;
     }
-  }, [supabase]);
+  }, []);
 
   const fetchRecentActivity = useCallback(async (): Promise<Activity[]> => {
     try {
-      const [newsData, eventsData, galleryData, leadershipData] = await Promise.all([
-        supabase.from('news').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('events').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('gallery').select('id, title, created_at').order('created_at', { ascending: false }).limit(4),
-        supabase.from('leadership').select('id, name, created_at').order('created_at', { ascending: false }).limit(4)
-      ]);
+      const response = await adminRequest<{
+        stats: typeof INITIAL_STATS;
+        recentActivity: Activity[];
+        upcomingEvents: UpcomingEvent[];
+      }>('/api/admin/dashboard');
 
-      type ActivitySeed = {
-        id: string;
-        type: Activity['type'];
-        action: string;
-        title: string;
-        created_at: string;
-      };
-
-      const seeds: ActivitySeed[] = [];
-
-      newsData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
-        seeds.push({
-          id: `news-${item.id}`,
-          type: 'news',
-          action: 'Published new article',
-          title: item.title,
-          created_at: item.created_at
-        })
-      );
-
-      eventsData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
-        seeds.push({
-          id: `event-${item.id}`,
-          type: 'event',
-          action: 'Created new event',
-          title: item.title,
-          created_at: item.created_at
-        })
-      );
-
-      galleryData.data?.forEach((item: { id: number; title: string; created_at: string }) =>
-        seeds.push({
-          id: `gallery-${item.id}`,
-          type: 'gallery',
-          action: 'Uploaded image',
-          title: item.title,
-          created_at: item.created_at
-        })
-      );
-
-      leadershipData.data?.forEach((item: { id: number; name: string; created_at: string }) =>
-        seeds.push({
-          id: `leadership-${item.id}`,
-          type: 'leadership',
-          action: 'Updated profile',
-          title: item.name,
-          created_at: item.created_at
-        })
-      );
-
-      seeds.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      return seeds.slice(0, 4).map((item) => ({
-        id: item.id,
-        type: item.type,
-        action: item.action,
-        title: item.title,
-        time: formatTimeAgo(item.created_at),
-        user: 'Admin'
+      return response.recentActivity.map((item) => ({
+        ...item,
+        time: formatTimeAgo(item.time),
       }));
     } catch (error) {
       console.error('Failed to load recent activity:', error);
       return [];
     }
-  }, [supabase]);
+  }, []);
 
   const fetchUpcomingEvents = useCallback(async (): Promise<UpcomingEvent[]> => {
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, title, date, location, capacity')
-        .gte('date', new Date().toISOString().split('T')[0])
-        .order('date', { ascending: true })
-        .limit(3);
+      const response = await adminRequest<{
+        stats: typeof INITIAL_STATS;
+        recentActivity: Activity[];
+        upcomingEvents: UpcomingEvent[];
+      }>('/api/admin/dashboard');
 
-      if (error) {
-        console.error('Error loading upcoming events:', error);
-        return [];
-      }
-
-      return (
-        data?.map((event: { id: number; title: string; date: string; location?: string; capacity?: number }) => ({
-          id: event.id,
-          title: event.title,
-          date: event.date,
-          location: event.location || 'TBA',
-          attendees: event.capacity || 0
-        })) || []
-      );
+      return response.upcomingEvents;
     } catch (error) {
       console.error('Failed to load upcoming events:', error);
       return [];
     }
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     if (!user || !snapshotReady) return;
@@ -382,7 +250,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.2em]">Admin Overview</p>
-                <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-gray-900">Welcome back, {user?.email?.split('@')[0] || 'Admin'}</h1>
+                <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-gray-900">Welcome back, {user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'Admin'}</h1>
                 <p className="mt-2 text-sm text-gray-600">Here is a summary of the latest activity across the platform.</p>
               </div>
             </div>

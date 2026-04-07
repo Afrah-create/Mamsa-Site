@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AlumniModal, { AlumniFormValues, AlumniRecord } from '@/components/AlumniModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import { adminRequest } from '@/lib/admin-api';
 
 type AboutSectionKey = 'history' | 'mission' | 'vision' | 'values' | 'objectives';
 
@@ -62,7 +63,7 @@ const EMPTY_FORM: AboutFormState = {
 };
 
 export default function AboutPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState<AboutFormState>(EMPTY_FORM);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,7 +76,7 @@ export default function AboutPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [alumnusToDelete, setAlumnusToDelete] = useState<AlumniRecord | null>(null);
 
-  const supabase = createClient();
+  const { isLoaded, user: clerkUser } = useUser();
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -84,44 +85,25 @@ export default function AboutPage() {
 
   const checkAuth = useCallback(async () => {
     try {
-      const {
-        data: { user: authUser },
-        error,
-      } = await supabase.auth.getUser();
+      if (!isLoaded) return;
 
-      if (error || !authUser) {
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { error: adminError } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-
-      if (adminError) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(authUser);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser);
     } catch (err) {
       console.error('Auth check failed:', err);
       window.location.href = '/login';
     }
-  }, [supabase]);
+  }, [clerkUser, isLoaded]);
 
   const loadContent = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('about')
-        .select('id, section, content, updated_at');
-
-      if (error) {
-        throw error;
-      }
+      const data = await adminRequest<Array<AboutRow>>('/api/admin/about');
 
       if (data) {
         const draft: AboutFormState = { ...EMPTY_FORM };
@@ -149,23 +131,12 @@ export default function AboutPage() {
     } finally {
       setLoading(false);
     }
-  }, [showToast, supabase]);
+  }, [showToast]);
 
   const loadAlumni = useCallback(async () => {
     try {
       setAlumniLoading(true);
-      const { data, error } = await supabase
-        .from('notable_alumni')
-        .select(
-          'id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at'
-        )
-        .order('order_position', { ascending: true, nullsFirst: true })
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
+      const data = await adminRequest<AlumniRecord[]>('/api/admin/notable-alumni');
       setAlumni((data as AlumniRecord[]) ?? []);
     } catch (err) {
       console.error('Failed to load notable alumni:', err);
@@ -173,7 +144,7 @@ export default function AboutPage() {
     } finally {
       setAlumniLoading(false);
     }
-  }, [showToast, supabase]);
+  }, [showToast]);
 
   useEffect(() => {
     checkAuth();
@@ -183,43 +154,13 @@ export default function AboutPage() {
     if (!user) return;
     loadContent();
     loadAlumni();
-    const channel = supabase
-      .channel('about_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'about',
-        },
-        (payload: { eventType: 'INSERT' | 'UPDATE' | 'DELETE' }) => {
-          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-            loadContent();
-          }
-        }
-      )
-      .subscribe();
+    const interval = window.setInterval(() => {
+      loadContent();
+      loadAlumni();
+    }, 30000);
 
-    const alumniChannel = supabase
-      .channel('notable_alumni_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notable_alumni',
-        },
-        () => {
-          loadAlumni();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(alumniChannel);
-    };
-  }, [loadAlumni, loadContent, supabase, user]);
+    return () => window.clearInterval(interval);
+  }, [loadAlumni, loadContent, user]);
 
   const handleFieldChange = (key: AboutSectionKey, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -235,13 +176,10 @@ export default function AboutPage() {
         content: formData[section.key].trim(),
       }));
 
-      const { error } = await supabase
-        .from('about')
-        .upsert(rows, { onConflict: 'section' });
-
-      if (error) {
-        throw error;
-      }
+      await adminRequest('/api/admin/about', {
+        method: 'PATCH',
+        body: JSON.stringify(rows),
+      });
 
       showToast('success', 'About content saved successfully.');
       await loadContent();
@@ -276,22 +214,17 @@ export default function AboutPage() {
 
     try {
       if (editingAlumnus) {
-        const { error } = await supabase
-          .from('notable_alumni')
-          .update(payload)
-          .eq('id', editingAlumnus.id);
-
-        if (error) {
-          throw error;
-        }
+        await adminRequest(`/api/admin/notable-alumni/${editingAlumnus.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
 
         showToast('success', 'Notable alumni details updated.');
       } else {
-        const { error } = await supabase.from('notable_alumni').insert(payload);
-
-        if (error) {
-          throw error;
-        }
+        await adminRequest('/api/admin/notable-alumni', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
 
         showToast('success', 'Notable alumni added.');
       }
@@ -309,10 +242,7 @@ export default function AboutPage() {
     if (!alumnusToDelete) return;
 
     try {
-      const { error } = await supabase.from('notable_alumni').delete().eq('id', alumnusToDelete.id);
-      if (error) {
-        throw error;
-      }
+      await adminRequest(`/api/admin/notable-alumni/${alumnusToDelete.id}`, { method: 'DELETE' });
       showToast('success', 'Notable alumni removed.');
       setShowDeleteModal(false);
       setAlumnusToDelete(null);

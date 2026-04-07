@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
@@ -10,6 +10,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
+import { adminRequest } from '@/lib/admin-api';
 
 interface LeadershipMember {
   id: number;
@@ -31,12 +32,6 @@ interface LeadershipMember {
   created_at: string;
 }
 
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new?: LeadershipMember;
-  old?: { id: number };
-}
-
 export default function LeadershipPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,8 +44,8 @@ export default function LeadershipPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'alumni'>('all');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
-  const supabase = createClient();
   const { toast, showToast, hideToast } = useToast();
+  const { isLoaded, user: clerkUser } = useUser();
 
   // Static data for demonstration
   const staticLeadership: LeadershipMember[] = [
@@ -167,68 +162,26 @@ export default function LeadershipPage() {
     loadLeadership();
   }, []);
 
-  // Real-time subscription for leadership changes
   useEffect(() => {
     if (!user) return;
+    const interval = window.setInterval(() => {
+      loadLeadership();
+    }, 30000);
 
-    const channel = supabase
-      .channel('leadership_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'leadership'
-        },
-        (payload: RealtimePayload) => {
-          console.log('Leadership change received:', payload);
-          
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setLeadership(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new!.id);
-              if (!exists) {
-                return [payload.new as LeadershipMember, ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            setLeadership(prev => prev.map(item => 
-              item.id === payload.new!.id ? payload.new as LeadershipMember : item
-            ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setLeadership(prev => prev.filter(item => item.id !== payload.old!.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
+    return () => window.clearInterval(interval);
+  }, [user]);
 
   const checkAuth = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      if (!isLoaded) return;
+
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser as unknown as User);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
@@ -240,15 +193,7 @@ export default function LeadershipPage() {
       setLoading(true);
       console.log('Loading leadership from database...');
       
-      const { data, error } = await supabase
-        .from('leadership')
-        .select('*')
-        .order('order_position', { ascending: true });
-
-      if (error) {
-        console.error('Error loading leadership:', error);
-        throw error;
-      }
+      const data = await adminRequest<LeadershipMember[]>('/api/admin/leadership');
 
       console.log('Successfully loaded leadership:', data);
       setLeadership(data || []);
@@ -300,21 +245,12 @@ export default function LeadershipPage() {
           updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('leadership')
-          .update(updateData)
-          .eq('id', editingItem.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating member:', error);
-          showToast(`Failed to update member: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<LeadershipMember>(`/api/admin/leadership/${editingItem.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updateData),
+        });
 
         if (!data) {
-          console.error('No data returned from update operation');
           showToast('Failed to update member: No data returned', 'error');
           return;
         }
@@ -343,20 +279,12 @@ export default function LeadershipPage() {
           created_by: user?.id
         };
 
-        const { data, error } = await supabase
-          .from('leadership')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating member:', error);
-          showToast(`Failed to create member: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<LeadershipMember>('/api/admin/leadership', {
+          method: 'POST',
+          body: JSON.stringify(insertData),
+        });
 
         if (!data) {
-          console.error('No data returned from create operation');
           showToast('Failed to create member: No data returned', 'error');
           return;
         }
@@ -392,15 +320,7 @@ export default function LeadershipPage() {
       try {
         console.log('Deleting member with ID:', itemToDelete.id);
         
-        const { error } = await supabase
-          .from('leadership')
-          .delete()
-          .eq('id', itemToDelete.id);
-
-        if (error) {
-          console.error('Error deleting member:', error);
-          throw error;
-        }
+        await adminRequest(`/api/admin/leadership/${itemToDelete.id}`, { method: 'DELETE' });
 
         console.log('Successfully deleted member');
         
@@ -420,15 +340,7 @@ export default function LeadershipPage() {
     try {
       console.log('Bulk deleting members:', selectedItems);
       
-      const { error } = await supabase
-        .from('leadership')
-        .delete()
-        .in('id', selectedItems);
-
-      if (error) {
-        console.error('Error bulk deleting members:', error);
-        throw error;
-      }
+      await Promise.all(selectedItems.map((id) => adminRequest(`/api/admin/leadership/${id}`, { method: 'DELETE' })));
 
       console.log('Successfully bulk deleted members');
       

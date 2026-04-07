@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient, supabaseUrl } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
@@ -9,6 +9,8 @@ import GalleryModal from '@/components/GalleryModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { adminRequest } from '@/lib/admin-api';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 interface GalleryImage {
   id: number;
@@ -31,12 +33,6 @@ interface GalleryImage {
   created_at: string;
 }
 
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new?: GalleryImage;
-  old?: { id: number };
-}
-
 export default function GalleryPage() {
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,8 +46,8 @@ export default function GalleryPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
-  const supabase = createClient();
   const { toast, showToast, hideToast } = useToast();
+  const { isLoaded, user: clerkUser } = useUser();
 
   const resolveImageUrl = (url?: string | null) => {
     if (!url) return '';
@@ -82,29 +78,11 @@ export default function GalleryPage() {
     }
 
     const cleaned = normalized.replace(/^\/+/, '');
-    const [bucket, ...segments] = cleaned.split('/');
-
-    if (!bucket || segments.length === 0) {
-      return trimmed;
+    if (cleaned.includes('/')) {
+      return `/${cleaned}`;
     }
 
-    const path = segments.join('/');
-
-    try {
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      if (data?.publicUrl) {
-        return data.publicUrl;
-      }
-    } catch (error) {
-      console.warn('Falling back to manual gallery URL resolution:', trimmed, error);
-    }
-
-    if (supabaseUrl) {
-      const normalizedBase = supabaseUrl.replace(/\/+$/, '');
-      return `${normalizedBase}/storage/v1/object/public/${bucket}/${path}`;
-    }
-
-    return trimmed;
+    return getPublicUrl(cleaned);
   };
 
   const normalizeGalleryImage = (image: GalleryImage): GalleryImage => ({
@@ -257,68 +235,26 @@ export default function GalleryPage() {
     loadGallery();
   }, []);
 
-  // Real-time subscription for gallery changes
   useEffect(() => {
     if (!user) return;
+    const interval = window.setInterval(() => {
+      loadGallery();
+    }, 30000);
 
-    const channel = supabase
-      .channel('gallery_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'gallery'
-        },
-        (payload: RealtimePayload) => {
-          console.log('Gallery change received:', payload);
-          
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setGallery(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new!.id);
-              if (!exists) {
-                return [normalizeGalleryImage(payload.new as GalleryImage), ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            setGallery(prev => prev.map(item => 
-              item.id === payload.new!.id ? normalizeGalleryImage(payload.new as GalleryImage) : item
-            ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setGallery(prev => prev.filter(item => item.id !== payload.old!.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
+    return () => window.clearInterval(interval);
+  }, [user]);
 
   const checkAuth = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      if (!isLoaded) return;
+
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser as unknown as User);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
@@ -330,15 +266,7 @@ export default function GalleryPage() {
       setLoading(true);
       console.log('Loading gallery from database...');
       
-      const { data, error } = await supabase
-        .from('gallery')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading gallery:', error);
-        throw error;
-      }
+      const data = await adminRequest<GalleryImage[]>('/api/admin/gallery');
 
       console.log('Successfully loaded gallery:', data);
       setGallery((data || []).map(normalizeGalleryImage));
@@ -392,21 +320,12 @@ export default function GalleryPage() {
           updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('gallery')
-          .update(updateData)
-          .eq('id', editingItem.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating image:', error);
-          showToast(`Failed to update image: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<GalleryImage>(`/api/admin/gallery/${editingItem.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updateData),
+        });
 
         if (!data) {
-          console.error('No data returned from update operation');
           showToast('Failed to update image: No data returned', 'error');
           return;
         }
@@ -437,20 +356,12 @@ export default function GalleryPage() {
           created_by: user?.id
         };
 
-        const { data, error } = await supabase
-          .from('gallery')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating image:', error);
-          showToast(`Failed to create image: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<GalleryImage>('/api/admin/gallery', {
+          method: 'POST',
+          body: JSON.stringify(insertData),
+        });
 
         if (!data) {
-          console.error('No data returned from create operation');
           showToast('Failed to create image: No data returned', 'error');
           return;
         }
@@ -486,15 +397,7 @@ export default function GalleryPage() {
       try {
         console.log('Deleting image with ID:', itemToDelete.id);
         
-        const { error } = await supabase
-          .from('gallery')
-          .delete()
-          .eq('id', itemToDelete.id);
-
-        if (error) {
-          console.error('Error deleting image:', error);
-          throw error;
-        }
+        await adminRequest(`/api/admin/gallery/${itemToDelete.id}`, { method: 'DELETE' });
 
         console.log('Successfully deleted image');
         
@@ -514,15 +417,7 @@ export default function GalleryPage() {
     try {
       console.log('Bulk deleting images:', selectedItems);
       
-      const { error } = await supabase
-        .from('gallery')
-        .delete()
-        .in('id', selectedItems);
-
-      if (error) {
-        console.error('Error bulk deleting images:', error);
-        throw error;
-      }
+      await Promise.all(selectedItems.map((id) => adminRequest(`/api/admin/gallery/${id}`, { method: 'DELETE' })));
 
       console.log('Successfully bulk deleted images');
       

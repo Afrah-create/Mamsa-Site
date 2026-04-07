@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
@@ -10,6 +10,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import ConfigurationErrorModal from '@/components/ConfigurationErrorModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { adminRequest } from '@/lib/admin-api';
 import Image from 'next/image';
 
 interface AdminUser {
@@ -37,12 +38,6 @@ interface AdminUser {
   created_by?: string;
 }
 
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new?: AdminUser;
-  old?: { id: number };
-}
-
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,8 +59,8 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
-  const supabase = createClient();
   const { toast, showToast, hideToast } = useToast();
+  const { isLoaded, user: clerkUser } = useUser();
 
   // Static data for demonstration
   const staticUsers: AdminUser[] = [
@@ -216,72 +211,40 @@ export default function UsersPage() {
   ];
 
   useEffect(() => {
-    checkAuth();
-    loadUsers();
-  }, []);
+    if (!isLoaded) return;
 
-  // Real-time subscription for user changes
+    if (!clerkUser) {
+      window.location.href = '/login';
+      return;
+    }
+
+    const verifyAndLoad = async () => {
+      try {
+        await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+        setUser(clerkUser as unknown as User);
+        await loadUsers();
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        window.location.href = '/login';
+      }
+    };
+
+    verifyAndLoad();
+  }, [clerkUser, isLoaded]);
+
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('admin_users_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'admin_users'
-        },
-        (payload: RealtimePayload) => {
-          console.log('Admin users change received:', payload);
-          
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setUsers(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new!.id);
-              if (!exists) {
-                return [payload.new as AdminUser, ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            setUsers(prev => prev.map(item => 
-              item.id === payload.new!.id ? payload.new as AdminUser : item
-            ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setUsers(prev => prev.filter(item => item.id !== payload.old!.id));
-          }
-        }
-      )
-      .subscribe();
+    const interval = window.setInterval(() => {
+      loadUsers();
+    }, 30000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
+    return () => window.clearInterval(interval);
+  }, [user]);
 
   const checkAuth = async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
@@ -292,16 +255,8 @@ export default function UsersPage() {
     try {
       setLoading(true);
       console.log('Loading users from database...');
-      
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error loading users:', error);
-        throw error;
-      }
+      const data = await adminRequest<AdminUser[]>('/api/admin/users');
 
       console.log('Successfully loaded users:', data);
       setUsers(data || []);
@@ -352,21 +307,17 @@ export default function UsersPage() {
           updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('admin_users')
-          .update(updateData)
-          .eq('id', editingItem.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating user:', error);
-          showToast(`Failed to update user: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<AdminUser>('/api/admin/users', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            id: editingItem.id,
+            user: {
+              ...updateData,
+            },
+          }),
+        });
 
         if (!data) {
-          console.error('No data returned from update operation');
           showToast('Failed to update user: No data returned', 'error');
           return;
         }
@@ -386,38 +337,17 @@ export default function UsersPage() {
 
         console.log('Creating new user via API...');
 
-        const response = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user: userData,
-            password: finalPassword,
-            createdBy: user?.id ?? null,
-          }),
-        });
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          console.error('API error creating user:', payload);
-          
-          // For configuration errors, show the detailed modal
-          if (payload?.error === 'Configuration Required' && typeof payload?.message === 'object') {
-            setConfigError(payload.message);
-            setConfigErrorHelpUrl(payload.helpUrl);
-            setShowConfigError(true);
-            return { success: false, error: payload?.error };
+        const payload = await adminRequest<{ data: AdminUser; message?: string }>(
+          '/api/admin/users',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              user: userData,
+              password: finalPassword,
+              createdBy: user?.id ?? null,
+            }),
           }
-          
-          // For other errors, show toast
-          let errorMessage = payload?.error ?? 'Unknown error occurred';
-          if (payload?.message && typeof payload.message === 'string') {
-            errorMessage = `${payload.error}\n\n${payload.message}`;
-          }
-          
-          showToast(`Unable to create user: ${errorMessage}`, 'error');
-          return { success: false, error: payload?.error };
-        }
+        );
 
         if (!payload?.data) {
           showToast('Failed to create user: invalid response', 'error');
@@ -427,7 +357,7 @@ export default function UsersPage() {
         setUsers((prev) => [payload.data, ...prev]);
         showToast('User created successfully', 'success');
       }
-      
+
       return { success: true };
     } catch (error) {
       console.error('Failed to save user:', error);
@@ -444,20 +374,14 @@ export default function UsersPage() {
     if (itemToDelete) {
       try {
         console.log('Deleting user with ID:', itemToDelete.id);
-        
-        const { error } = await supabase
-          .from('admin_users')
-          .delete()
-          .eq('id', itemToDelete.id);
 
-        if (error) {
-          console.error('Error deleting user:', error);
-          throw error;
-        }
+        await adminRequest('/api/admin/users', {
+          method: 'DELETE',
+          body: JSON.stringify({ clerkUserId: itemToDelete.user_id }),
+        });
 
         console.log('Successfully deleted user');
-        
-        // Update local state
+
         setUsers(prev => prev.filter(u => u.id !== itemToDelete.id));
         setShowConfirm(false);
         setItemToDelete(null);
@@ -472,20 +396,21 @@ export default function UsersPage() {
   const handleBulkDelete = async () => {
     try {
       console.log('Bulk deleting users:', selectedItems);
-      
-      const { error } = await supabase
-        .from('admin_users')
-        .delete()
-        .in('id', selectedItems);
 
-      if (error) {
-        console.error('Error bulk deleting users:', error);
-        throw error;
-      }
+      await Promise.all(
+        selectedItems
+          .map((id) => users.find((user) => user.id === id))
+          .filter((item): item is AdminUser => Boolean(item))
+          .map((item) =>
+            adminRequest('/api/admin/users', {
+              method: 'DELETE',
+              body: JSON.stringify({ clerkUserId: item.user_id }),
+            })
+          )
+      );
 
       console.log('Successfully bulk deleted users');
-      
-      // Update local state
+
       setUsers(prev => prev.filter(u => !selectedItems.includes(u.id)));
       setSelectedItems([]);
       showToast(`${selectedItems.length} user(s) deleted successfully`, 'success');
@@ -553,12 +478,17 @@ export default function UsersPage() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
     return date.toLocaleDateString();
   };
+
+  useEffect(() => {
+    checkAuth();
+    loadUsers();
+  }, []);
 
   return (
     <AdminLayout user={user}>

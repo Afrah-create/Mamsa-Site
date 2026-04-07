@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
+import { adminRequest } from '@/lib/admin-api';
 
 interface ContactMessage {
   id: number;
@@ -86,15 +87,13 @@ function ContactManagementContent() {
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  const supabase = createClient();
+  const { isLoaded, user: clerkUser } = useUser();
 
   const filteredMessages = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return messages.filter((message) => {
       const matchesStatus = statusFilter === 'all' || message.status === statusFilter;
       if (!matchesStatus) return false;
-
-      if (!query) return true;
 
       return (
         message.name.toLowerCase().includes(query) ||
@@ -131,70 +130,40 @@ function ContactManagementContent() {
 
   const checkAuth = useCallback(async () => {
     try {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
+      if (!isLoaded) return;
+
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: admin, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (adminError || !admin) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(data.user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser as unknown as User);
     } catch (error) {
       console.error('Contact management auth error:', error);
       window.location.href = '/login';
     } finally {
       setLoadingUser(false);
     }
-  }, [supabase]);
+  }, [clerkUser, isLoaded]);
 
   const loadMessages = useCallback(async () => {
     try {
       setLoadingMessages(true);
-      const { data, error } = await supabase
-        .from('contact_messages')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Failed to load contact messages:', error);
-        showToast({ type: 'error', message: 'Unable to fetch contact messages.' });
-        return;
-      }
-
+      const data = await adminRequest<ContactMessage[]>('/api/admin/contact');
       setMessages(data ?? []);
     } catch (error) {
-      console.error('Unexpected contact message load error:', error);
-      showToast({ type: 'error', message: 'Unexpected error loading messages.' });
+      console.error('Failed to load contact messages:', error);
+      showToast({ type: 'error', message: 'Unable to fetch contact messages.' });
     } finally {
       setLoadingMessages(false);
     }
-  }, [supabase, showToast]);
+  }, [showToast]);
 
   const loadSettings = useCallback(async () => {
     try {
       setLoadingSettings(true);
-      const { data, error } = await supabase
-        .from('contact_settings')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Failed to load contact settings:', error);
-        showToast({ type: 'error', message: 'Unable to load contact settings.' });
-        return;
-      }
+      const data = await adminRequest<ContactSettings | null>('/api/contact/settings');
 
       if (data) {
         setSettings({
@@ -211,180 +180,139 @@ function ContactManagementContent() {
     } finally {
       setLoadingSettings(false);
     }
-  }, [supabase, showToast]);
+  }, [showToast]);
 
-  const handleSelectMessage = useCallback(
-    async (message: ContactMessage) => {
-      setSelectedMessageId(message.id);
+      const handleSelectMessage = useCallback(
+        async (message: ContactMessage) => {
+          setSelectedMessageId(message.id);
 
-      if (message.status === 'new') {
-        try {
-          const { data, error } = await supabase
-            .from('contact_messages')
-            .update({ status: 'in_progress' })
-            .eq('id', message.id)
-            .select()
-            .single();
+          if (message.status === 'new') {
+            try {
+              const data = await adminRequest<ContactMessage>('/api/admin/contact', {
+                method: 'PATCH',
+                body: JSON.stringify({ id: message.id, status: 'in_progress', updates: { responded_at: null } }),
+              });
 
-          if (error) {
-            console.error('Failed to update message status when opening:', error);
+              setMessages((prev) => prev.map((item) => (item.id === message.id ? data : item)));
+            } catch (error) {
+              console.error('Unexpected status update on select:', error);
+            }
+          }
+        },
+        []
+      );
+
+      const updateMessage = useCallback(
+        async (id: number, updates: Partial<ContactMessage>) => {
+          try {
+            const data = await adminRequest<ContactMessage>('/api/admin/contact', {
+              method: 'PATCH',
+              body: JSON.stringify({
+                id,
+                status: (updates.status ?? 'new') as ContactMessage['status'],
+                updates: {
+                  admin_notes: updates.admin_notes ?? null,
+                  responded_at: updates.responded_at ?? null,
+                },
+              }),
+            });
+
+            setMessages((prev) => prev.map((item) => (item.id === id ? data : item)));
+            if (selectedMessageId === id) {
+              setSelectedMessageId(id);
+            }
+            showToast({ type: 'success', message: 'Update saved.' });
+          } catch (error) {
+            console.error('Unexpected error updating message:', error);
+            showToast({ type: 'error', message: 'Unexpected error saving changes.' });
+          }
+        },
+        [selectedMessageId, showToast]
+      );
+
+      const handleStatusChange = useCallback(
+        async (id: number, status: ContactMessage['status']) => {
+          const responded_at = status === 'resolved' ? new Date().toISOString() : null;
+          await updateMessage(id, { status, responded_at });
+        },
+        [updateMessage]
+      );
+
+      const handleNoteSave = useCallback(
+        async (id: number, note: string) => {
+          await updateMessage(id, { admin_notes: note });
+        },
+        [updateMessage]
+      );
+
+      const handleMarkAsRead = useCallback(
+        async (id: number) => {
+          const message = messages.find((m) => m.id === id);
+          if (message && message.status === 'new') {
+            await handleStatusChange(id, 'in_progress');
+          }
+        },
+        [messages, handleStatusChange]
+      );
+
+      const handleDeleteMessage = useCallback(
+        async (id: number) => {
+          if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
             return;
           }
 
-          setMessages((prev) => prev.map((item) => (item.id === message.id ? data : item)));
-        } catch (error) {
-          console.error('Unexpected status update on select:', error);
-        }
-      }
-    },
-    [supabase]
-  );
+          try {
+            await adminRequest('/api/admin/contact', {
+              method: 'DELETE',
+              body: JSON.stringify({ id }),
+            });
 
-  const updateMessage = useCallback(
-    async (id: number, updates: Partial<ContactMessage>) => {
-      try {
-        const { data, error } = await supabase
-          .from('contact_messages')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Failed to update contact message:', error);
-          showToast({ type: 'error', message: 'Unable to update the message.' });
-          return;
-        }
-
-        setMessages((prev) => prev.map((item) => (item.id === id ? data : item)));
-        if (selectedMessageId === id) {
-          setSelectedMessageId(id);
-        }
-        showToast({ type: 'success', message: 'Update saved.' });
-      } catch (error) {
-        console.error('Unexpected error updating message:', error);
-        showToast({ type: 'error', message: 'Unexpected error saving changes.' });
-      }
-    },
-    [supabase, selectedMessageId, showToast]
-  );
-
-  const handleStatusChange = useCallback(
-    async (id: number, status: ContactMessage['status']) => {
-      const responded_at = status === 'resolved' ? new Date().toISOString() : null;
-      await updateMessage(id, { status, responded_at });
-    },
-    [updateMessage]
-  );
-
-  const handleNoteSave = useCallback(
-    async (id: number, note: string) => {
-      await updateMessage(id, { admin_notes: note });
-    },
-    [updateMessage]
-  );
-
-  const handleMarkAsRead = useCallback(
-    async (id: number) => {
-      const message = messages.find((m) => m.id === id);
-      if (message && message.status === 'new') {
-        await handleStatusChange(id, 'in_progress');
-      }
-    },
-    [messages, handleStatusChange]
-  );
-
-  const handleDeleteMessage = useCallback(
-    async (id: number) => {
-      if (!confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
-        return;
-      }
-
-      try {
-        const { error } = await supabase.from('contact_messages').delete().eq('id', id);
-
-        if (error) {
-          console.error('Failed to delete message:', error);
-          showToast({ type: 'error', message: 'Failed to delete message.' });
-          return;
-        }
-
-        setMessages((prev) => prev.filter((item) => item.id !== id));
-        if (selectedMessageId === id) {
-          setSelectedMessageId(null);
-        }
-        showToast({ type: 'success', message: 'Message deleted successfully.' });
-      } catch (error) {
-        console.error('Unexpected error deleting message:', error);
-        showToast({ type: 'error', message: 'Unexpected error deleting message.' });
-      }
-    },
-    [supabase, selectedMessageId, showToast]
-  );
-
-  const handleSettingsSave = useCallback(
-    async (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!settings) return;
-
-      try {
-        setSavingSettings(true);
-        const payload = {
-          office_name: settings.office_name || null,
-          address: settings.address || null,
-          email: settings.email || null,
-          phone: settings.phone || null,
-          latitude: settings.latitude,
-          longitude: settings.longitude,
-          map_embed_url: settings.map_embed_url?.trim() || null,
-          updated_by: user?.id ?? null,
-        };
-
-        if (settings.id) {
-          const { data, error } = await supabase
-            .from('contact_settings')
-            .update(payload)
-            .eq('id', settings.id)
-            .select()
-            .single();
-
-          if (error) {
-            console.error('Failed to update contact settings:', error);
-            showToast({ type: 'error', message: 'Unable to update contact settings.' });
-            return;
+            setMessages((prev) => prev.filter((item) => item.id !== id));
+            if (selectedMessageId === id) {
+              setSelectedMessageId(null);
+            }
+            showToast({ type: 'success', message: 'Message deleted successfully.' });
+          } catch (error) {
+            console.error('Unexpected error deleting message:', error);
+            showToast({ type: 'error', message: 'Unexpected error deleting message.' });
           }
+        },
+        [selectedMessageId, showToast]
+      );
 
-          setSettings(data);
-        } else {
-          const { data, error } = await supabase
-            .from('contact_settings')
-            .insert(payload)
-            .select()
-            .single();
+      const handleSettingsSave = useCallback(
+        async (event: React.FormEvent<HTMLFormElement>) => {
+          event.preventDefault();
+          if (!settings) return;
 
-          if (error) {
-            console.error('Failed to create contact settings:', error);
-            showToast({ type: 'error', message: 'Unable to save contact settings.' });
-            return;
+          try {
+            setSavingSettings(true);
+            const payload = {
+              office_name: settings.office_name || null,
+              address: settings.address || null,
+              email: settings.email || null,
+              phone: settings.phone || null,
+              latitude: settings.latitude,
+              longitude: settings.longitude,
+              map_embed_url: settings.map_embed_url?.trim() || null,
+            };
+
+            const data = await adminRequest<ContactSettings>('/api/contact/settings', {
+              method: 'PATCH',
+              body: JSON.stringify(payload),
+            });
+
+            setSettings(data);
+            showToast({ type: 'success', message: 'Contact settings updated.' });
+          } catch (error) {
+            console.error('Unexpected error saving contact settings:', error);
+            showToast({ type: 'error', message: 'Unexpected error saving settings.' });
+          } finally {
+            setSavingSettings(false);
           }
-
-          setSettings(data);
-        }
-
-        showToast({ type: 'success', message: 'Contact settings updated.' });
-      } catch (error) {
-        console.error('Unexpected error saving contact settings:', error);
-        showToast({ type: 'error', message: 'Unexpected error saving settings.' });
-      } finally {
-        setSavingSettings(false);
-      }
-    },
-    [settings, supabase, user?.id, showToast]
-  );
-
+        },
+        [settings, showToast]
+      );
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -410,25 +338,12 @@ function ContactManagementContent() {
   }, [searchParams, messages, handleSelectMessage]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel('contact_management_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contact_messages',
-        },
-        () => {
-          loadMessages();
-        }
-      )
-      .subscribe();
+    const interval = window.setInterval(() => {
+      loadMessages();
+    }, 30000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, loadMessages]);
+    return () => window.clearInterval(interval);
+  }, [loadMessages]);
 
   useEffect(() => {
     if (!toast) return;

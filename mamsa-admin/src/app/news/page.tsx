@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
@@ -9,6 +9,7 @@ import NewsModal from '@/components/NewsModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { adminRequest } from '@/lib/admin-api';
 
 interface NewsItem {
   id: number;
@@ -23,12 +24,6 @@ interface NewsItem {
   tags?: string[];
 }
 
-interface RealtimePayload {
-  eventType: 'INSERT' | 'UPDATE' | 'DELETE';
-  new?: NewsItem;
-  old?: { id: number };
-}
-
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [user, setUser] = useState<User | null>(null);
@@ -41,8 +36,8 @@ export default function NewsPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
-  const supabase = createClient();
   const { toast, showToast, hideToast } = useToast();
+  const { isLoaded, user: clerkUser } = useUser();
 
   // Function to seed initial news data
   const seedInitialNews = useCallback(async () => {
@@ -72,65 +67,58 @@ export default function NewsPage() {
         }
       ];
 
-      const { data, error } = await supabase
-        .from('news_articles')
-        .insert(initialNews)
-        .select();
+      const seeded = await Promise.all(
+        initialNews.map((item) =>
+          adminRequest<NewsItem>('/api/admin/news', {
+            method: 'POST',
+            body: JSON.stringify({ ...item, created_by: user?.id }),
+          })
+        )
+      );
 
-      if (error) {
-        console.error('Error seeding initial news:', error);
-        return;
-      }
-
-      console.log('Successfully seeded initial news data:', data);
-      // Only set news if we don't already have data
-      setNews(prev => prev.length > 0 ? prev : data);
+      console.log('Successfully seeded initial news data:', seeded);
+      setNews((prev) => (prev.length > 0 ? prev : seeded));
     } catch (error) {
       console.error('Failed to seed initial news:', error);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id]);
 
   const checkAuth = useCallback(async () => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
-      if (error || !user) {
+      if (!isLoaded) return;
+
+      if (!clerkUser) {
         window.location.href = '/login';
         return;
       }
 
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminData) {
-        window.location.href = '/login';
-        return;
-      }
-
-      setUser(user);
+      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      setUser(clerkUser as unknown as User);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
     }
-  }, [supabase]);
+  }, [clerkUser, isLoaded]);
 
   const loadNews = useCallback(async () => {
     try {
       setLoading(true);
       console.log('Loading news from database...');
 
-      const { data, error } = await supabase
-        .from('news_articles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const data = await adminRequest<NewsItem[]>('/api/admin/news');
 
-      if (error) {
-        console.error('Error loading news:', error);
-        
-        // If table doesn't exist or has issues, fall back to static data
+        if (data && data.length > 0) {
+          console.log('Loaded news from database:', data.length, 'articles');
+          setNews(data);
+        } else {
+          console.log('No news articles found in database');
+          setNews([]);
+          await seedInitialNews();
+        }
+        return;
+      } catch (loadError) {
+        console.error('Error loading news:', loadError);
         console.log('Falling back to static data...');
         const staticNews: NewsItem[] = [
           {
@@ -161,70 +149,27 @@ export default function NewsPage() {
         setNews(staticNews);
         return;
       }
-
-      if (data && data.length > 0) {
-        console.log('Loaded news from database:', data.length, 'articles');
-        setNews(data);
-      } else {
-        console.log('No news articles found in database');
-        setNews([]);
-        
-        // Optionally seed some initial data
-        await seedInitialNews();
-      }
     } catch (error) {
       console.error('Failed to load news:', error);
       setNews([]);
     } finally {
       setLoading(false);
     }
-  }, [supabase, seedInitialNews]);
+  }, [seedInitialNews]);
 
   useEffect(() => {
     checkAuth();
     loadNews();
   }, [checkAuth, loadNews]);
 
-  // Set up real-time subscription for news articles
   useEffect(() => {
     if (!user) return;
+    const interval = window.setInterval(() => {
+      loadNews();
+    }, 30000);
 
-    const channel = supabase
-      .channel('news_articles_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'news_articles'
-        },
-        (payload: RealtimePayload) => {
-          console.log('News articles change received:', payload);
-          
-          if (payload.eventType === 'INSERT' && payload.new) {
-            setNews(prev => {
-              // Check if item already exists to prevent duplicates
-              const exists = prev.some(item => item.id === payload.new!.id);
-              if (!exists) {
-                return [payload.new as NewsItem, ...prev];
-              }
-              return prev;
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            setNews(prev => prev.map(item => 
-              item.id === payload.new!.id ? payload.new as NewsItem : item
-            ));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setNews(prev => prev.filter(item => item.id !== payload.old!.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, supabase]);
+    return () => window.clearInterval(interval);
+  }, [loadNews, user]);
 
   const handleCreateNews = () => {
     setEditingItem(null);
@@ -261,21 +206,12 @@ export default function NewsPage() {
           updated_at: new Date().toISOString()
         };
 
-        const { data, error } = await supabase
-          .from('news_articles')
-          .update(updateData)
-          .eq('id', editingItem.id)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error updating news article:', error);
-          showToast(`Failed to update news article: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<NewsItem>(`/api/admin/news/${editingItem.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ ...updateData, published_at: updateData.published_at }),
+        });
 
         if (!data) {
-          console.error('No data returned from update operation');
           showToast('Failed to update news article: No data returned', 'error');
           return;
         }
@@ -301,20 +237,12 @@ export default function NewsPage() {
           created_by: user?.id
         };
 
-        const { data, error } = await supabase
-          .from('news_articles')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating news article:', error);
-          showToast(`Failed to create news article: ${error.message}`, 'error');
-          return;
-        }
+        const data = await adminRequest<NewsItem>('/api/admin/news', {
+          method: 'POST',
+          body: JSON.stringify(insertData),
+        });
 
         if (!data) {
-          console.error('No data returned from create operation');
           showToast('Failed to create news article: No data returned', 'error');
           return;
         }
@@ -350,15 +278,7 @@ export default function NewsPage() {
       try {
         console.log('Deleting news article with ID:', itemToDelete.id);
         
-        const { error } = await supabase
-          .from('news_articles')
-          .delete()
-          .eq('id', itemToDelete.id);
-
-        if (error) {
-          console.error('Error deleting news article:', error);
-          throw error;
-        }
+        await adminRequest(`/api/admin/news/${itemToDelete.id}`, { method: 'DELETE' });
 
         console.log('Successfully deleted news article');
         
@@ -378,15 +298,7 @@ export default function NewsPage() {
     try {
       console.log('Bulk deleting news articles:', selectedItems);
       
-      const { error } = await supabase
-        .from('news_articles')
-        .delete()
-        .in('id', selectedItems);
-
-      if (error) {
-        console.error('Error bulk deleting news articles:', error);
-        throw error;
-      }
+      await Promise.all(selectedItems.map((id) => adminRequest(`/api/admin/news/${id}`, { method: 'DELETE' })));
 
       console.log('Successfully bulk deleted news articles');
       

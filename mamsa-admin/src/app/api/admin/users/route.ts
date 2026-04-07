@@ -37,7 +37,6 @@ export async function GET() {
     const users = await sql<AdminUserRow[]>`
       SELECT id, email, name, role, status, clerk_user_id
       FROM admin_users
-      WHERE status = 'active'
       ORDER BY id DESC
     `;
 
@@ -109,6 +108,36 @@ export async function POST(request: Request) {
     }, { status: 201 });
   } catch (error) {
     console.error('[api/admin/users] Unexpected error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unexpected error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  await requireAdmin();
+
+  try {
+    const { id, user }: { id: number; user: Partial<IncomingUser> & { full_name?: string; avatar_url?: string; phone?: string; bio?: string; department?: string; position?: string; permissions?: Permissions } } = await request.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'id is required.' }, { status: 400 });
+    }
+
+    const rows = await sql<AdminUserRow[]>`
+      UPDATE admin_users
+      SET name = ${user.name ?? user.full_name ?? null},
+          email = ${user.email ?? ''},
+          role = ${user.role ?? 'admin'},
+          status = ${user.status ?? 'active'}
+      WHERE id = ${id}
+      RETURNING id, email, name, role, status, clerk_user_id
+    `;
+
+    return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
+  } catch (error) {
+    console.error('[api/admin/users][PATCH] Unexpected error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unexpected error' },
       { status: 500 }

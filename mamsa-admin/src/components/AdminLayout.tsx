@@ -9,7 +9,7 @@ import { clearSessionData } from '@/lib/session-manager';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  user?: unknown;
+  user?: any;
 }
 
 interface ProfileData {
