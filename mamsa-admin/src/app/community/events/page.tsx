@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { fetchActiveEvents, type Event } from '@/lib/public-content';
 import { formatDate, formatTime } from '@/lib/public-content-utils';
 
@@ -143,6 +144,17 @@ export default async function EventsPage() {
                       {event.contact_email}
                     </span>
                   )}
+                </div>
+                <div className="pt-1">
+                  <Link
+                    href={`/community/events/${event.id}`}
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                  >
+                    Read more
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
+                      <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
                 </div>
               </div>
             </article>

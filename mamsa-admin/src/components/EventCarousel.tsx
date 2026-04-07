@@ -81,7 +81,7 @@ export default function EventCarousel({ events }: Props) {
           const hasDetails = Boolean(event.location || event.time || event.organizer);
 
           return (
-            <Link key={event.id} href="/community/events" className="w-full flex-none block">
+            <Link key={event.id} href={`/community/events/${event.id}`} className="w-full flex-none block">
               <article className="w-full h-full">
                 <div className="relative h-[320px] w-full overflow-hidden sm:h-[360px] lg:h-[420px] cursor-pointer">
                 {event.featured_image ? (

@@ -376,23 +376,86 @@ export async function fetchPublishedNewsArticle(id: number) {
     const rows = await getNewsArticles();
     const item = rows.find((row) => row.id === id) ?? null;
 
+    if (item) {
+      return {
+        data: {
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          excerpt: item.excerpt,
+          category: 'general',
+          date: item.published_at,
+          author: item.author,
+          image: null,
+          featured_image: item.featured_image,
+          status: item.status,
+          published_at: item.published_at,
+          tags: item.tags,
+        },
+        error: null,
+      };
+    }
+
+    const newsRows = await getNews();
+    const newsItem = newsRows.find((row) => row.id === id) ?? null;
+
     return {
-      data: item
+      data: newsItem
         ? {
-            id: item.id,
-            title: item.title,
-            content: item.content,
-            excerpt: item.excerpt,
-            category: 'general',
-            date: item.published_at,
-            author: item.author,
-            image: null,
-            featured_image: item.featured_image,
-            status: item.status,
-            published_at: item.published_at,
-            tags: item.tags,
+            id: newsItem.id,
+            title: newsItem.title,
+            content: newsItem.content,
+            excerpt: newsItem.excerpt,
+            category: newsItem.category,
+            date: newsItem.date,
+            author: newsItem.author,
+            image: newsItem.image,
+            featured_image: newsItem.image,
+            status: 'published',
+            published_at: newsItem.date,
+            tags: newsItem.tags,
           }
         : null,
+      error: null,
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+export async function fetchEventById(id: number) {
+  try {
+    const rows = await sql<
+      Array<{
+        id: number;
+        title: string;
+        description: string | null;
+        date: string | null;
+        time: string | null;
+        location: string | null;
+        status: string | null;
+        featured_image: string | null;
+        organizer: string | null;
+        contact_email: string | null;
+      }>
+    >`
+      SELECT *
+      FROM events
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+
+    const row = rows[0] ?? null;
+
+    if (!row) {
+      return { data: null, error: null };
+    }
+
+    return {
+      data: {
+        ...row,
+        featured_image: resolveImage(row.featured_image),
+      } as Event,
       error: null,
     };
   } catch (error) {
