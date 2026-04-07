@@ -7,8 +7,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'MAMSA Admin Portal',
-  description: 'MAMSA Admin Portal for content management',
+  title: 'MAMSA Fraternity',
+  description: 'MAMSA Fraternity',
   icons: {
     icon: [{ url: '/images/mamsa-logo.JPG', type: 'image/jpeg' }],
     shortcut: ['/images/mamsa-logo.JPG'],

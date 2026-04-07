@@ -4,13 +4,14 @@ import { fetchEventById } from '@/lib/public-content';
 import { formatDate, formatTime } from '@/lib/public-content-utils';
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export const revalidate = 180;
 
 export default async function EventDetailPage({ params }: PageProps) {
-  const id = Number(params.id);
+  const { id: idParam } = await params;
+  const id = Number(idParam);
 
   if (!Number.isFinite(id)) {
     notFound();
