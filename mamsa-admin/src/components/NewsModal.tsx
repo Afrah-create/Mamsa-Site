@@ -10,6 +10,7 @@ interface NewsItem {
   content: string;
   author: string;
   category: 'general' | 'events' | 'announcements';
+  image?: string | null;
   published_at: string;
   created_at: string;
   status: 'draft' | 'published' | 'archived';
@@ -97,8 +98,8 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
       reader.onload = (event) => {
         setFormData(prev => ({
           ...prev,
-          featured_image_file: file,
-          featured_image: event.target?.result as string
+          featured_image_file: null,
+          featured_image: String(event.target?.result ?? '')
         }));
       };
       reader.readAsDataURL(file);
@@ -127,17 +128,22 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
     setLoading(true);
 
     try {
-      // Call onSave and wait for it to complete
       await onSave({
-        ...formData,
-        published_at: new Date().toISOString()
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        author: formData.author.trim() || 'Admin',
+        category: (formData.category || 'general').toLowerCase() as 'general' | 'events' | 'announcements',
+        status: formData.status,
+        featured_image: formData.featured_image || '',
+        featured_image_file: null,
+        image: formData.featured_image || null,
+        published_at: new Date().toISOString(),
+        excerpt: formData.excerpt.trim(),
+        tags: formData.tags
       });
-      
-      // Only close modal if save was successful
       onClose();
     } catch (error) {
       console.error('Failed to save article:', error);
-      // Don't close modal on error - let the parent handle the error display
     } finally {
       setLoading(false);
     }

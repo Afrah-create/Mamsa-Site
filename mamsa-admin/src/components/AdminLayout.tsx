@@ -90,6 +90,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       if (!response.ok) {
         const text = await response.text();
         console.error('Error loading notifications:', response.status, text);
+        setNotifications([]);
         return;
       }
 
@@ -112,6 +113,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       setNotifications(mapped);
     } catch (error) {
       console.error('Failed to load notifications:', error);
+      setNotifications([]);
     } finally {
       setLoadingNotifications(false);
     }

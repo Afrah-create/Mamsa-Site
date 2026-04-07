@@ -82,6 +82,7 @@ const readNewsPayload = async (request: Request) => {
       date: String(formData.get('date') ?? '').trim() || null,
       author: String(formData.get('author') ?? '').trim(),
       status: String(formData.get('status') ?? 'published').trim(),
+      image: String(formData.get('image') ?? '').trim() || String(formData.get('featured_image') ?? '').trim() || null,
       featured_image: String(formData.get('featured_image') ?? '').trim() || null,
       featured_image_file: formData.get('featured_image_file') as File | null,
     };
@@ -95,6 +96,7 @@ const readNewsPayload = async (request: Request) => {
     date: body.date ?? null,
     author: String(body.author ?? '').trim(),
     status: String(body.status ?? 'published').trim(),
+    image: body.image ?? body.featured_image ?? null,
     featured_image: body.featured_image ?? null,
     featured_image_file: null,
   };
@@ -144,24 +146,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
-    const category = body.category || 'general';
+    const category = allowedCategories.has(body.category) ? body.category : 'general';
     if (!allowedCategories.has(category)) {
       return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
     }
 
-    const date = body.date || new Date().toISOString();
+    const date = body.date || new Date().toISOString().split('T')[0];
+    const content = body.content || '';
+    const author = body.author || 'Admin';
+    const image = body.image || null;
     const status = body.status || 'published';
     const columns = await getNewsColumnInfo();
     const imageColumn = getNewsImageColumn(columns);
 
     const uploadedFromFile = await uploadFileToCloudinary(body.featured_image_file);
-    const uploadedFromValue = uploadedFromFile ?? (body.featured_image ? await uploadNewsImageIfNeeded(body.featured_image) : null);
+    const uploadedFromValue = uploadedFromFile ?? (image ? await uploadNewsImageIfNeeded(image) : null);
     const imageUrl = uploadedFromValue;
 
     if (columns.hasStatus && imageColumn === 'image_url') {
       const rows = await sql`
         INSERT INTO news (title, content, category, date, author, status, image_url)
-        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${status}, ${imageUrl})
+        VALUES (${body.title}, ${content}, ${category}, ${date}, ${author}, ${status}, ${imageUrl})
         RETURNING *
       `;
 
@@ -171,7 +176,7 @@ export async function POST(request: Request) {
     if (columns.hasStatus && imageColumn === 'featured_image') {
       const rows = await sql`
         INSERT INTO news (title, content, category, date, author, status, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${status}, ${imageUrl})
+        VALUES (${body.title}, ${content}, ${category}, ${date}, ${author}, ${status}, ${imageUrl})
         RETURNING *
       `;
 
@@ -181,7 +186,7 @@ export async function POST(request: Request) {
     if (imageColumn === 'image_url') {
       const rows = await sql`
         INSERT INTO news (title, content, category, date, author, image_url)
-        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${imageUrl})
+        VALUES (${body.title}, ${content}, ${category}, ${date}, ${author}, ${imageUrl})
         RETURNING *
       `;
 
@@ -191,7 +196,7 @@ export async function POST(request: Request) {
     if (imageColumn === 'featured_image') {
       const rows = await sql`
         INSERT INTO news (title, content, category, date, author, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null}, ${imageUrl})
+        VALUES (${body.title}, ${content}, ${category}, ${date}, ${author}, ${imageUrl})
         RETURNING *
       `;
 
@@ -200,7 +205,7 @@ export async function POST(request: Request) {
 
     const rows = await sql`
       INSERT INTO news (title, content, category, date, author)
-      VALUES (${body.title}, ${body.content ?? null}, ${category}, ${date}, ${body.author ?? null})
+      VALUES (${body.title}, ${content}, ${category}, ${date}, ${author})
       RETURNING *
     `;
 

@@ -4,13 +4,30 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Event } from '@/lib/public-content';
-import { formatDate, formatTime } from '@/lib/public-content-utils';
+import { formatTime } from '@/lib/public-content-utils';
 
 type Props = {
   events: Event[];
 };
 
 const SLIDE_DELAY = 8000;
+
+const formatEventDate = (value: string | null | undefined) => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
 
 export default function EventCarousel({ events }: Props) {
   const slides = useMemo(() => events.filter((event) => Boolean(event.title)), [events]);
@@ -88,7 +105,7 @@ export default function EventCarousel({ events }: Props) {
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                       {event.status || 'Upcoming'}
                     </span>
-                    <span>{formatDate(event.date)}</span>
+                    <span>{formatEventDate(event.date)}</span>
                   </div>
 
                   <div className="space-y-4 text-white drop-shadow">
