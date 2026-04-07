@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const footerLinks = [
@@ -8,9 +11,13 @@ const footerLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
-const COPYRIGHT_YEAR = 2026;
-
 export default function PublicFooter() {
+  const [copyrightYear, setCopyrightYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCopyrightYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="bg-emerald-950 text-emerald-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12 md:flex-row md:items-center md:justify-between">
@@ -37,7 +44,7 @@ export default function PublicFooter() {
         </nav>
       </div>
       <div className="bg-emerald-900/40 py-4 text-center text-xs text-emerald-200/80">
-        © {COPYRIGHT_YEAR} MAMSA. All rights reserved.
+        © {copyrightYear ?? ''} MAMSA. All rights reserved.
       </div>
     </footer>
   );

@@ -74,28 +74,21 @@ export async function PATCH(request: Request) {
     }
 
     const rows = await sql<ProfileRow[]>`
-      INSERT INTO admin_users (id, user_id, email, full_name, avatar_url, phone, bio, role, updated_at)
-      VALUES (
-        ${user.id},
-        ${String(user.id)},
-        ${body.email ?? user.email},
-        ${body.full_name ?? user.name ?? ''},
-        ${avatarUrl},
-        ${body.phone ?? ''},
-        ${body.bio ?? ''},
-        ${user.role ?? 'admin'},
-        ${new Date().toISOString()}
-      )
-      ON CONFLICT (id)
-      DO UPDATE SET
-        email = EXCLUDED.email,
-        full_name = EXCLUDED.full_name,
-        avatar_url = EXCLUDED.avatar_url,
-        phone = EXCLUDED.phone,
-        bio = EXCLUDED.bio,
-        updated_at = EXCLUDED.updated_at
+      UPDATE admin_users
+      SET email = ${body.email ?? user.email},
+          full_name = ${body.full_name ?? user.name ?? ''},
+          avatar_url = ${avatarUrl},
+          phone = ${body.phone ?? ''},
+          bio = ${body.bio ?? ''},
+          updated_at = ${new Date().toISOString()}
+      WHERE id = ${user.id}
+         OR LOWER(email) = LOWER(${user.email})
       RETURNING id, user_id, email, full_name, avatar_url, phone, bio, role, created_at, updated_at
     `;
+
+    if (!rows[0]) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ data: rows[0] ?? null });
   } catch (error) {
