@@ -16,10 +16,12 @@ interface NewsItem {
   title: string;
   content: string;
   author: string;
+  category: 'general' | 'events' | 'announcements';
   published_at: string;
   created_at: string;
   status: 'draft' | 'published' | 'archived';
   featured_image?: string;
+  featured_image_file?: File | null;
   excerpt?: string;
   tags?: string[];
 }
@@ -48,6 +50,7 @@ export default function NewsPage() {
           title: "Welcome to MAMSA News Portal",
           content: "Welcome to the MAMSA News Portal! This is your central hub for all the latest updates, announcements, and news from the Madi Makerere University Students Association.\n\nHere you'll find information about upcoming events, leadership updates, community initiatives, and much more. We're committed to keeping you informed and engaged with all the exciting developments happening within our community.",
           author: "MAMSA Editorial Team",
+          category: 'announcements',
           status: "published",
           featured_image: "/api/placeholder/400/200",
           excerpt: "Welcome to the MAMSA News Portal - your central hub for all the latest updates and announcements.",
@@ -58,6 +61,7 @@ export default function NewsPage() {
           title: "Getting Started with MAMSA",
           content: "New to MAMSA? Here's everything you need to know to get started and make the most of your membership.\n\nMAMSA offers numerous opportunities for personal and professional development, networking, and community engagement. From academic support to leadership development programs, we're here to help you succeed throughout your university journey.\n\nMake sure to check out our upcoming events and consider joining one of our many committees or interest groups.",
           author: "MAMSA Admin",
+          category: 'general',
           status: "published",
           featured_image: "/api/placeholder/400/200",
           excerpt: "Everything you need to know to get started with MAMSA and make the most of your membership.",
@@ -126,6 +130,7 @@ export default function NewsPage() {
             title: "MAMSA Annual Conference 2024: A Resounding Success",
             content: "The MAMSA Annual Conference 2024 was held last weekend at the Makerere University Main Hall, bringing together over 500 students from various departments. The conference featured keynote speeches from industry leaders, panel discussions on current issues, and networking opportunities for students.\n\nThe theme 'Building Tomorrow's Leaders Today' resonated throughout the event, with speakers emphasizing the importance of student leadership and community engagement. Highlights included a presentation on sustainable development goals and a workshop on digital literacy in education.",
             author: "Dr. Sarah Johnson",
+            category: 'events',
             published_at: "2024-03-15T10:00:00Z",
             created_at: "2024-03-15T09:00:00Z",
             status: "published",
@@ -138,6 +143,7 @@ export default function NewsPage() {
             title: "New Student Support Services Launch",
             content: "MAMSA is excited to announce the launch of new student support services designed to help members throughout their academic journey. These services include academic tutoring, career counseling, mental health support, and financial aid guidance.\n\nThe services are available to all registered MAMSA members and can be accessed through our online portal or by visiting the MAMSA office. We encourage all students to take advantage of these resources to enhance their university experience.",
             author: "John Mwesigwa",
+            category: 'general',
             published_at: "2024-03-10T14:30:00Z",
             created_at: "2024-03-10T14:00:00Z",
             status: "published",
@@ -193,23 +199,35 @@ export default function NewsPage() {
       if (editingItem) {
         // Update existing item
         console.log('Updating existing article with ID:', editingItem.id);
-        
-        const updateData = {
-          title: newsData.title,
-          content: newsData.content,
-          author: newsData.author,
-          status: newsData.status,
-          featured_image: newsData.featured_image,
-          excerpt: newsData.excerpt,
-          tags: newsData.tags,
-          published_at: newsData.status === 'published' ? new Date().toISOString() : editingItem.published_at,
-          updated_at: new Date().toISOString()
-        };
+        const formData = new FormData();
+        formData.append('title', newsData.title);
+        formData.append('content', newsData.content);
+        formData.append('author', newsData.author);
+        formData.append('category', newsData.category);
+        formData.append('status', newsData.status);
+        formData.append('excerpt', newsData.excerpt ?? '');
+        formData.append('tags', JSON.stringify(newsData.tags ?? []));
+        formData.append('published_at', newsData.status === 'published' ? new Date().toISOString() : editingItem.published_at);
+        if (newsData.featured_image) {
+          formData.append('featured_image', newsData.featured_image);
+        }
+        if (newsData.featured_image_file) {
+          formData.append('featured_image_file', newsData.featured_image_file);
+        }
 
-        const data = await adminRequest<NewsItem>(`/api/admin/news/${editingItem.id}`, {
+        const response = await fetch(`/api/admin/news/${editingItem.id}`, {
           method: 'PATCH',
-          body: JSON.stringify({ ...updateData, published_at: updateData.published_at }),
+          credentials: 'include',
+          body: formData,
         });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || 'Failed to update news article.');
+        }
+
+        const payload = await response.json();
+        const data = payload.data as NewsItem;
 
         if (!data) {
           showToast('Failed to update news article: No data returned', 'error');
@@ -224,23 +242,34 @@ export default function NewsPage() {
       } else {
         // Create new item
         console.log('Creating new article...');
-        
-        const insertData = {
-          title: newsData.title,
-          content: newsData.content,
-          author: newsData.author,
-          status: newsData.status,
-          featured_image: newsData.featured_image,
-          excerpt: newsData.excerpt,
-          tags: newsData.tags,
-          published_at: newsData.status === 'published' ? new Date().toISOString() : null,
-          created_by: user?.id
-        };
+        const formData = new FormData();
+        formData.append('title', newsData.title);
+        formData.append('content', newsData.content);
+        formData.append('author', newsData.author);
+        formData.append('category', newsData.category);
+        formData.append('status', newsData.status);
+        formData.append('excerpt', newsData.excerpt ?? '');
+        formData.append('tags', JSON.stringify(newsData.tags ?? []));
+        if (newsData.featured_image) {
+          formData.append('featured_image', newsData.featured_image);
+        }
+        if (newsData.featured_image_file) {
+          formData.append('featured_image_file', newsData.featured_image_file);
+        }
 
-        const data = await adminRequest<NewsItem>('/api/admin/news', {
+        const response = await fetch('/api/admin/news', {
           method: 'POST',
-          body: JSON.stringify(insertData),
+          credentials: 'include',
+          body: formData,
         });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || 'Failed to create news article.');
+        }
+
+        const payload = await response.json();
+        const data = payload.data as NewsItem;
 
         if (!data) {
           showToast('Failed to create news article: No data returned', 'error');

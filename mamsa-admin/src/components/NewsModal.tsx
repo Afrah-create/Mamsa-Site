@@ -9,10 +9,12 @@ interface NewsItem {
   title: string;
   content: string;
   author: string;
+  category: 'general' | 'events' | 'announcements';
   published_at: string;
   created_at: string;
   status: 'draft' | 'published' | 'archived';
   featured_image?: string;
+  featured_image_file?: File | null;
   excerpt?: string;
   tags?: string[];
 }
@@ -29,8 +31,10 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
     title: '',
     content: '',
     author: '',
+    category: 'general' as 'general' | 'events' | 'announcements',
     status: 'draft' as 'draft' | 'published' | 'archived',
     featured_image: '',
+    featured_image_file: null as File | null,
     excerpt: '',
     tags: [] as string[]
   });
@@ -49,8 +53,10 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
         title: editingItem.title,
         content: editingItem.content,
         author: editingItem.author,
+        category: editingItem.category,
         status: editingItem.status,
         featured_image: editingItem.featured_image || '',
+        featured_image_file: null,
         excerpt: editingItem.excerpt || '',
         tags: editingItem.tags || []
       });
@@ -59,8 +65,10 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
         title: '',
         content: '',
         author: '',
+        category: 'general',
         status: 'draft',
         featured_image: '',
+        featured_image_file: null,
         excerpt: '',
         tags: []
       });
@@ -85,11 +93,11 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Simulate image upload - in real app, this would upload to storage
       const reader = new FileReader();
       reader.onload = (event) => {
         setFormData(prev => ({
           ...prev,
+          featured_image_file: file,
           featured_image: event.target?.result as string
         }));
       };
@@ -140,8 +148,10 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
       title: '',
       content: '',
       author: '',
+      category: 'general',
       status: 'draft',
       featured_image: '',
+      featured_image_file: null,
       excerpt: '',
       tags: []
     });
@@ -223,6 +233,25 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                 <p className="mt-1 text-xs text-gray-500">
                   {formData.excerpt.length}/200 characters
                 </p>
+              </div>
+
+              {/* Category */}
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  id="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                  className="block w-full border border-gray-300 rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
+                >
+                  <option value="general">General</option>
+                  <option value="events">Events</option>
+                  <option value="announcements">Announcements</option>
+                </select>
               </div>
 
               {/* Content */}

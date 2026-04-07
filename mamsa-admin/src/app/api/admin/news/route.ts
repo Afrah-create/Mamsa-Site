@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
+import { isBase64Image } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
 let newsColumnsCache: { hasStatus: boolean; hasFeaturedImage: boolean } | null = null;
@@ -37,7 +37,54 @@ const uploadNewsImageIfNeeded = async (value?: string | null) => {
     transformation: [{ quality: 'auto', fetch_format: 'auto' }],
   });
 
-  return result.public_id;
+  return result.secure_url;
+};
+
+const uploadFileToCloudinary = async (file: File | null) => {
+  if (!file || file.size === 0) {
+    return null;
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const dataUri = `data:${file.type};base64,${buffer.toString('base64')}`;
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder: 'mamsa/news',
+    resource_type: 'image',
+    transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+  });
+
+  return result.secure_url;
+};
+
+const readNewsPayload = async (request: Request) => {
+  const contentType = request.headers.get('content-type') ?? '';
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    return {
+      title: String(formData.get('title') ?? '').trim(),
+      content: String(formData.get('content') ?? '').trim(),
+      category: String(formData.get('category') ?? '').trim(),
+      date: String(formData.get('date') ?? '').trim() || null,
+      author: String(formData.get('author') ?? '').trim(),
+      status: String(formData.get('status') ?? 'published').trim(),
+      featured_image: String(formData.get('featured_image') ?? '').trim() || null,
+      featured_image_file: formData.get('featured_image_file') as File | null,
+    };
+  }
+
+  const body = await request.json();
+  return {
+    title: String(body.title ?? '').trim(),
+    content: String(body.content ?? '').trim(),
+    category: String(body.category ?? '').trim(),
+    date: body.date ?? null,
+    author: String(body.author ?? '').trim(),
+    status: String(body.status ?? 'published').trim(),
+    featured_image: body.featured_image ?? null,
+    featured_image_file: null,
+  };
 };
 
 export async function GET() {
@@ -73,42 +120,45 @@ export async function POST(request: Request) {
   await requireAdmin();
 
   try {
-    const body = await request.json();
+    const body = await readNewsPayload(request);
+
+    if (!body.category) {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
+    }
+
     const columns = await getNewsColumnInfo();
 
-    const featuredImage = columns.hasFeaturedImage
-      ? await uploadNewsImageIfNeeded(body.featured_image ?? null)
-      : null;
+    const uploadedFromFile = await uploadFileToCloudinary(body.featured_image_file);
+    const uploadedFromValue = uploadedFromFile ?? (columns.hasFeaturedImage ? await uploadNewsImageIfNeeded(body.featured_image ?? null) : null);
+    const featuredImage = uploadedFromValue ?? body.featured_image ?? null;
+
+    const newsImageColumnValue = uploadedFromFile ?? featuredImage;
 
     let rows;
     if (columns.hasStatus && columns.hasFeaturedImage) {
       rows = await sql`
         INSERT INTO news (title, content, category, date, author, status, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category ?? null}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'}, ${featuredImage})
+        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'}, ${newsImageColumnValue})
         RETURNING *
       `;
     } else if (columns.hasStatus) {
       rows = await sql`
         INSERT INTO news (title, content, category, date, author, status)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category ?? null}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'})
+        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${body.status ?? 'published'})
         RETURNING *
       `;
     } else if (columns.hasFeaturedImage) {
       rows = await sql`
         INSERT INTO news (title, content, category, date, author, featured_image)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category ?? null}, ${body.date ?? null}, ${body.author ?? null}, ${featuredImage})
+        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null}, ${newsImageColumnValue})
         RETURNING *
       `;
     } else {
       rows = await sql`
         INSERT INTO news (title, content, category, date, author)
-        VALUES (${body.title}, ${body.content ?? null}, ${body.category ?? null}, ${body.date ?? null}, ${body.author ?? null})
+        VALUES (${body.title}, ${body.content ?? null}, ${body.category}, ${body.date ?? null}, ${body.author ?? null})
         RETURNING *
       `;
-    }
-
-    if (!columns.hasFeaturedImage && isCloudinaryPublicId(featuredImage)) {
-      await cloudinary.uploader.destroy(featuredImage as string);
     }
 
     return NextResponse.json({ data: rows[0] }, { status: 201 });
