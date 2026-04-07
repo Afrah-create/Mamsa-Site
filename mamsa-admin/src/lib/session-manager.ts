@@ -1,13 +1,18 @@
 'use client';
 
-import type { User } from '@clerk/nextjs/server';
+export interface SessionUser {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+}
 
 export interface SessionData {
-  user: User;
+  user: SessionUser;
   adminData: {
     role: string;
     status: string;
-    id: number;
+    id: string;
   };
 }
 
@@ -28,7 +33,10 @@ export function clearSessionData() {
  */
 export async function validateSession(): Promise<SessionData | null> {
   try {
-    const response = await fetch('/api/auth/verify-admin', { method: 'POST' });
+    const response = await fetch('/api/auth/me', {
+      method: 'GET',
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       clearSessionData();
@@ -36,22 +44,27 @@ export async function validateSession(): Promise<SessionData | null> {
     }
 
     const payload = (await response.json()) as {
-      isAdmin?: boolean;
-      user?: User | null;
+      user?: SessionUser | null;
+      adminData?: {
+        role: string;
+        status: string;
+        id: string;
+      };
     };
 
-    if (!payload.isAdmin || !payload.user) {
+    if (!payload.user) {
       clearSessionData();
       return null;
     }
 
     return {
       user: payload.user,
-      adminData: {
-        role: 'admin',
-        status: 'active',
-        id: 0,
-      },
+      adminData:
+        payload.adminData ?? {
+          role: payload.user.role,
+          status: 'active',
+          id: String(payload.user.id),
+        },
     };
   } catch (error) {
     console.error('Session validation error:', error);
@@ -87,7 +100,7 @@ export function setupSessionMonitoring(onSessionInvalid: () => void) {
 
   // Listen for storage events (logout from other tabs)
   const handleStorageChange = (e: StorageEvent) => {
-    if (e.key === 'sb-auth-token' || e.key === null) {
+    if (e.key === null) {
       // Session was cleared, invalidate current session
       onSessionInvalid();
     }

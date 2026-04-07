@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import LeadershipModal from '@/components/LeadershipModal';
@@ -11,6 +9,7 @@ import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface LeadershipMember {
   id: number;
@@ -35,7 +34,7 @@ interface LeadershipMember {
 export default function LeadershipPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<LeadershipMember | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -45,7 +44,6 @@ export default function LeadershipPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
-  const { isLoaded, user: clerkUser } = useUser();
 
   // Static data for demonstration
   const staticLeadership: LeadershipMember[] = [
@@ -173,15 +171,9 @@ export default function LeadershipPage() {
 
   const checkAuth = async () => {
     try {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser as unknown as User);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';

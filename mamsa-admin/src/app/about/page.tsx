@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AlumniModal, { AlumniFormValues, AlumniRecord } from '@/components/AlumniModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 type AboutSectionKey = 'history' | 'mission' | 'vision' | 'values' | 'objectives';
 
@@ -63,7 +62,7 @@ const EMPTY_FORM: AboutFormState = {
 };
 
 export default function AboutPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [formData, setFormData] = useState<AboutFormState>(EMPTY_FORM);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -76,8 +75,6 @@ export default function AboutPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [alumnusToDelete, setAlumnusToDelete] = useState<AlumniRecord | null>(null);
 
-  const { isLoaded, user: clerkUser } = useUser();
-
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 4000);
@@ -85,20 +82,14 @@ export default function AboutPage() {
 
   const checkAuth = useCallback(async () => {
     try {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (err) {
       console.error('Auth check failed:', err);
       window.location.href = '/login';
     }
-  }, [clerkUser, isLoaded]);
+  }, []);
 
   const loadContent = useCallback(async () => {
     try {

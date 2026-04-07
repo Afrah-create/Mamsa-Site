@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import GalleryModal from '@/components/GalleryModal';
@@ -10,6 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import { getPublicUrl } from '@/lib/cloudinary';
 
 interface GalleryImage {
@@ -36,7 +35,7 @@ interface GalleryImage {
 export default function GalleryPage() {
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<GalleryImage | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -47,7 +46,6 @@ export default function GalleryPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
-  const { isLoaded, user: clerkUser } = useUser();
 
   const resolveImageUrl = (url?: string | null) => {
     if (!url) return '';
@@ -246,15 +244,9 @@ export default function GalleryPage() {
 
   const checkAuth = async () => {
     try {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser as unknown as User);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';

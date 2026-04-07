@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface ProfileData {
   id: string;
@@ -20,7 +19,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,20 +34,13 @@ export default function ProfilePage() {
     email: ''
   });
 
-  const { isLoaded, user: clerkUser } = useUser();
   useEffect(() => {
     const verifyAndLoad = async () => {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
       try {
-        await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-        setUser(clerkUser);
-        await loadProfile(clerkUser.id);
+        const session = await requireAuth();
+        if (!session) return;
+        setUser(session.user);
+        await loadProfile(session.user);
       } catch (error) {
         console.error('Auth check failed:', error);
         window.location.href = '/login';
@@ -56,11 +48,11 @@ export default function ProfilePage() {
     };
 
     void verifyAndLoad();
-  }, [clerkUser, isLoaded]);
+  }, []);
 
-  const loadProfile = async (userId: string) => {
+  const loadProfile = async (sessionUser: SessionUser) => {
     try {
-      console.log('Loading profile for user:', userId);
+      console.log('Loading profile for user:', sessionUser.id);
 
       const data = await adminRequest<ProfileData | null>('/api/admin/profile');
 
@@ -68,13 +60,13 @@ export default function ProfilePage() {
 
       if (!data) {
         const fallbackProfile = {
-          id: userId,
-          email: clerkUser?.emailAddresses?.[0]?.emailAddress || '',
-          full_name: clerkUser?.firstName || clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || '',
+          id: String(sessionUser.id),
+          email: sessionUser.email || '',
+          full_name: sessionUser.name || sessionUser.email?.split('@')[0] || '',
           avatar_url: '',
           phone: '',
           bio: '',
-          role: 'admin',
+          role: sessionUser.role || 'admin',
           created_at: new Date().toISOString()
         };
         setProfile(fallbackProfile);
@@ -82,7 +74,7 @@ export default function ProfilePage() {
           full_name: fallbackProfile.full_name,
           phone: '',
           bio: '',
-          email: fallbackProfile.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
+          email: fallbackProfile.email || sessionUser.email || ''
         });
         setLoading(false);
         return;
@@ -93,18 +85,18 @@ export default function ProfilePage() {
         full_name: data.full_name || '',
         phone: data.phone || '',
         bio: data.bio || '',
-        email: data.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
+        email: data.email || sessionUser.email || ''
       });
     } catch (error) {
       console.error('Failed to load profile:', error);
       const fallbackProfile = {
-        id: userId,
-        email: clerkUser?.emailAddresses?.[0]?.emailAddress || '',
-        full_name: clerkUser?.firstName || clerkUser?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || '',
+        id: String(sessionUser.id),
+        email: sessionUser.email || '',
+        full_name: sessionUser.name || sessionUser.email?.split('@')[0] || '',
         avatar_url: '',
         phone: '',
         bio: '',
-        role: 'admin',
+        role: sessionUser.role || 'admin',
         created_at: new Date().toISOString()
       };
       setProfile(fallbackProfile);
@@ -112,7 +104,7 @@ export default function ProfilePage() {
         full_name: fallbackProfile.full_name,
         phone: '',
         bio: '',
-        email: fallbackProfile.email || clerkUser?.emailAddresses?.[0]?.emailAddress || ''
+        email: fallbackProfile.email || sessionUser.email || ''
       });
     } finally {
       setLoading(false);

@@ -1,34 +1,80 @@
-import { currentUser } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import sql from './db';
+import type { JWTPayload } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
-export async function isAdmin(): Promise<boolean> {
-  const user = await currentUser();
-
-  if (!user) {
-    return false;
-  }
-
-  const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null;
-
-  const rows = await sql<[{ id: number }][]>`
-    SELECT id
-    FROM admin_users
-    WHERE status = 'active'
-      AND (
-        clerk_user_id = ${user.id}
-        OR (${email} IS NOT NULL AND LOWER(email) = LOWER(${email}))
-      )
-    LIMIT 1
-  `;
-
-  return rows.length > 0;
+export interface SessionPayload extends JWTPayload {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
 }
 
-export async function requireAdmin(): Promise<void> {
-  const allowed = await isAdmin();
+const SESSION_COOKIE_NAME = 'admin_session';
+const SESSION_EXPIRY = '8h';
 
-  if (!allowed) {
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('Missing JWT_SECRET environment variable.');
+  }
+  return new TextEncoder().encode(secret);
+}
+
+export async function signJWT(payload: SessionPayload): Promise<string> {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(SESSION_EXPIRY)
+    .sign(getJwtSecret());
+}
+
+export async function verifyJWT(token: string): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret());
+
+    if (
+      typeof payload.id !== 'number' ||
+      typeof payload.email !== 'string' ||
+      typeof payload.name !== 'string' ||
+      typeof payload.role !== 'string'
+    ) {
+      return null;
+    }
+
+    return {
+      id: payload.id,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  if (!token) {
+    return null;
+  }
+  return verifyJWT(token);
+}
+
+export async function requireSession(): Promise<SessionPayload> {
+  const session = await getSession();
+  if (!session) {
     redirect('/login');
   }
+  return session;
+}
+
+export async function requireAdmin(): Promise<SessionPayload> {
+  const session = await requireSession();
+
+  if (!['super_admin', 'admin', 'moderator'].includes(session.role)) {
+    redirect('/login');
+  }
+
+  return session;
 }

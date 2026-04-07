@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import NewsModal from '@/components/NewsModal';
@@ -10,6 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface NewsItem {
   id: number;
@@ -26,7 +25,7 @@ interface NewsItem {
 
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
@@ -37,7 +36,6 @@ export default function NewsPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
-  const { isLoaded, user: clerkUser } = useUser();
 
   // Function to seed initial news data
   const seedInitialNews = useCallback(async () => {
@@ -85,20 +83,14 @@ export default function NewsPage() {
 
   const checkAuth = useCallback(async () => {
     try {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser as unknown as User);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';
     }
-  }, [clerkUser, isLoaded]);
+  }, []);
 
   const loadNews = useCallback(async () => {
     try {

@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface ContactMessage {
   id: number;
@@ -75,7 +74,7 @@ const emptyContactSettings: ContactSettings = {
 
 function ContactManagementContent() {
   const searchParams = useSearchParams();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -86,8 +85,6 @@ function ContactManagementContent() {
   const [settings, setSettings] = useState<ContactSettings>(emptyContactSettings);
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
-
-  const { isLoaded, user: clerkUser } = useUser();
 
   const filteredMessages = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -130,22 +127,16 @@ function ContactManagementContent() {
 
   const checkAuth = useCallback(async () => {
     try {
-      if (!isLoaded) return;
-
-      if (!clerkUser) {
-        window.location.href = '/login';
-        return;
-      }
-
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser as unknown as User);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (error) {
       console.error('Contact management auth error:', error);
       window.location.href = '/login';
     } finally {
       setLoadingUser(false);
     }
-  }, [clerkUser, isLoaded]);
+  }, []);
 
   const loadMessages = useCallback(async () => {
     try {

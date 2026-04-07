@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -16,8 +15,6 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const { user } = useUser();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,14 +43,22 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     }
 
     try {
-      if (!user) {
-        throw new Error('No authenticated user found.');
-      }
-
-      await user.updatePassword({
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        }),
       });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to update password.');
+      }
 
       setMessage({ type: 'success', text: 'Password updated successfully!' });
       

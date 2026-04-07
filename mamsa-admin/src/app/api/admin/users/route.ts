@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { clerkClient } from '@clerk/nextjs/server';
 import sql from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { hashPassword } from '@/lib/password';
 
 type AdminUserRow = {
   id: number;
@@ -9,7 +9,7 @@ type AdminUserRow = {
   name: string | null;
   role: 'super_admin' | 'admin' | 'moderator';
   status: 'active' | 'inactive' | 'suspended';
-  clerk_user_id: string | null;
+  user_id: string;
 };
 
 type Permissions = {
@@ -35,7 +35,7 @@ export async function GET() {
 
   try {
     const users = await sql<AdminUserRow[]>`
-      SELECT id, email, name, role, status, clerk_user_id
+      SELECT id, email, name, role, status, CAST(id AS TEXT) AS user_id
       FROM admin_users
       ORDER BY id DESC
     `;
@@ -76,35 +76,25 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = user.email.trim().toLowerCase();
-    const client = await clerkClient();
-
-    const clerkUser = await client.users.createUser({
-      emailAddress: [normalizedEmail],
-      password: finalPassword,
-      firstName: displayName,
-      privateMetadata: {
-        role: user.role,
-        createdBy: createdBy ?? null,
-      },
-    });
+    const passwordHash = await hashPassword(finalPassword);
 
     const rows = await sql<AdminUserRow[]>`
-      INSERT INTO admin_users (email, name, role, status, clerk_user_id)
-      VALUES (${normalizedEmail}, ${displayName}, ${user.role}, ${user.status ?? 'active'}, ${clerkUser.id})
+      INSERT INTO admin_users (email, name, role, status, password_hash)
+      VALUES (${normalizedEmail}, ${displayName}, ${user.role}, ${user.status ?? 'active'}, ${passwordHash})
       ON CONFLICT (email)
       DO UPDATE SET
         name = EXCLUDED.name,
         role = EXCLUDED.role,
         status = EXCLUDED.status,
-        clerk_user_id = EXCLUDED.clerk_user_id
-      RETURNING id, email, name, role, status, clerk_user_id
+        password_hash = EXCLUDED.password_hash
+      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     const adminUser = rows[0];
 
     return NextResponse.json({ 
       data: adminUser,
-      message: 'User created successfully in Clerk and synced to admin_users.'
+      message: 'User created successfully.'
     }, { status: 201 });
   } catch (error) {
     console.error('[api/admin/users] Unexpected error:', error);
@@ -132,7 +122,7 @@ export async function PATCH(request: Request) {
           role = ${user.role ?? 'admin'},
           status = ${user.status ?? 'active'}
       WHERE id = ${id}
-      RETURNING id, email, name, role, status, clerk_user_id
+      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
@@ -150,19 +140,17 @@ export async function DELETE(request: Request) {
 
   try {
     const { clerkUserId } = await request.json();
+    const targetId = Number(clerkUserId);
 
-    if (!clerkUserId) {
+    if (!clerkUserId || Number.isNaN(targetId)) {
       return NextResponse.json({ error: 'clerkUserId is required.' }, { status: 400 });
     }
-
-    const client = await clerkClient();
-    await client.users.deleteUser(clerkUserId);
 
     const rows = await sql<AdminUserRow[]>`
       UPDATE admin_users
       SET status = 'inactive'
-      WHERE clerk_user_id = ${clerkUserId}
-      RETURNING id, email, name, role, status, clerk_user_id
+      WHERE id = ${targetId}
+      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     return NextResponse.json({ data: rows[0] ?? null, message: 'User deactivated successfully.' }, { status: 200 });

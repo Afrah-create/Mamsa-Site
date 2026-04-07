@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, useClerk, useUser } from '@clerk/nextjs';
-import { clearSessionData } from '@/lib/session-manager';
+import { clearSessionData, type SessionUser } from '@/lib/session-manager';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  user?: any;
+  user?: SessionUser | null;
 }
 
 interface ProfileData {
@@ -66,6 +65,7 @@ const formatRelativeTime = (input?: string | null) => {
 };
 
 export default function AdminLayout({ children, user }: AdminLayoutProps) {
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(user ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -73,11 +73,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
-  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
-  const { getToken } = useAuth();
-  const { signOut } = useClerk();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => notification.unread).length,
@@ -88,9 +84,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     try {
       setLoadingNotifications(true);
       const response = await fetch('/api/admin/contact', {
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -120,7 +114,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [getToken]);
+  }, []);
 
   const navigation = [
     { 
@@ -217,10 +211,10 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   ];
 
   const loadProfile = useCallback(async () => {
-    if (!clerkUser?.id) return;
+    if (!currentUser?.id) return;
     
     // Try to load from sessionStorage first for instant display
-    const PROFILE_CACHE_KEY = `admin_profile_${clerkUser.id}`;
+    const PROFILE_CACHE_KEY = `admin_profile_${currentUser.id}`;
     try {
       const cached = sessionStorage.getItem(PROFILE_CACHE_KEY);
       if (cached) {
@@ -233,12 +227,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     
     try {
       const fallbackProfile = {
-        id: clerkUser.id,
-        user_id: clerkUser.id,
-        email: clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? '',
-        full_name: clerkUser.fullName || clerkUser.firstName || 'Admin',
-        role: 'admin',
-        avatar_url: clerkUser.imageUrl,
+        id: String(currentUser.id),
+        user_id: String(currentUser.id),
+        email: currentUser.email,
+        full_name: currentUser.name || 'Admin',
+        role: currentUser.role || 'admin',
+        avatar_url: '',
         created_at: new Date().toISOString()
       };
 
@@ -253,12 +247,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       console.error('Failed to load profile in AdminLayout:', error);
       // Create fallback profile even if there's an error
       const fallbackProfile = {
-        id: clerkUser.id,
-        user_id: clerkUser.id,
-        email: clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? '',
-        full_name: clerkUser.fullName || clerkUser.firstName || 'Admin',
-        role: 'admin',
-        avatar_url: clerkUser.imageUrl,
+        id: String(currentUser.id),
+        user_id: String(currentUser.id),
+        email: currentUser.email,
+        full_name: currentUser.name || 'Admin',
+        role: currentUser.role || 'admin',
+        avatar_url: '',
         created_at: new Date().toISOString()
       };
       setProfile(fallbackProfile);
@@ -269,7 +263,11 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         // Ignore storage errors
       }
     }
-  }, [clerkUser]);
+  }, [currentUser]);
+
+  useEffect(() => {
+    setCurrentUser(user ?? null);
+  }, [user]);
 
   // Set current year on client side to avoid hydration mismatch
   useEffect(() => {
@@ -281,12 +279,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   }, [loadProfile]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!currentUser) return;
     loadNotifications();
-  }, [isLoaded, isSignedIn, loadNotifications]);
+  }, [currentUser, loadNotifications]);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!currentUser) return;
 
     const intervalId = window.setInterval(() => {
       loadNotifications();
@@ -295,33 +293,29 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isLoaded, isSignedIn, loadNotifications]);
+  }, [currentUser, loadNotifications]);
 
   // Monitor session validity and detect logout from other tabs
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!currentUser) return;
 
     // Check session validity periodically
     const checkSession = async () => {
       try {
-        const response = await fetch('/api/auth/verify-admin', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${await getToken()}`,
-          },
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include',
         });
 
-        const payload = await response.json();
-
-        if (!response.ok || !payload.isAdmin) {
+        if (!response.ok) {
           clearSessionData();
-          await signOut({ redirectUrl: '/login' });
+          window.location.href = '/login';
           return;
         }
       } catch {
         // Session invalid, redirect to login
         clearSessionData();
-        await signOut({ redirectUrl: '/login' });
+        window.location.href = '/login';
       }
     };
 
@@ -331,7 +325,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
     // Listen for storage events (logout from other tabs)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === null || e.key.startsWith('sb-')) {
+      if (e.key === null) {
         // Session was cleared, redirect to login
         clearSessionData();
         window.location.href = '/login';
@@ -344,15 +338,18 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [getToken, isLoaded, isSignedIn, signOut]);
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
       // Clear all storage
       localStorage.clear();
       sessionStorage.clear();
-      
-      await signOut({ redirectUrl: '/login' });
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout failed:', error);
       // Force redirect even on error
@@ -383,7 +380,8 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         try {
           await fetch('/api/admin/contact', {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getToken()}` },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: notification.recordId, status: 'in_progress' }),
           });
         } catch (error) {
@@ -393,7 +391,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         }
       }
     },
-    [getToken, loadNotifications, notifications]
+    [loadNotifications, notifications]
   );
 
   return (
@@ -655,16 +653,16 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                     />
                   ) : (
                     <span className="text-sm font-semibold text-white">
-                      {(profile?.full_name || user?.user_metadata?.full_name || user?.email || 'Admin').charAt(0).toUpperCase()}
+                      {(profile?.full_name || currentUser?.name || currentUser?.email || 'Admin').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-gray-900">
-                    {profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'}
+                    {profile?.full_name || currentUser?.name || currentUser?.email?.split('@')[0] || 'Admin'}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {profile?.email || user?.email || 'admin@mamsa.org'}
+                    {profile?.email || currentUser?.email || 'admin@mamsa.org'}
                   </p>
                 </div>
               </div>

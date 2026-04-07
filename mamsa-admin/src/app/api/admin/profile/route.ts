@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs/server';
 import sql from '@/lib/db';
+import { getSession } from '@/lib/auth';
 
 type ProfileRow = {
   id: number;
@@ -17,7 +17,7 @@ type ProfileRow = {
 
 export async function GET() {
   try {
-    const user = await currentUser();
+    const user = await getSession();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
@@ -26,8 +26,8 @@ export async function GET() {
     const rows = await sql<ProfileRow[]>`
       SELECT id, user_id, email, full_name, avatar_url, phone, bio, role, created_at, updated_at
       FROM admin_users
-      WHERE clerk_user_id = ${user.id}
-         OR LOWER(email) = LOWER(${user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? ''})
+      WHERE id = ${user.id}
+         OR LOWER(email) = LOWER(${user.email})
       LIMIT 1
     `;
 
@@ -40,7 +40,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const user = await currentUser();
+    const user = await getSession();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
@@ -49,19 +49,19 @@ export async function PATCH(request: Request) {
     const body = await request.json();
 
     const rows = await sql<ProfileRow[]>`
-      INSERT INTO admin_users (clerk_user_id, user_id, email, full_name, avatar_url, phone, bio, role, updated_at)
+      INSERT INTO admin_users (id, user_id, email, full_name, avatar_url, phone, bio, role, updated_at)
       VALUES (
         ${user.id},
-        ${user.id},
-        ${body.email ?? ''},
-        ${body.full_name ?? ''},
+        ${String(user.id)},
+        ${body.email ?? user.email},
+        ${body.full_name ?? user.name ?? ''},
         ${body.avatar_url ?? ''},
         ${body.phone ?? ''},
         ${body.bio ?? ''},
-        'admin',
+        ${user.role ?? 'admin'},
         ${new Date().toISOString()}
       )
-      ON CONFLICT (clerk_user_id)
+      ON CONFLICT (id)
       DO UPDATE SET
         email = EXCLUDED.email,
         full_name = EXCLUDED.full_name,

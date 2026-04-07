@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import UserModal from '@/components/UserModal';
@@ -11,6 +9,7 @@ import ConfigurationErrorModal from '@/components/ConfigurationErrorModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import Image from 'next/image';
 
 interface AdminUser {
@@ -41,7 +40,7 @@ interface AdminUser {
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<AdminUser | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -60,7 +59,6 @@ export default function UsersPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
-  const { isLoaded, user: clerkUser } = useUser();
 
   // Static data for demonstration
   const staticUsers: AdminUser[] = [
@@ -211,17 +209,11 @@ export default function UsersPage() {
   ];
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!clerkUser) {
-      window.location.href = '/login';
-      return;
-    }
-
     const verifyAndLoad = async () => {
       try {
-        await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-        setUser(clerkUser as unknown as User);
+        const session = await requireAuth();
+        if (!session) return;
+        setUser(session.user);
         await loadUsers();
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -229,8 +221,8 @@ export default function UsersPage() {
       }
     };
 
-    verifyAndLoad();
-  }, [clerkUser, isLoaded]);
+    void verifyAndLoad();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -244,7 +236,7 @@ export default function UsersPage() {
 
   const checkAuth = async () => {
     try {
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
+      await requireAuth();
     } catch (error) {
       console.error('Auth check failed:', error);
       window.location.href = '/login';

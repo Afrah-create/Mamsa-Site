@@ -1,12 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
-import type { User } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import { adminRequest } from '@/lib/admin-api';
+import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 const INITIAL_STATS = {
   news: 0,
@@ -31,7 +30,7 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(INITIAL_STATS);
   
@@ -57,24 +56,17 @@ export default function DashboardPage() {
   
   const [snapshotReady, setSnapshotReady] = useState(false);
   const [hasSnapshot, setHasSnapshot] = useState(false);
-  const { isLoaded, user: clerkUser } = useUser();
 
   const checkAuth = useCallback(async () => {
-    if (!isLoaded) return;
-
-    if (!clerkUser) {
-      window.location.href = '/login';
-      return;
-    }
-
     try {
-      await adminRequest('/api/auth/verify-admin', { method: 'POST' });
-      setUser(clerkUser);
+      const session = await requireAuth();
+      if (!session) return;
+      setUser(session.user);
     } catch (error) {
       console.error('Admin check failed:', error);
       window.location.href = '/login';
     }
-  }, [clerkUser, isLoaded]);
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -250,7 +242,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.2em]">Admin Overview</p>
-                <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-gray-900">Welcome back, {user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'Admin'}</h1>
+                <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-gray-900">Welcome back, {user?.email?.split('@')[0] || 'Admin'}</h1>
                 <p className="mt-2 text-sm text-gray-600">Here is a summary of the latest activity across the platform.</p>
               </div>
             </div>
