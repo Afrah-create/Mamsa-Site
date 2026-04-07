@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { getPublicUrl } from '@/lib/cloudinary';
 import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -9,12 +10,20 @@ type ProfileRow = {
   user_id: string;
   email: string;
   full_name: string;
-  avatar_url: string;
+  avatar_url: string | null;
   phone: string;
   bio: string;
   role: string;
   created_at: string;
   updated_at?: string;
+};
+
+const mapProfileForClient = (row: ProfileRow | null) => {
+  if (!row) return null;
+  return {
+    ...row,
+    avatar_url: row.avatar_url && !row.avatar_url.startsWith('http') ? (getPublicUrl(row.avatar_url) || row.avatar_url) : row.avatar_url,
+  };
 };
 
 export async function GET() {
@@ -33,7 +42,7 @@ export async function GET() {
       LIMIT 1
     `;
 
-    return NextResponse.json({ data: rows[0] ?? null });
+    return NextResponse.json({ data: mapProfileForClient(rows[0] ?? null) });
   } catch (error) {
     console.error('[api/admin/profile][GET] Unexpected error:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });
@@ -90,7 +99,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: rows[0] ?? null });
+    return NextResponse.json({ data: mapProfileForClient(rows[0] ?? null) });
   } catch (error) {
     console.error('[api/admin/profile][PATCH] Unexpected error:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });

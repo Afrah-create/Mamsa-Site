@@ -37,6 +37,31 @@ interface AdminUser {
   created_by?: string;
 }
 
+const normalizeUser = (raw: Partial<AdminUser> & { name?: string | null }): AdminUser => {
+  const fullName = (raw.full_name ?? raw.name ?? raw.email ?? 'Unknown User').toString().trim() || 'Unknown User';
+  const email = (raw.email ?? '').toString().trim();
+
+  return {
+    id: Number(raw.id ?? 0),
+    user_id: (raw.user_id ?? String(raw.id ?? '')).toString(),
+    full_name: fullName,
+    email,
+    avatar_url: raw.avatar_url ?? '',
+    phone: raw.phone ?? '',
+    bio: raw.bio ?? '',
+    role: (raw.role as AdminUser['role']) ?? 'admin',
+    department: raw.department ?? '',
+    position: raw.position ?? '',
+    permissions:
+      raw.permissions ??
+      ({ news: false, events: false, leadership: false, gallery: false, users: false, reports: false } as AdminUser['permissions']),
+    status: (raw.status as AdminUser['status']) ?? 'active',
+    last_login: raw.last_login,
+    created_at: raw.created_at ?? new Date().toISOString(),
+    created_by: raw.created_by ?? '',
+  };
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
@@ -248,10 +273,10 @@ export default function UsersPage() {
       setLoading(true);
       console.log('Loading users from database...');
 
-      const data = await adminRequest<AdminUser[]>('/api/admin/users');
+      const data = await adminRequest<Array<Partial<AdminUser> & { name?: string | null }>>('/api/admin/users');
 
       console.log('Successfully loaded users:', data);
-      setUsers(data || []);
+      setUsers((data || []).map(normalizeUser));
     } catch (error) {
       console.error('Failed to load users:', error);
       // Fallback to static data if database fails
