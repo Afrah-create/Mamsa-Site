@@ -8,6 +8,8 @@ const footerLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
+const COPYRIGHT_YEAR = 2026;
+
 export default function PublicFooter() {
   return (
     <footer className="bg-emerald-950 text-emerald-50">
@@ -35,7 +37,7 @@ export default function PublicFooter() {
         </nav>
       </div>
       <div className="bg-emerald-900/40 py-4 text-center text-xs text-emerald-200/80">
-        © {typeof window !== 'undefined' ? new Date().getFullYear() : 2025} MAMSA. All rights reserved.
+        © {COPYRIGHT_YEAR} MAMSA. All rights reserved.
       </div>
     </footer>
   );
