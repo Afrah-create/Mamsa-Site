@@ -1,21 +1,6 @@
 import sql from '@/lib/db';
 import { getPublicUrl } from '@/lib/cloudinary';
 
-const QUERY_TIMEOUT_MS = Number(process.env.DB_TIMEOUT_MS ?? '15000');
-
-const createTimeoutController = (label: string) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
-
-  return {
-    controller,
-    clear: () => clearTimeout(timeoutId),
-    label,
-  };
-};
-
-const buildUnavailableError = (message: string) => new Error(`[Database] ${message}`);
-
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
 export type AboutSnapshot = Record<AboutSectionKey, string>;
@@ -23,11 +8,14 @@ export type AboutSnapshot = Record<AboutSectionKey, string>;
 export type NewsArticle = {
   id: number;
   title: string;
-  excerpt: string | null;
-  featured_image: string | null;
-  published_at: string | null;
+  content: string | null;
+  category: string | null;
+  date: string | null;
   author: string | null;
-  content?: string | null;
+  status?: 'published' | 'draft' | 'archived' | null;
+  featured_image: string | null;
+  excerpt: string | null;
+  published_at: string | null;
 };
 
 export type Event = {
@@ -39,8 +27,17 @@ export type Event = {
   location: string | null;
   status: string | null;
   featured_image: string | null;
-  organizer?: string | null;
+  organizer: string | null;
   contact_email?: string | null;
+};
+
+export type GalleryImage = {
+  id: number;
+  title: string;
+  image_url: string | null;
+  category: string | null;
+  description: string | null;
+  featured: boolean;
 };
 
 export type Leader = {
@@ -71,15 +68,31 @@ export type NotableAlumnus = {
   } | null;
   featured: boolean | null;
   order_position: number | null;
+  status?: 'published' | 'draft' | 'archived' | null;
 };
 
-export type GalleryImage = {
+export type Service = {
   id: number;
   title: string;
-  image_url: string | null;
-  category: string | null;
   description: string | null;
-  featured: boolean | null;
+  icon: string | null;
+  order: number | null;
+  status: string | null;
+};
+
+export type ContactInfo = {
+  id: number;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+};
+
+export type SettingsMap = Record<string, string>;
+
+export type HomeContentStats = {
+  storiesCount: number;
+  eventsCount: number;
+  leadersCount: number;
 };
 
 export type HomeContent = {
@@ -89,404 +102,395 @@ export type HomeContent = {
   gallery: GalleryImage[];
   about: AboutSnapshot;
   hasError: boolean;
+  stats: HomeContentStats;
 };
 
-type NewsRow = {
-  id: number;
-  title: string;
-  content: string | null;
-  category: string | null;
-  status: string;
-  image: string | null;
-  created_at: string;
-  updated_at: string | null;
-};
-
-type EventRow = {
-  id: number;
-  title: string;
-  description: string | null;
-  date: string | null;
-  location: string | null;
-  status: string;
-  image: string | null;
-  category: string | null;
-  created_at: string;
-  updated_at: string | null;
-};
-
-type LeadershipRow = {
-  id: number;
-  name: string;
-  position: string | null;
-  bio: string | null;
-  image: string | null;
-  order: number | null;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-};
-
-type GalleryRow = {
-  id: number;
-  title: string;
-  description: string | null;
-  category: string | null;
-  cover_image: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-};
-
-type AboutRow = {
-  mission: string | null;
-  vision: string | null;
-  content: string | null;
-  updated_at: string | null;
-};
-
-type AlumniRow = {
-  id: number;
-  name: string | null;
-  role: string | null;
-  image: string | null;
-  created_at: string;
-};
-
-const resolveImage = (value?: string | null) => {
-  if (!value) return null;
-  if (/^https?:\/\//i.test(value)) return value;
-  return getPublicUrl(value);
-};
-
-const withTimeout = async <T>(label: string, runner: () => Promise<T>): Promise<T> => {
-  const timeout = createTimeoutController(label);
-
-  try {
-    return await Promise.race([
-      runner(),
-      new Promise<T>((_, reject) => {
-        timeout.controller.signal.addEventListener('abort', () => {
-          reject(new Error('AbortError'));
-        });
-      }),
-    ]);
-  } finally {
-    timeout.clear();
-  }
-};
+const toImageUrl = (value?: string | null) =>
+  value?.startsWith('http') ? value : value ? getPublicUrl(value) : null;
 
 const deriveExcerpt = (content: string | null) => {
   const text = content?.trim() ?? '';
   if (!text) return null;
-  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+  return text.length > 180 ? `${text.slice(0, 177)}...` : text;
 };
 
-const toNewsArticle = (row: NewsRow): NewsArticle => ({
-  id: row.id,
-  title: row.title,
-  excerpt: deriveExcerpt(row.content),
-  featured_image: resolveImage(row.image),
-  published_at: row.updated_at ?? row.created_at,
-  author: row.category,
-  content: row.content,
-});
+let newsColumnsCache: { hasStatus: boolean; hasFeaturedImage: boolean } | null = null;
 
-const toEvent = (row: EventRow): Event => ({
-  id: row.id,
-  title: row.title,
-  description: row.description,
-  date: row.date,
-  time: null,
-  location: row.location,
-  status: row.status,
-  featured_image: resolveImage(row.image),
-  organizer: row.category,
-  contact_email: null,
-});
+async function getNewsColumnInfo() {
+  if (newsColumnsCache) {
+    return newsColumnsCache;
+  }
 
-const toLeader = (row: LeadershipRow): Leader => ({
-  id: row.id,
-  name: row.name,
-  position: row.position,
-  bio: row.bio,
-  image_url: resolveImage(row.image),
-  department: null,
-  email: null,
-  phone: null,
-});
+  const rows = await sql<{ column_name: string }[]>`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'news'
+      AND column_name IN ('status', 'featured_image')
+  `;
 
-const toGalleryImage = (row: GalleryRow): GalleryImage => ({
-  id: row.id,
-  title: row.title,
-  image_url: resolveImage(row.cover_image),
-  category: row.category,
-  description: row.description,
-  featured: false,
-});
+  const names = new Set(rows.map((row) => row.column_name));
+  newsColumnsCache = {
+    hasStatus: names.has('status'),
+    hasFeaturedImage: names.has('featured_image'),
+  };
 
-const toAlumnus = (row: AlumniRow): NotableAlumnus => ({
-  id: row.id,
-  full_name: row.name ?? 'Unknown',
-  graduation_year: null,
-  biography: null,
-  achievements: null,
-  current_position: row.role,
-  organization: null,
-  specialty: null,
-  image_url: resolveImage(row.image),
-  profile_links: null,
-  featured: false,
-  order_position: null,
-});
+  return newsColumnsCache;
+}
 
-export async function fetchPublishedNews(limit?: number) {
-  try {
-    const rows = await withTimeout('news', async () =>
-      sql<NewsRow[]>`
-        SELECT id, title, content, category, status, image, created_at, updated_at
-        FROM news_articles
+export async function getAbout() {
+  const rows = await sql<{ id: number; section: string; content: string | null }[]>`
+    SELECT id, section, content
+    FROM about
+    ORDER BY id ASC
+  `;
+
+  return rows;
+}
+
+export async function getNews(limit?: number) {
+  const columns = await getNewsColumnInfo();
+
+  const rows = columns.hasStatus
+    ? await sql<{
+        id: number;
+        title: string;
+        content: string | null;
+        category: string | null;
+        date: string | null;
+        author: string | null;
+        status: 'published' | 'draft' | 'archived' | null;
+        featured_image: string | null;
+        created_at: string;
+        updated_at: string | null;
+      }[]>`
+        SELECT
+          id,
+          title,
+          content,
+          category,
+          date,
+          author,
+          status,
+          ${columns.hasFeaturedImage ? sql`featured_image` : sql`NULL::text AS featured_image`},
+          created_at,
+          updated_at
+        FROM news
         WHERE status = 'published'
         ORDER BY COALESCE(updated_at, created_at) DESC
         ${limit ? sql`LIMIT ${limit}` : sql``}
       `
-    );
+    : await sql<{
+        id: number;
+        title: string;
+        content: string | null;
+        category: string | null;
+        date: string | null;
+        author: string | null;
+        featured_image: string | null;
+        created_at: string;
+        updated_at: string | null;
+      }[]>`
+        SELECT
+          id,
+          title,
+          content,
+          category,
+          date,
+          author,
+          ${columns.hasFeaturedImage ? sql`featured_image` : sql`NULL::text AS featured_image`},
+          created_at,
+          updated_at
+        FROM news
+        ORDER BY COALESCE(updated_at, created_at) DESC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `;
 
-    return { data: rows.map(toNewsArticle), error: null };
-  } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return {
-        data: [] as NewsArticle[],
-        error: buildUnavailableError(`Timed out fetching published news (>${QUERY_TIMEOUT_MS}ms).`),
-      };
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    category: row.category,
+    date: row.date,
+    author: row.author,
+    status: 'status' in row ? row.status : 'published',
+    featured_image: toImageUrl(row.featured_image),
+    excerpt: deriveExcerpt(row.content),
+    published_at: row.updated_at ?? row.created_at,
+  }));
+}
+
+export async function getEvents(limit?: number) {
+  const rows = await sql<{
+    id: number;
+    title: string;
+    description: string | null;
+    date: string | null;
+    time: string | null;
+    location: string | null;
+    status: string | null;
+    featured_image: string | null;
+    organizer: string | null;
+  }[]>`
+    SELECT id, title, description, date, time, location, status, featured_image, organizer
+    FROM events
+    WHERE status IN ('upcoming', 'ongoing')
+    ORDER BY date ASC, time ASC
+    ${limit ? sql`LIMIT ${limit}` : sql``}
+  `;
+
+  return rows.map((row) => ({
+    ...row,
+    featured_image: toImageUrl(row.featured_image),
+    contact_email: null,
+  }));
+}
+
+export async function getGallery(limit?: number) {
+  const galleries = await sql<{
+    id: number;
+    title: string;
+    description: string | null;
+    category: string | null;
+    cover_image: string | null;
+    status: string;
+  }[]>`
+    SELECT id, title, description, category, cover_image, status
+    FROM gallery
+    WHERE status = 'active'
+    ORDER BY created_at DESC
+    ${limit ? sql`LIMIT ${limit}` : sql``}
+  `;
+
+  const images = await sql<{
+    id: number;
+    gallery_id: number;
+    image: string | null;
+    caption: string | null;
+  }[]>`
+    SELECT id, gallery_id, image, caption
+    FROM gallery_images
+    ORDER BY "order" ASC, created_at ASC
+  `;
+
+  const byGallery = new Map<number, Array<{ id: number; image: string | null; caption: string | null }>>();
+  for (const image of images) {
+    const list = byGallery.get(image.gallery_id) ?? [];
+    list.push({ id: image.id, image: image.image, caption: image.caption });
+    byGallery.set(image.gallery_id, list);
+  }
+
+  const result: GalleryImage[] = [];
+  for (const gallery of galleries) {
+    result.push({
+      id: gallery.id,
+      title: gallery.title,
+      description: gallery.description,
+      category: gallery.category,
+      image_url: toImageUrl(gallery.cover_image),
+      featured: false,
+    });
+
+    const related = byGallery.get(gallery.id) ?? [];
+    for (const item of related) {
+      result.push({
+        id: item.id,
+        title: item.caption || gallery.title,
+        description: gallery.description,
+        category: gallery.category,
+        image_url: toImageUrl(item.image),
+        featured: false,
+      });
     }
+  }
+
+  return result;
+}
+
+export async function getLeadership(limit?: number) {
+  const rows = await sql<{
+    id: number;
+    name: string;
+    position: string | null;
+    bio: string | null;
+    image: string | null;
+    status: string;
+  }[]>`
+    SELECT id, name, position, bio, image, status
+    FROM leadership
+    WHERE status = 'active'
+    ORDER BY "order" ASC, created_at DESC
+    ${limit ? sql`LIMIT ${limit}` : sql``}
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    position: row.position,
+    bio: row.bio,
+    image_url: toImageUrl(row.image),
+    department: null,
+    email: null,
+    phone: null,
+  }));
+}
+
+export async function getServices() {
+  const rows = await sql<Service[]>`
+    SELECT id, title, description, icon, "order", status
+    FROM services
+    WHERE status = 'active'
+    ORDER BY "order" ASC, created_at ASC
+  `;
+
+  return rows.map((row) => ({
+    ...row,
+    icon: toImageUrl(row.icon),
+  }));
+}
+
+export async function getContact() {
+  const rows = await sql<ContactInfo[]>`
+    SELECT id, phone, email, address
+    FROM contact
+    ORDER BY id DESC
+    LIMIT 1
+  `;
+
+  return rows[0] ?? null;
+}
+
+export async function getSettings() {
+  const rows = await sql<{ key: string; value: string | null }[]>`
+    SELECT key, value
+    FROM settings
+    ORDER BY key ASC
+  `;
+
+  return rows.reduce<SettingsMap>((acc, row) => {
+    acc[row.key] = row.value ?? '';
+    return acc;
+  }, {});
+}
+
+export async function fetchPublishedNews(limit?: number) {
+  try {
+    const data = await getNews(limit);
+    return { data, error: null };
+  } catch (error) {
     return { data: [] as NewsArticle[], error: error as Error };
   }
 }
 
 export async function fetchPublishedNewsArticle(id: number) {
   try {
-    const rows = await withTimeout('news-article', async () =>
-      sql<NewsRow[]>`
-        SELECT id, title, content, category, status, image, created_at, updated_at
-        FROM news_articles
-        WHERE status = 'published' AND id = ${id}
-        LIMIT 1
-      `
-    );
-
-    return { data: rows[0] ? toNewsArticle(rows[0]) : null, error: null };
+    const rows = await getNews();
+    return { data: rows.find((row) => row.id === id) ?? null, error: null };
   } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return {
-        data: null,
-        error: buildUnavailableError(`Timed out fetching news article (>${QUERY_TIMEOUT_MS}ms).`),
-      };
-    }
     return { data: null, error: error as Error };
   }
 }
 
 export async function fetchActiveEvents(limit?: number) {
   try {
-    const rows = await withTimeout('events', async () =>
-      sql<EventRow[]>`
-        SELECT id, title, description, date, location, status, image, category, created_at, updated_at
-        FROM events
-        WHERE status IN ('upcoming', 'ongoing')
-        ORDER BY date ASC
-        ${limit ? sql`LIMIT ${limit}` : sql``}
-      `
-    );
-
-    return { data: rows.map(toEvent), error: null };
+    const data = await getEvents(limit);
+    return { data, error: null };
   } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return { data: [] as Event[], error: buildUnavailableError(`Timed out fetching events (>${QUERY_TIMEOUT_MS}ms).`) };
-    }
     return { data: [] as Event[], error: error as Error };
-  }
-}
-
-export async function fetchLeadership(limit?: number) {
-  try {
-    const rows = await withTimeout('leadership', async () =>
-      sql<LeadershipRow[]>`
-        SELECT id, name, position, bio, image, "order" AS order, status, created_at, updated_at
-        FROM leadership
-        WHERE status = 'active'
-        ORDER BY "order" ASC, created_at DESC
-        ${limit ? sql`LIMIT ${limit}` : sql``}
-      `
-    );
-
-    return { data: rows.map(toLeader), error: null };
-  } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return {
-        data: [] as Leader[],
-        error: buildUnavailableError(`Timed out fetching leadership (>${QUERY_TIMEOUT_MS}ms).`),
-      };
-    }
-    return { data: [] as Leader[], error: error as Error };
   }
 }
 
 export async function fetchPublishedGallery(limit?: number) {
   try {
-    const rows = await withTimeout('gallery', async () =>
-      sql<GalleryRow[]>`
-        SELECT id, title, description, category, cover_image, status, created_at, updated_at
-        FROM gallery
-        WHERE status = 'published'
-        ORDER BY created_at DESC
-        ${limit ? sql`LIMIT ${limit}` : sql``}
-      `
-    );
-
-    return { data: rows.map(toGalleryImage), error: null };
+    const data = await getGallery(limit);
+    return { data, error: null };
   } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return {
-        data: [] as GalleryImage[],
-        error: buildUnavailableError(`Timed out fetching gallery (>${QUERY_TIMEOUT_MS}ms).`),
-      };
-    }
     return { data: [] as GalleryImage[], error: error as Error };
+  }
+}
+
+export async function fetchLeadership(limit?: number) {
+  try {
+    const data = await getLeadership(limit);
+    return { data, error: null };
+  } catch (error) {
+    return { data: [] as Leader[], error: error as Error };
+  }
+}
+
+export async function fetchAboutSnapshot() {
+  const snapshot: AboutSnapshot = {
+    history: '',
+    mission: '',
+    vision: '',
+    values: '',
+    objectives: '',
+  };
+
+  try {
+    const rows = await getAbout();
+    for (const row of rows) {
+      const key = row.section as AboutSectionKey;
+      if (key in snapshot) {
+        snapshot[key] = row.content ?? '';
+      }
+    }
+    return { data: snapshot, error: null };
+  } catch (error) {
+    return { data: snapshot, error: error as Error };
   }
 }
 
 export async function fetchPublishedAlumni(limit?: number) {
   try {
-    const rows = await withTimeout('alumni', async () =>
-      sql<AlumniRow[]>`
-        SELECT id, name, role, image, created_at
-        FROM leadership_members
-        ORDER BY created_at DESC
-        ${limit ? sql`LIMIT ${limit}` : sql``}
-      `
-    );
+    const rows = await sql<{
+      id: number;
+      name: string;
+      role: string | null;
+      image: string | null;
+      created_at: string;
+    }[]>`
+      SELECT id, name, role, image, created_at
+      FROM leadership_members
+      ORDER BY created_at DESC
+      ${limit ? sql`LIMIT ${limit}` : sql``}
+    `;
 
-    return { data: rows.map(toAlumnus), error: null };
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        full_name: row.name,
+        graduation_year: null,
+        biography: null,
+        achievements: null,
+        current_position: row.role,
+        organization: null,
+        specialty: null,
+        image_url: toImageUrl(row.image),
+        profile_links: null,
+        featured: false,
+        order_position: null,
+        status: 'published' as const,
+      })),
+      error: null,
+    };
   } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return {
-        data: [] as NotableAlumnus[],
-        error: buildUnavailableError(`Timed out fetching notable alumni (>${QUERY_TIMEOUT_MS}ms).`),
-      };
-    }
     return { data: [] as NotableAlumnus[], error: error as Error };
   }
 }
 
-export async function fetchAboutSnapshot() {
-  const draft: AboutSnapshot = ABOUT_SECTIONS.reduce((acc, key) => {
-    acc[key] = '';
-    return acc;
-  }, {} as AboutSnapshot);
-
-  try {
-    const rows = await withTimeout('about', async () => sql<AboutRow[]>`
-      SELECT mission, vision, content, updated_at
-      FROM about
-      ORDER BY updated_at DESC
-      LIMIT 1
-    `);
-
-    const row = rows[0];
-    draft.history = row?.content ?? '';
-    draft.mission = row?.mission ?? '';
-    draft.vision = row?.vision ?? '';
-    draft.values = '';
-    draft.objectives = '';
-
-    return { data: draft, error: null };
-  } catch (error) {
-    if (error instanceof Error && error.message === 'AbortError') {
-      return { data: draft, error: buildUnavailableError(`Timed out fetching about snapshot (>${QUERY_TIMEOUT_MS}ms).`) };
-    }
-    return { data: draft, error: error as Error };
-  }
-}
-
-// Helper function to get total count of published news articles
-// Optimized with timeout to prevent blocking
-async function fetchPublishedNewsCount(): Promise<number> {
-  try {
-    const rows = await sql<{ count: string | number }[]>`
-      SELECT COUNT(*)::int AS count
-      FROM news_articles
-      WHERE status = 'published'
-    `;
-    return Number(rows[0]?.count ?? 0);
-  } catch (error) {
-    return 0;
-  }
-}
-
-// Helper function to get total count of active events
-// Optimized with timeout to prevent blocking
-async function fetchActiveEventsCount(): Promise<number> {
-  try {
-    const rows = await sql<{ count: string | number }[]>`
-      SELECT COUNT(*)::int AS count
-      FROM events
-      WHERE status IN ('upcoming', 'ongoing')
-    `;
-    return Number(rows[0]?.count ?? 0);
-  } catch (error) {
-    return 0;
-  }
-}
-
-// Helper function to get total count of active leaders
-// Optimized with timeout to prevent blocking
-async function fetchLeadershipCount(): Promise<number> {
-  try {
-    const rows = await sql<{ count: string | number }[]>`
-      SELECT COUNT(*)::int AS count
-      FROM leadership
-      WHERE status = 'active'
-    `;
-    return Number(rows[0]?.count ?? 0);
-  } catch (error) {
-    return 0;
-  }
-}
-
-export type HomeContentStats = {
-  storiesCount: number;
-  eventsCount: number;
-  leadersCount: number;
-};
-
-export async function fetchHomeContent(): Promise<HomeContent & { stats: HomeContentStats }> {
-  // Optimize: Limit events to 10 most recent for home page, fetch counts in parallel but don't block on them
+export async function fetchHomeContent(): Promise<HomeContent> {
   const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
     fetchPublishedNews(3),
-    fetchActiveEvents(10), // Limit to 10 most recent events for home page
-    fetchLeadership(4),
-    fetchPublishedGallery(6),
+    fetchActiveEvents(10),
+    fetchLeadership(6),
+    fetchPublishedGallery(12),
     fetchAboutSnapshot(),
-  ]);
-
-  // Fetch counts in parallel but don't block page rendering on them
-  const [storiesCount, eventsCount, leadersCount] = await Promise.all([
-    fetchPublishedNewsCount(),
-    fetchActiveEventsCount(),
-    fetchLeadershipCount(),
   ]);
 
   const hasError = Boolean(
     newsResult.error || eventsResult.error || leadershipResult.error || galleryResult.error || aboutResult.error
   );
-
-  // Hardcoded fallback values if counts fail
-  const FALLBACK_STATS: HomeContentStats = {
-    storiesCount: 12,
-    eventsCount: 8,
-    leadersCount: 15,
-  };
 
   return {
     news: newsResult.data,
@@ -496,10 +500,9 @@ export async function fetchHomeContent(): Promise<HomeContent & { stats: HomeCon
     about: aboutResult.data,
     hasError,
     stats: {
-      storiesCount: storiesCount || FALLBACK_STATS.storiesCount,
-      eventsCount: eventsCount || FALLBACK_STATS.eventsCount,
-      leadersCount: leadersCount || FALLBACK_STATS.leadersCount,
+      storiesCount: newsResult.data.length,
+      eventsCount: eventsResult.data.length,
+      leadersCount: leadershipResult.data.length,
     },
   };
 }
-

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { isBase64Image } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary-server';
 
 export async function GET() {
   await requireAdmin();
@@ -24,9 +26,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const featuredImage = isBase64Image(body.featured_image ?? null)
+      ? (
+          await cloudinary.uploader.upload(body.featured_image, {
+            folder: 'mamsa/events',
+            resource_type: 'image',
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+          })
+        ).public_id
+      : (body.featured_image ?? null);
+
     const rows = await sql`
-      INSERT INTO events (title, description, date, time, location, status, featured_image, capacity, registration_required, registration_deadline, organizer, contact_email, contact_phone, tags, created_by)
-      VALUES (${body.title}, ${body.description}, ${body.date}, ${body.time ?? null}, ${body.location}, ${body.status}, ${body.featured_image ?? null}, ${body.capacity ?? null}, ${body.registration_required ?? false}, ${body.registration_deadline ?? null}, ${body.organizer}, ${body.contact_email ?? null}, ${body.contact_phone ?? null}, ${body.tags ?? null}, ${body.created_by ?? null})
+      INSERT INTO events (title, description, date, time, location, status, featured_image, organizer)
+      VALUES (${body.title}, ${body.description ?? null}, ${body.date ?? null}, ${body.time ?? null}, ${body.location ?? null}, ${body.status ?? 'upcoming'}, ${featuredImage}, ${body.organizer ?? null})
       RETURNING *
     `;
 

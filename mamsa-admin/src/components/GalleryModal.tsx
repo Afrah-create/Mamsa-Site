@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 interface GalleryImage {
   id: number;
@@ -54,6 +55,12 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
   const [tagInput, setTagInput] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  const resolvePreviewUrl = (value?: string | null) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || value;
+  };
+
   useEffect(() => {
     if (editingItem) {
       setFormData({
@@ -71,7 +78,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
         featured: editingItem.featured,
         alt_text: editingItem.alt_text || ''
       });
-      setImagePreview(editingItem.image_url);
+      setImagePreview(resolvePreviewUrl(editingItem.image_url));
     } else {
       setFormData({
         title: '',

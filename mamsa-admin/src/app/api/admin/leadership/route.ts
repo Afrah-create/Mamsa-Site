@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { isBase64Image } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary-server';
 
 export async function GET() {
   await requireAdmin();
@@ -9,7 +11,7 @@ export async function GET() {
     const rows = await sql`
       SELECT *
       FROM leadership
-      ORDER BY order_position ASC, created_at DESC
+      ORDER BY "order" ASC, created_at DESC
     `;
 
     return NextResponse.json({ data: rows });
@@ -24,9 +26,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const image = isBase64Image(body.image ?? body.image_url ?? null)
+      ? (
+          await cloudinary.uploader.upload(body.image ?? body.image_url, {
+            folder: 'mamsa/leadership',
+            resource_type: 'image',
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+          })
+        ).public_id
+      : (body.image ?? body.image_url ?? null);
+
     const rows = await sql`
-      INSERT INTO leadership (name, position, bio, image_url, email, phone, department, year, social_links, status, order_position, created_by)
-      VALUES (${body.name}, ${body.position}, ${body.bio}, ${body.image_url}, ${body.email ?? null}, ${body.phone ?? null}, ${body.department ?? null}, ${body.year ?? null}, ${body.social_links ?? null}, ${body.status}, ${body.order_position ?? 0}, ${body.created_by ?? null})
+      INSERT INTO leadership (name, position, bio, image, "order", status)
+      VALUES (${body.name}, ${body.position ?? null}, ${body.bio ?? null}, ${image}, ${body.order ?? body.order_position ?? 0}, ${body.status ?? 'active'})
       RETURNING *
     `;
 

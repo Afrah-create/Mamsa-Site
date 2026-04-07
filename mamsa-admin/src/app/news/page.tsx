@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
+import { getPublicUrl } from '@/lib/cloudinary';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface NewsItem {
@@ -101,8 +102,15 @@ export default function NewsPage() {
         const data = await adminRequest<NewsItem[]>('/api/admin/news');
 
         if (data && data.length > 0) {
+          const normalized = data.map((item) => ({
+            ...item,
+            featured_image:
+              item.featured_image && !item.featured_image.startsWith('http')
+                ? (getPublicUrl(item.featured_image) || item.featured_image)
+                : item.featured_image,
+          }));
           console.log('Loaded news from database:', data.length, 'articles');
-          setNews(data);
+          setNews(normalized);
         } else {
           console.log('No news articles found in database');
           setNews([]);

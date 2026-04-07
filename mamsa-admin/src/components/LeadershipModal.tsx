@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 interface LeadershipMember {
   id: number;
@@ -49,6 +50,12 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
     order_position: 0
   });
   const [loading, setLoading] = useState(false);
+
+  const resolvePreviewUrl = (value?: string) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || value;
+  };
 
   useEffect(() => {
     if (editingItem) {
@@ -333,7 +340,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
                   <div className="space-y-3">
                     <div className="relative inline-block">
                       <Image 
-                        src={formData.image_url} 
+                        src={resolvePreviewUrl(formData.image_url)} 
                         alt="Profile preview" 
                         width={120}
                         height={120}

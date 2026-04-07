@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 type AlumniStatus = 'draft' | 'published' | 'archived';
 
@@ -71,6 +72,12 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
   const [imagePreview, setImagePreview] = useState<string>('');
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
+  const resolvePreviewUrl = (value?: string | null) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || value;
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setForm(defaultValues);
@@ -98,7 +105,7 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
         status: editingItem.status ?? 'draft',
         order_position: editingItem.order_position ?? 0,
       });
-      setImagePreview(editingItem.image_url ?? '');
+      setImagePreview(resolvePreviewUrl(editingItem.image_url ?? ''));
       setImageUploadError(null);
     } else {
       setForm(defaultValues);
@@ -116,7 +123,10 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
     const value = form.image_url.trim();
     if (value.startsWith('data:image') || value.startsWith('http')) {
       setImagePreview(value);
+      return;
     }
+
+    setImagePreview(resolvePreviewUrl(value));
   }, [form.image_url]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

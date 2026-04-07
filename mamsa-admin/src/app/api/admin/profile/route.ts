@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary-server';
 
 type ProfileRow = {
   id: number;
@@ -48,6 +50,28 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
 
+    const existing = await sql<{ avatar_url: string | null }[]>`
+      SELECT avatar_url
+      FROM admin_users
+      WHERE id = ${user.id}
+         OR LOWER(email) = LOWER(${user.email})
+      LIMIT 1
+    `;
+
+    let avatarUrl = body.avatar_url ?? existing[0]?.avatar_url ?? '';
+    if (isBase64Image(body.avatar_url ?? null)) {
+      if (isCloudinaryPublicId(existing[0]?.avatar_url)) {
+        await cloudinary.uploader.destroy(existing[0].avatar_url as string);
+      }
+
+      const uploaded = await cloudinary.uploader.upload(body.avatar_url, {
+        folder: 'mamsa/admin_users',
+        resource_type: 'image',
+        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+      });
+      avatarUrl = uploaded.public_id;
+    }
+
     const rows = await sql<ProfileRow[]>`
       INSERT INTO admin_users (id, user_id, email, full_name, avatar_url, phone, bio, role, updated_at)
       VALUES (
@@ -55,7 +79,7 @@ export async function PATCH(request: Request) {
         ${String(user.id)},
         ${body.email ?? user.email},
         ${body.full_name ?? user.name ?? ''},
-        ${body.avatar_url ?? ''},
+        ${avatarUrl},
         ${body.phone ?? ''},
         ${body.bio ?? ''},
         ${user.role ?? 'admin'},

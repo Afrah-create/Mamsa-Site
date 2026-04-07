@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { isBase64Image } from '@/lib/cloudinary';
+import { cloudinary } from '@/lib/cloudinary-server';
 
 export async function GET() {
   await requireAdmin();
@@ -24,9 +26,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const coverImage = isBase64Image(body.cover_image ?? body.image_url ?? null)
+      ? (
+          await cloudinary.uploader.upload(body.cover_image ?? body.image_url, {
+            folder: 'mamsa/gallery',
+            resource_type: 'image',
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+          })
+        ).public_id
+      : (body.cover_image ?? body.image_url ?? null);
+
     const rows = await sql`
-      INSERT INTO gallery (title, description, image_url, category, tags, photographer, location, event_date, file_size, dimensions, status, featured, alt_text, created_by)
-      VALUES (${body.title}, ${body.description}, ${body.image_url}, ${body.category}, ${body.tags ?? null}, ${body.photographer ?? null}, ${body.location ?? null}, ${body.event_date ?? null}, ${body.file_size ?? null}, ${body.dimensions ?? null}, ${body.status}, ${body.featured ?? false}, ${body.alt_text ?? null}, ${body.created_by ?? null})
+      INSERT INTO gallery (title, description, category, cover_image, status)
+      VALUES (${body.title}, ${body.description ?? null}, ${body.category ?? null}, ${coverImage}, ${body.status ?? 'active'})
       RETURNING *
     `;
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 interface NewsItem {
   id: number;
@@ -35,6 +36,12 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
   });
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
+
+  const resolvePreviewUrl = (value?: string) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || value;
+  };
 
   useEffect(() => {
     if (editingItem) {
@@ -249,7 +256,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                   <div className="space-y-2">
                     <div className="relative inline-block">
                       <Image 
-                        src={formData.featured_image} 
+                        src={resolvePreviewUrl(formData.featured_image)} 
                         alt="Featured preview" 
                         width={200}
                         height={80}
@@ -398,7 +405,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
                 <div className="bg-white rounded-md p-3 shadow-sm border border-gray-200">
                   {formData.featured_image && (
                     <Image 
-                      src={formData.featured_image} 
+                      src={resolvePreviewUrl(formData.featured_image)} 
                       alt="Preview" 
                       width={200}
                       height={64}

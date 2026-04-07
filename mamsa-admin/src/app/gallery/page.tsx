@@ -32,6 +32,10 @@ interface GalleryImage {
   created_at: string;
 }
 
+type GalleryApiRow = GalleryImage & {
+  cover_image?: string | null;
+};
+
 export default function GalleryPage() {
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,9 +87,9 @@ export default function GalleryPage() {
     return getPublicUrl(cleaned);
   };
 
-  const normalizeGalleryImage = (image: GalleryImage): GalleryImage => ({
+  const normalizeGalleryImage = (image: GalleryApiRow): GalleryImage => ({
     ...image,
-    image_url: resolveImageUrl(image.image_url),
+    image_url: resolveImageUrl(image.image_url || image.cover_image || '') || '',
   });
 
   // Static data for demonstration
@@ -258,7 +262,7 @@ export default function GalleryPage() {
       setLoading(true);
       console.log('Loading gallery from database...');
       
-      const data = await adminRequest<GalleryImage[]>('/api/admin/gallery');
+      const data = await adminRequest<GalleryApiRow[]>('/api/admin/gallery');
 
       console.log('Successfully loaded gallery:', data);
       setGallery((data || []).map(normalizeGalleryImage));

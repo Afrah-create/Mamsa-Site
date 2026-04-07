@@ -152,6 +152,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
               alt={leader.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
+              onError={(event) => {
+                event.currentTarget.style.display = 'none';
+              }}
             />
           ) : (
             <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold ${styles.text} ${

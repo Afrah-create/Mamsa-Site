@@ -9,6 +9,7 @@ import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
 import { adminRequest } from '@/lib/admin-api';
+import { getPublicUrl } from '@/lib/cloudinary';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface LeadershipMember {
@@ -31,6 +32,11 @@ interface LeadershipMember {
   created_at: string;
 }
 
+type LeadershipApiRow = LeadershipMember & {
+  image?: string | null;
+  order?: number;
+};
+
 export default function LeadershipPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,6 +50,18 @@ export default function LeadershipPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
+
+  const resolveImageUrl = (value?: string | null) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || '';
+  };
+
+  const normalizeMember = (row: LeadershipApiRow): LeadershipMember => ({
+    ...row,
+    image_url: resolveImageUrl(row.image_url || row.image || ''),
+    order_position: row.order_position ?? row.order ?? 0,
+  });
 
   // Static data for demonstration
   const staticLeadership: LeadershipMember[] = [
@@ -185,10 +203,10 @@ export default function LeadershipPage() {
       setLoading(true);
       console.log('Loading leadership from database...');
       
-      const data = await adminRequest<LeadershipMember[]>('/api/admin/leadership');
+      const data = await adminRequest<LeadershipApiRow[]>('/api/admin/leadership');
 
       console.log('Successfully loaded leadership:', data);
-      setLeadership(data || []);
+      setLeadership((data || []).map(normalizeMember));
     } catch (error) {
       console.error('Failed to load leadership:', error);
       // Fallback to static data if database fails
@@ -250,7 +268,7 @@ export default function LeadershipPage() {
         console.log('Successfully updated member:', data);
         
         // Update local state
-        setLeadership(prev => prev.map(member => member.id === editingItem.id ? data : member));
+        setLeadership(prev => prev.map(member => member.id === editingItem.id ? normalizeMember(data as LeadershipApiRow) : member));
         showToast('Leadership member updated successfully', 'success');
       } else {
         // Create new member
@@ -284,7 +302,7 @@ export default function LeadershipPage() {
         console.log('Successfully created member:', data);
         
         // Update local state
-        setLeadership(prev => [data, ...prev]);
+        setLeadership(prev => [normalizeMember(data as LeadershipApiRow), ...prev]);
         showToast('Leadership member created successfully', 'success');
       }
       

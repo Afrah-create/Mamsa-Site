@@ -20,6 +20,9 @@ export default function LeaderCard({ leader }: LeaderCardProps) {
             alt={leader.name}
             className="h-full w-full object-cover"
             loading="lazy"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none';
+            }}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 text-xl sm:text-2xl md:text-3xl font-semibold text-emerald-700">

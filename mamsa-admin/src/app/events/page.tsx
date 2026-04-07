@@ -8,6 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
+import { getPublicUrl } from '@/lib/cloudinary';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface Event {
@@ -99,6 +100,10 @@ export default function EventsPage() {
 
   const normalizeEvent = (event: Event): Event => ({
     ...event,
+    featured_image:
+      event.featured_image && !event.featured_image.startsWith('http')
+        ? (getPublicUrl(event.featured_image) || event.featured_image)
+        : event.featured_image,
     time: formatTimeForDisplay(event.time),
     registration_deadline: event.registration_deadline
       ? formatDateTimeForDisplay(event.registration_deadline)

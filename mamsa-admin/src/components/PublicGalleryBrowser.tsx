@@ -118,6 +118,9 @@ export default function PublicGalleryBrowser({ images }: Props) {
                       alt={item.title}
                       className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="%23e5e7eb"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%236b7280" font-family="Arial" font-size="24">Image unavailable</text></svg>';
+                      }}
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { adminRequest } from '@/lib/admin-api';
+import { getPublicUrl } from '@/lib/cloudinary';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface ProfileData {
@@ -33,6 +34,12 @@ export default function ProfilePage() {
     bio: '',
     email: ''
   });
+
+  const resolveImageUrl = (value?: string | null) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || '';
+  };
 
   useEffect(() => {
     const verifyAndLoad = async () => {
@@ -146,7 +153,7 @@ export default function ProfilePage() {
         
         try {
           // Update profile with base64 image data
-          await adminRequest('/api/admin/profile', {
+          const updated = await adminRequest<ProfileData>('/api/admin/profile', {
             method: 'PATCH',
             body: JSON.stringify({
               full_name: formData.full_name,
@@ -158,7 +165,7 @@ export default function ProfilePage() {
           });
 
           // Update local state
-          setProfile(prev => prev ? { ...prev, avatar_url: base64String } : null);
+          setProfile(updated ?? null);
           setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
 
         } catch (error) {
@@ -287,10 +294,12 @@ export default function ProfilePage() {
                   <div className="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4 overflow-hidden">
                     {profile?.avatar_url ? (
                       <img 
-                        src={profile.avatar_url} 
+                        src={resolveImageUrl(profile.avatar_url)} 
                         alt="Profile" 
                         className="h-32 w-32 rounded-full object-cover"
-                        onLoad={() => {}} // Remove any loading handlers
+                        onError={(event) => {
+                          (event.currentTarget as HTMLImageElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <span className="text-4xl font-medium text-gray-600">

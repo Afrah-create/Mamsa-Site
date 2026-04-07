@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getPublicUrl } from '@/lib/cloudinary';
 
 interface EventItem {
   id: number;
@@ -48,6 +49,12 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
   });
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
+
+  const resolvePreviewUrl = (value?: string) => {
+    if (!value) return '';
+    if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
+    return getPublicUrl(value) || value;
+  };
 
   useEffect(() => {
     if (editingItem) {
@@ -301,7 +308,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
                   <div className="space-y-2">
                     <div className="relative inline-block">
                       <Image 
-                        src={formData.featured_image} 
+                        src={resolvePreviewUrl(formData.featured_image)} 
                         alt="Featured preview" 
                         width={200}
                         height={80}
