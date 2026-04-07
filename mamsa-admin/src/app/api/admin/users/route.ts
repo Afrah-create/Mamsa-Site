@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import sql from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
 type AdminUserRow = {
   id: number;
@@ -30,6 +31,8 @@ type IncomingUser = {
 };
 
 export async function GET() {
+  await requireAdmin();
+
   try {
     const users = await sql<AdminUserRow[]>`
       SELECT id, email, name, role, status, clerk_user_id
@@ -49,6 +52,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  await requireAdmin();
+
   try {
     const { user, password, createdBy }: { user: IncomingUser; password?: string; createdBy?: string | null } =
       await request.json();
@@ -112,6 +117,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  await requireAdmin();
+
   try {
     const { clerkUserId } = await request.json();
 

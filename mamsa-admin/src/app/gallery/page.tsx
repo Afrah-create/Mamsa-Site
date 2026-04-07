@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient, supabaseUrl } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import GalleryModal from '@/components/GalleryModal';

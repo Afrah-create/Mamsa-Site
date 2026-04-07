@@ -4,13 +4,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import { clearSessionData } from '@/lib/session-manager';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  user?: User | null;
+  user?: unknown;
 }
 
 interface ProfileData {
@@ -76,7 +75,9 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
+  const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const { signOut } = useClerk();
 
   const unreadCount = useMemo(
     () => notifications.filter((notification) => notification.unread).length,
@@ -86,18 +87,21 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const loadNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
-      const { data, error } = await supabase
-        .from('contact_messages')
-        .select('id, name, subject, status, created_at, updated_at')
-        .order('created_at', { ascending: false })
-        .limit(15);
+      const response = await fetch('/api/admin/contact', {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
 
-      if (error) {
-        console.error('Error loading notifications:', error);
+      if (!response.ok) {
+        console.error('Error loading notifications:', response.statusText);
         return;
       }
 
-      const mapped: NotificationItem[] = (data ?? []).map((message: ContactMessageRow) => ({
+      const payload = await response.json();
+      const data = (payload.data ?? []) as ContactMessageRow[];
+
+      const mapped: NotificationItem[] = data.map((message) => ({
         id: message.id,
         recordId: message.id,
         title:
@@ -116,7 +120,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [supabase]);
+  }, [getToken]);
 
   const navigation = [
     { 
@@ -213,10 +217,10 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   ];
 
   const loadProfile = useCallback(async () => {
-    if (!user?.id) return;
+    if (!clerkUser?.id) return;
     
     // Try to load from sessionStorage first for instant display
-    const PROFILE_CACHE_KEY = `admin_profile_${user.id}`;
+    const PROFILE_CACHE_KEY = `admin_profile_${clerkUser.id}`;
     try {
       const cached = sessionStorage.getItem(PROFILE_CACHE_KEY);
       if (cached) {
@@ -228,41 +232,20 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     }
     
     try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      const fallbackProfile = {
+        id: clerkUser.id,
+        user_id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? '',
+        full_name: clerkUser.fullName || clerkUser.firstName || 'Admin',
+        role: 'admin',
+        avatar_url: clerkUser.imageUrl,
+        created_at: new Date().toISOString()
+      };
 
-      if (error) {
-        console.error('Error loading profile in AdminLayout:', error);
-        
-        // If no profile exists, create a fallback profile with auth user data
-        if (error.code === 'PGRST116' || error.message.includes('No rows found')) {
-          const fallbackProfile = {
-            id: user.id,
-            user_id: user.id,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
-            role: 'admin',
-            avatar_url: user.user_metadata?.avatar_url,
-            created_at: new Date().toISOString()
-          };
-          setProfile(fallbackProfile);
-          // Cache the fallback profile
-          try {
-            sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
-          } catch (e) {
-            // Ignore storage errors
-          }
-        }
-        return;
-      }
-
-      setProfile(data);
+      setProfile(fallbackProfile);
       // Cache the profile for faster loading on navigation
       try {
-        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(data));
+        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
       } catch (e) {
         // Ignore storage errors
       }
@@ -270,12 +253,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       console.error('Failed to load profile in AdminLayout:', error);
       // Create fallback profile even if there's an error
       const fallbackProfile = {
-        id: user.id,
-        user_id: user.id,
-        email: user.email || '',
-        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
+        id: clerkUser.id,
+        user_id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? '',
+        full_name: clerkUser.fullName || clerkUser.firstName || 'Admin',
         role: 'admin',
-        avatar_url: user.user_metadata?.avatar_url,
+        avatar_url: clerkUser.imageUrl,
         created_at: new Date().toISOString()
       };
       setProfile(fallbackProfile);
@@ -286,7 +269,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         // Ignore storage errors
       }
     }
-  }, [user?.id, supabase, user?.email, user?.user_metadata, user?.user_metadata?.avatar_url]);
+  }, [clerkUser]);
 
   // Set current year on client side to avoid hydration mismatch
   useEffect(() => {
@@ -298,61 +281,47 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   }, [loadProfile]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isLoaded || !isSignedIn) return;
     loadNotifications();
-  }, [user, loadNotifications]);
+  }, [isLoaded, isSignedIn, loadNotifications]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isLoaded || !isSignedIn) return;
 
-    const channel = supabase
-      .channel('contact_notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'contact_messages',
-        },
-        () => {
-          loadNotifications();
-        }
-      )
-      .subscribe();
+    const intervalId = window.setInterval(() => {
+      loadNotifications();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      window.clearInterval(intervalId);
     };
-  }, [user, supabase, loadNotifications]);
+  }, [isLoaded, isSignedIn, loadNotifications]);
 
   // Monitor session validity and detect logout from other tabs
   useEffect(() => {
-    if (!user) return;
+    if (!isLoaded || !isSignedIn) return;
 
     // Check session validity periodically
     const checkSession = async () => {
-      const { data: { user: currentUser }, error } = await supabase.auth.getUser();
-      
-      if (error || !currentUser || currentUser.id !== user.id) {
+      try {
+        const response = await fetch('/api/auth/verify-admin', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok || !payload.isAdmin) {
+          clearSessionData();
+          await signOut({ redirectUrl: '/login' });
+          return;
+        }
+      } catch {
         // Session invalid, redirect to login
         clearSessionData();
-        window.location.href = '/login';
-        return;
-      }
-
-      // Verify admin status is still valid
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('role, status')
-        .eq('user_id', currentUser.id)
-        .single();
-
-      // Valid admin roles
-      const validRoles = ['super_admin', 'admin', 'moderator'];
-
-      if (adminError || !adminData || !validRoles.includes(adminData.role) || adminData.status !== 'active') {
-        clearSessionData();
-        window.location.href = '/login';
+        await signOut({ redirectUrl: '/login' });
       }
     };
 
@@ -375,7 +344,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user, supabase]);
+  }, [getToken, isLoaded, isSignedIn, signOut]);
 
   const handleLogout = async () => {
     try {
@@ -383,15 +352,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       localStorage.clear();
       sessionStorage.clear();
       
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Logout error:', error);
-      }
-      
-      // Force redirect to login and clear any cached data
-      window.location.href = '/login';
+      await signOut({ redirectUrl: '/login' });
     } catch (error) {
       console.error('Logout failed:', error);
       // Force redirect even on error
@@ -420,14 +381,11 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
       if (notification.type === 'contact' && notification.unread) {
         try {
-          const { error } = await supabase
-            .from('contact_messages')
-            .update({ status: 'in_progress' })
-            .eq('id', notification.recordId);
-
-          if (error) {
-            console.error('Failed to update contact message status from notification:', error);
-          }
+          await fetch('/api/admin/contact', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getToken()}` },
+            body: JSON.stringify({ id: notification.recordId, status: 'in_progress' }),
+          });
         } catch (error) {
           console.error('Unexpected notification read error:', error);
         } finally {
@@ -435,7 +393,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         }
       }
     },
-    [notifications, supabase, loadNotifications]
+    [getToken, loadNotifications, notifications]
   );
 
   return (

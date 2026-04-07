@@ -1,10 +1,11 @@
-import { createServerClient } from '@/lib/supabase-server';
+import sql from '@/lib/db';
+import { getPublicUrl } from '@/lib/cloudinary';
 
-const SUPABASE_TIMEOUT_MS = Number(process.env.SUPABASE_TIMEOUT_MS ?? '15000');
+const QUERY_TIMEOUT_MS = Number(process.env.DB_TIMEOUT_MS ?? '15000');
 
 const createTimeoutController = (label: string) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), SUPABASE_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
 
   return {
     controller,
@@ -13,7 +14,7 @@ const createTimeoutController = (label: string) => {
   };
 };
 
-const buildUnavailableError = (message: string) => new Error(`[Supabase] ${message}`);
+const buildUnavailableError = (message: string) => new Error(`[Database] ${message}`);
 
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
@@ -90,332 +91,366 @@ export type HomeContent = {
   hasError: boolean;
 };
 
-export async function fetchPublishedNews(limit?: number) {
-  const supabase = await createServerClient();
+type NewsRow = {
+  id: number;
+  title: string;
+  content: string | null;
+  category: string | null;
+  status: string;
+  image: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
 
-  if (!supabase) {
-    return { data: [] as NewsArticle[], error: buildUnavailableError('Client unavailable while fetching news.') };
-  }
+type EventRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string | null;
+  location: string | null;
+  status: string;
+  image: string | null;
+  category: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
 
-  const timeout = createTimeoutController('news');
+type LeadershipRow = {
+  id: number;
+  name: string;
+  position: string | null;
+  bio: string | null;
+  image: string | null;
+  order: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type GalleryRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string | null;
+  cover_image: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type AboutRow = {
+  mission: string | null;
+  vision: string | null;
+  content: string | null;
+  updated_at: string | null;
+};
+
+type AlumniRow = {
+  id: number;
+  name: string | null;
+  role: string | null;
+  image: string | null;
+  created_at: string;
+};
+
+const resolveImage = (value?: string | null) => {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return getPublicUrl(value);
+};
+
+const withTimeout = async <T>(label: string, runner: () => Promise<T>): Promise<T> => {
+  const timeout = createTimeoutController(label);
 
   try {
-    let query = supabase
-      .from('news_articles')
-      .select('id, title, excerpt, featured_image, published_at, author, content')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false });
+    return await Promise.race([
+      runner(),
+      new Promise<T>((_, reject) => {
+        timeout.controller.signal.addEventListener('abort', () => {
+          reject(new Error('AbortError'));
+        });
+      }),
+    ]);
+  } finally {
+    timeout.clear();
+  }
+};
 
-    if (limit) {
-      query = query.limit(limit);
-    }
+const deriveExcerpt = (content: string | null) => {
+  const text = content?.trim() ?? '';
+  if (!text) return null;
+  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
+};
 
-    const { data, error } = await query.abortSignal(timeout.controller.signal);
-    return { data: data ?? [], error };
+const toNewsArticle = (row: NewsRow): NewsArticle => ({
+  id: row.id,
+  title: row.title,
+  excerpt: deriveExcerpt(row.content),
+  featured_image: resolveImage(row.image),
+  published_at: row.updated_at ?? row.created_at,
+  author: row.category,
+  content: row.content,
+});
+
+const toEvent = (row: EventRow): Event => ({
+  id: row.id,
+  title: row.title,
+  description: row.description,
+  date: row.date,
+  time: null,
+  location: row.location,
+  status: row.status,
+  featured_image: resolveImage(row.image),
+  organizer: row.category,
+  contact_email: null,
+});
+
+const toLeader = (row: LeadershipRow): Leader => ({
+  id: row.id,
+  name: row.name,
+  position: row.position,
+  bio: row.bio,
+  image_url: resolveImage(row.image),
+  department: null,
+  email: null,
+  phone: null,
+});
+
+const toGalleryImage = (row: GalleryRow): GalleryImage => ({
+  id: row.id,
+  title: row.title,
+  image_url: resolveImage(row.cover_image),
+  category: row.category,
+  description: row.description,
+  featured: false,
+});
+
+const toAlumnus = (row: AlumniRow): NotableAlumnus => ({
+  id: row.id,
+  full_name: row.name ?? 'Unknown',
+  graduation_year: null,
+  biography: null,
+  achievements: null,
+  current_position: row.role,
+  organization: null,
+  specialty: null,
+  image_url: resolveImage(row.image),
+  profile_links: null,
+  featured: false,
+  order_position: null,
+});
+
+export async function fetchPublishedNews(limit?: number) {
+  try {
+    const rows = await withTimeout('news', async () =>
+      sql<NewsRow[]>`
+        SELECT id, title, content, category, status, image, created_at, updated_at
+        FROM news_articles
+        WHERE status = 'published'
+        ORDER BY COALESCE(updated_at, created_at) DESC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `
+    );
+
+    return { data: rows.map(toNewsArticle), error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.message === 'AbortError') {
       return {
         data: [] as NewsArticle[],
-        error: buildUnavailableError(`Timed out fetching published news (>${SUPABASE_TIMEOUT_MS}ms).`),
+        error: buildUnavailableError(`Timed out fetching published news (>${QUERY_TIMEOUT_MS}ms).`),
       };
     }
     return { data: [] as NewsArticle[], error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchPublishedNewsArticle(id: number) {
-  const supabase = await createServerClient();
-
-  if (!supabase) {
-    return { data: null, error: buildUnavailableError('Client unavailable while fetching news article.') };
-  }
-
-  const timeout = createTimeoutController('news-article');
-
   try {
-    const { data, error } = await supabase
-      .from('news_articles')
-      .select('id, title, content, excerpt, featured_image, published_at, author')
-      .eq('status', 'published')
-      .eq('id', id)
-      .maybeSingle()
-      .abortSignal(timeout.controller.signal);
+    const rows = await withTimeout('news-article', async () =>
+      sql<NewsRow[]>`
+        SELECT id, title, content, category, status, image, created_at, updated_at
+        FROM news_articles
+        WHERE status = 'published' AND id = ${id}
+        LIMIT 1
+      `
+    );
 
-    return { data: data ?? null, error };
+    return { data: rows[0] ? toNewsArticle(rows[0]) : null, error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.message === 'AbortError') {
       return {
         data: null,
-        error: buildUnavailableError(`Timed out fetching news article (>${SUPABASE_TIMEOUT_MS}ms).`),
+        error: buildUnavailableError(`Timed out fetching news article (>${QUERY_TIMEOUT_MS}ms).`),
       };
     }
     return { data: null, error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchActiveEvents(limit?: number) {
-  const supabase = await createServerClient();
-
-  if (!supabase) {
-    return { data: [] as Event[], error: buildUnavailableError('Client unavailable while fetching events.') };
-  }
-
-  const timeout = createTimeoutController('events');
-
   try {
-    let query = supabase
-      .from('events')
-      .select('id, title, description, date, time, location, status, featured_image, organizer, contact_email')
-      .in('status', ['upcoming', 'ongoing'])
-      .order('date', { ascending: true });
+    const rows = await withTimeout('events', async () =>
+      sql<EventRow[]>`
+        SELECT id, title, description, date, location, status, image, category, created_at, updated_at
+        FROM events
+        WHERE status IN ('upcoming', 'ongoing')
+        ORDER BY date ASC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `
+    );
 
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query.abortSignal(timeout.controller.signal);
-    return { data: data ?? [], error };
+    return { data: rows.map(toEvent), error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { data: [] as Event[], error: buildUnavailableError(`Timed out fetching events (>${SUPABASE_TIMEOUT_MS}ms).`) };
+    if (error instanceof Error && error.message === 'AbortError') {
+      return { data: [] as Event[], error: buildUnavailableError(`Timed out fetching events (>${QUERY_TIMEOUT_MS}ms).`) };
     }
     return { data: [] as Event[], error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchLeadership(limit?: number) {
-  const supabase = await createServerClient();
-
-  if (!supabase) {
-    return { data: [] as Leader[], error: buildUnavailableError('Client unavailable while fetching leadership.') };
-  }
-
-  const timeout = createTimeoutController('leadership');
-
   try {
-    let query = supabase
-      .from('leadership')
-      .select('id, name, position, bio, image_url, department, email, phone')
-      .eq('status', 'active')
-      .order('order_position', { ascending: true });
+    const rows = await withTimeout('leadership', async () =>
+      sql<LeadershipRow[]>`
+        SELECT id, name, position, bio, image, "order" AS order, status, created_at, updated_at
+        FROM leadership
+        WHERE status = 'active'
+        ORDER BY "order" ASC, created_at DESC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `
+    );
 
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query.abortSignal(timeout.controller.signal);
-    return { data: data ?? [], error };
+    return { data: rows.map(toLeader), error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.message === 'AbortError') {
       return {
         data: [] as Leader[],
-        error: buildUnavailableError(`Timed out fetching leadership (>${SUPABASE_TIMEOUT_MS}ms).`),
+        error: buildUnavailableError(`Timed out fetching leadership (>${QUERY_TIMEOUT_MS}ms).`),
       };
     }
     return { data: [] as Leader[], error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchPublishedGallery(limit?: number) {
-  const supabase = await createServerClient();
-
-  if (!supabase) {
-    return { data: [] as GalleryImage[], error: buildUnavailableError('Client unavailable while fetching gallery.') };
-  }
-
-  const timeout = createTimeoutController('gallery');
-
   try {
-    let query = supabase
-      .from('gallery')
-      .select('id, title, image_url, category, description, featured')
-      .eq('status', 'published')
-      .order('featured', { ascending: false })
-      .order('created_at', { ascending: false });
+    const rows = await withTimeout('gallery', async () =>
+      sql<GalleryRow[]>`
+        SELECT id, title, description, category, cover_image, status, created_at, updated_at
+        FROM gallery
+        WHERE status = 'published'
+        ORDER BY created_at DESC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `
+    );
 
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query.abortSignal(timeout.controller.signal);
-    return { data: data ?? [], error };
+    return { data: rows.map(toGalleryImage), error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.message === 'AbortError') {
       return {
         data: [] as GalleryImage[],
-        error: buildUnavailableError(`Timed out fetching gallery (>${SUPABASE_TIMEOUT_MS}ms).`),
+        error: buildUnavailableError(`Timed out fetching gallery (>${QUERY_TIMEOUT_MS}ms).`),
       };
     }
     return { data: [] as GalleryImage[], error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchPublishedAlumni(limit?: number) {
-  const supabase = await createServerClient();
-
-  if (!supabase) {
-    return { data: [] as NotableAlumnus[], error: buildUnavailableError('Client unavailable while fetching alumni.') };
-  }
-
-  const timeout = createTimeoutController('alumni');
-
   try {
-    let query = supabase
-      .from('notable_alumni')
-      .select(
-        'id, full_name, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, order_position'
-      )
-      .eq('status', 'published')
-      .order('featured', { ascending: false })
-      .order('order_position', { ascending: true, nullsFirst: true })
-      .order('created_at', { ascending: false });
+    const rows = await withTimeout('alumni', async () =>
+      sql<AlumniRow[]>`
+        SELECT id, name, role, image, created_at
+        FROM leadership_members
+        ORDER BY created_at DESC
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `
+    );
 
-    if (limit) {
-      query = query.limit(limit);
-    }
-
-    const { data, error } = await query.abortSignal(timeout.controller.signal);
-    return { data: (data as NotableAlumnus[]) ?? [], error };
+    return { data: rows.map(toAlumnus), error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof Error && error.message === 'AbortError') {
       return {
         data: [] as NotableAlumnus[],
-        error: buildUnavailableError(`Timed out fetching notable alumni (>${SUPABASE_TIMEOUT_MS}ms).`),
+        error: buildUnavailableError(`Timed out fetching notable alumni (>${QUERY_TIMEOUT_MS}ms).`),
       };
     }
     return { data: [] as NotableAlumnus[], error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 export async function fetchAboutSnapshot() {
-  const supabase = await createServerClient();
-
   const draft: AboutSnapshot = ABOUT_SECTIONS.reduce((acc, key) => {
     acc[key] = '';
     return acc;
   }, {} as AboutSnapshot);
 
-  if (!supabase) {
-    return { data: draft, error: buildUnavailableError('Client unavailable while fetching about snapshot.') };
-  }
-
-  const timeout = createTimeoutController('about');
-
   try {
-    const { data, error } = await supabase
-      .from('about')
-      .select('section, content')
-      .abortSignal(timeout.controller.signal);
+    const rows = await withTimeout('about', async () => sql<AboutRow[]>`
+      SELECT mission, vision, content, updated_at
+      FROM about
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `);
 
-    if (error) {
-      return { data: draft, error };
-    }
-
-    data?.forEach((row: { section: string; content: string }) => {
-      const key = row.section as AboutSectionKey;
-      if (ABOUT_SECTIONS.includes(key)) {
-        draft[key] = row.content ?? '';
-      }
-    });
+    const row = rows[0];
+    draft.history = row?.content ?? '';
+    draft.mission = row?.mission ?? '';
+    draft.vision = row?.vision ?? '';
+    draft.values = '';
+    draft.objectives = '';
 
     return { data: draft, error: null };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { data: draft, error: buildUnavailableError(`Timed out fetching about snapshot (>${SUPABASE_TIMEOUT_MS}ms).`) };
+    if (error instanceof Error && error.message === 'AbortError') {
+      return { data: draft, error: buildUnavailableError(`Timed out fetching about snapshot (>${QUERY_TIMEOUT_MS}ms).`) };
     }
     return { data: draft, error: error as Error };
-  } finally {
-    timeout.clear();
   }
 }
 
 // Helper function to get total count of published news articles
 // Optimized with timeout to prevent blocking
 async function fetchPublishedNewsCount(): Promise<number> {
-  const supabase = await createServerClient();
-  if (!supabase) return 0;
-  
-  const timeout = createTimeoutController('news-count');
-  
   try {
-    const { count, error } = await supabase
-      .from('news_articles')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'published')
-      .abortSignal(timeout.controller.signal);
-    
-    return error ? 0 : (count ?? 0);
+    const rows = await sql<{ count: string | number }[]>`
+      SELECT COUNT(*)::int AS count
+      FROM news_articles
+      WHERE status = 'published'
+    `;
+    return Number(rows[0]?.count ?? 0);
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return 0; // Return 0 on timeout to not block page rendering
-    }
     return 0;
-  } finally {
-    timeout.clear();
   }
 }
 
 // Helper function to get total count of active events
 // Optimized with timeout to prevent blocking
 async function fetchActiveEventsCount(): Promise<number> {
-  const supabase = await createServerClient();
-  if (!supabase) return 0;
-  
-  const timeout = createTimeoutController('events-count');
-  
   try {
-    const { count, error } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['upcoming', 'ongoing'])
-      .abortSignal(timeout.controller.signal);
-    
-    return error ? 0 : (count ?? 0);
+    const rows = await sql<{ count: string | number }[]>`
+      SELECT COUNT(*)::int AS count
+      FROM events
+      WHERE status IN ('upcoming', 'ongoing')
+    `;
+    return Number(rows[0]?.count ?? 0);
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return 0; // Return 0 on timeout to not block page rendering
-    }
     return 0;
-  } finally {
-    timeout.clear();
   }
 }
 
 // Helper function to get total count of active leaders
 // Optimized with timeout to prevent blocking
 async function fetchLeadershipCount(): Promise<number> {
-  const supabase = await createServerClient();
-  if (!supabase) return 0;
-  
-  const timeout = createTimeoutController('leadership-count');
-  
   try {
-    const { count, error } = await supabase
-      .from('leadership')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-      .abortSignal(timeout.controller.signal);
-    
-    return error ? 0 : (count ?? 0);
+    const rows = await sql<{ count: string | number }[]>`
+      SELECT COUNT(*)::int AS count
+      FROM leadership
+      WHERE status = 'active'
+    `;
+    return Number(rows[0]?.count ?? 0);
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return 0; // Return 0 on timeout to not block page rendering
-    }
     return 0;
-  } finally {
-    timeout.clear();
   }
 }
 

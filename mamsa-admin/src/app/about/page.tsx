@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AlumniModal, { AlumniFormValues, AlumniRecord } from '@/components/AlumniModal';
 import ConfirmModal from '@/components/ConfirmModal';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import NewsModal from '@/components/NewsModal';

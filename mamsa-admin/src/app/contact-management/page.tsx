@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@clerk/nextjs/server';
 import AdminLayout from '@/components/AdminLayout';
 
 interface ContactMessage {

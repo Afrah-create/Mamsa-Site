@@ -1,33 +1,26 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase-server';
+import sql from '@/lib/db';
 
 export async function GET() {
   try {
-    const supabase = await createServerClient();
+    const rows = await sql<{
+      id: number;
+      office_name: string | null;
+      address: string | null;
+      email: string | null;
+      phone: string | null;
+      latitude: number | null;
+      longitude: number | null;
+      map_embed_url: string | null;
+    }[]>`
+      SELECT id, office_name, address, email, phone, latitude, longitude, map_embed_url
+      FROM contact
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `;
 
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Supabase client is not configured.' },
-        { status: 500 }
-      );
-    }
-
-    const { data, error } = await supabase
-      .from('contact_settings')
-      .select('*')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Failed to load contact settings:', error);
-      return NextResponse.json(
-        { error: 'Could not load contact settings.' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ data });
+    const row = rows[0] ?? null;
+    return NextResponse.json({ data: row });
   } catch (error) {
     console.error('Unexpected contact settings error:', error);
     return NextResponse.json(

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase';
+import { useUser } from '@clerk/nextjs';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const supabase = createClient();
+  const { user } = useUser();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -46,14 +46,14 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
     }
 
     try {
-      // Update password
-      const { error } = await supabase.auth.updateUser({
-        password: formData.newPassword
-      });
-
-      if (error) {
-        throw error;
+      if (!user) {
+        throw new Error('No authenticated user found.');
       }
+
+      await user.updatePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      });
 
       setMessage({ type: 'success', text: 'Password updated successfully!' });
       

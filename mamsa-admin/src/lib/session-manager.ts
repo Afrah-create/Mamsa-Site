@@ -1,7 +1,6 @@
 'use client';
 
-import { createClient } from './supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@clerk/nextjs/server';
 
 export interface SessionData {
   user: User;
@@ -28,43 +27,30 @@ export function clearSessionData() {
  * Validate current session and check if user is still authenticated
  */
 export async function validateSession(): Promise<SessionData | null> {
-  const supabase = createClient();
-  
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const response = await fetch('/api/auth/verify-admin', { method: 'POST' });
 
-    if (error || !user) {
+    if (!response.ok) {
       clearSessionData();
       return null;
     }
 
-    // Verify user is still an admin (super_admin, admin, or moderator)
-    const { data: adminData, error: adminError } = await supabase
-      .from('admin_users')
-      .select('role, status, id')
-      .eq('user_id', user.id)
-      .single();
+    const payload = (await response.json()) as {
+      isAdmin?: boolean;
+      user?: User | null;
+    };
 
-    if (adminError || !adminData) {
-      clearSessionData();
-      return null;
-    }
-
-    // Valid admin roles
-    const validRoles = ['super_admin', 'admin', 'moderator'];
-
-    // Check if user is still active and has a valid admin role
-    if (!validRoles.includes(adminData.role) || adminData.status !== 'active') {
+    if (!payload.isAdmin || !payload.user) {
       clearSessionData();
       return null;
     }
 
     return {
-      user,
+      user: payload.user,
       adminData: {
-        role: adminData.role,
-        status: adminData.status,
-        id: adminData.id,
+        role: 'admin',
+        status: 'active',
+        id: 0,
       },
     };
   } catch (error) {
