@@ -5,6 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { adminRequest } from '@/lib/admin-api';
 import { getPublicUrl } from '@/lib/cloudinary';
+import { optimizeImageForUpload } from '@/lib/image-client';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface ProfileData {
@@ -146,37 +147,34 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
-      // Convert file to base64 for storage
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64String = event.target?.result as string;
-        
-        try {
-          // Update profile with base64 image data
-          const updated = await adminRequest<ProfileData>('/api/admin/profile', {
-            method: 'PATCH',
-            body: JSON.stringify({
-              full_name: formData.full_name,
-              phone: formData.phone,
-              bio: formData.bio,
-              email: formData.email,
-              image: base64String,
-            }),
-          });
+      const base64String = await optimizeImageForUpload(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+      });
 
-          // Update local state
-          setProfile(updated ?? null);
-          setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
+      try {
+        // Update profile with optimized base64 image data
+        const updated = await adminRequest<ProfileData>('/api/admin/profile', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            full_name: formData.full_name,
+            phone: formData.phone,
+            bio: formData.bio,
+            email: formData.email,
+            image: base64String,
+          }),
+        });
 
-        } catch (error) {
-          console.error('Update failed:', error);
-          setMessage({ type: 'error', text: 'Failed to update profile picture. Please try again.' });
-        } finally {
-          setUploading(false);
-        }
-      };
-      
-      reader.readAsDataURL(file);
+        // Update local state
+        setProfile(updated ?? null);
+        setMessage({ type: 'success', text: 'Profile picture updated successfully!' });
+      } catch (error) {
+        console.error('Update failed:', error);
+        setMessage({ type: 'error', text: 'Failed to update profile picture. Please try again.' });
+      } finally {
+        setUploading(false);
+      }
 
     } catch (error) {
       console.error('Upload failed:', error);

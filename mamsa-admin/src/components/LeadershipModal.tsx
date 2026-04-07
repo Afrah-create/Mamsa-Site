@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getPublicUrl } from '@/lib/cloudinary';
+import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface LeadershipMember {
   id: number;
@@ -117,17 +118,18 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({
-          ...prev,
-          image_url: event.target?.result as string
-        }));
-      };
-      reader.readAsDataURL(file);
+      const optimized = await optimizeImageForUpload(file, {
+        maxWidth: 1400,
+        maxHeight: 1400,
+        quality: 0.8,
+      });
+      setFormData(prev => ({
+        ...prev,
+        image_url: optimized,
+      }));
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getPublicUrl } from '@/lib/cloudinary';
+import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface NewsItem {
   id: number;
@@ -91,18 +92,19 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: News
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({
-          ...prev,
-          featured_image_file: null,
-          featured_image: String(event.target?.result ?? '')
-        }));
-      };
-      reader.readAsDataURL(file);
+      const optimized = await optimizeImageForUpload(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.78,
+      });
+      setFormData(prev => ({
+        ...prev,
+        featured_image_file: null,
+        featured_image: optimized,
+      }));
     }
   };
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getPublicUrl } from '@/lib/cloudinary';
+import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface GalleryImage {
   id: number;
@@ -108,35 +109,35 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Simulate file processing
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
+      const imageUrl = await optimizeImageForUpload(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.78,
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        image_url: imageUrl,
+        file_size: file.size,
+        alt_text: file.name.split('.')[0]
+      }));
+      setImagePreview(imageUrl);
+
+      // Get image dimensions from optimized preview.
+      const img = new window.Image();
+      img.onload = () => {
         setFormData(prev => ({
           ...prev,
-          image_url: imageUrl,
-          file_size: file.size,
-          alt_text: file.name.split('.')[0]
+          dimensions: {
+            width: img.width,
+            height: img.height
+          }
         }));
-        setImagePreview(imageUrl);
-
-        // Get image dimensions
-        const img = new window.Image();
-        img.onload = () => {
-          setFormData(prev => ({
-            ...prev,
-            dimensions: {
-              width: img.width,
-              height: img.height
-            }
-          }));
-        };
-        img.src = imageUrl;
       };
-      reader.readAsDataURL(file);
+      img.src = imageUrl;
     }
   };
 
