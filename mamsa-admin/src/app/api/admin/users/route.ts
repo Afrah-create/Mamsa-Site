@@ -35,7 +35,7 @@ export async function GET() {
 
   try {
     const users = await sql<AdminUserRow[]>`
-      SELECT id, email, name, role, status, CAST(id AS TEXT) AS user_id
+      SELECT id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
       FROM admin_users
       ORDER BY id DESC
     `;
@@ -79,15 +79,15 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(finalPassword);
 
     const rows = await sql<AdminUserRow[]>`
-      INSERT INTO admin_users (email, name, role, status, password_hash)
+      INSERT INTO admin_users (email, full_name, role, status, password_hash)
       VALUES (${normalizedEmail}, ${displayName}, ${user.role}, ${user.status ?? 'active'}, ${passwordHash})
       ON CONFLICT (email)
       DO UPDATE SET
-        name = EXCLUDED.name,
+        full_name = EXCLUDED.full_name,
         role = EXCLUDED.role,
         status = EXCLUDED.status,
         password_hash = EXCLUDED.password_hash
-      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
+      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     const adminUser = rows[0];
@@ -117,12 +117,12 @@ export async function PATCH(request: Request) {
 
     const rows = await sql<AdminUserRow[]>`
       UPDATE admin_users
-      SET name = ${user.name ?? user.full_name ?? null},
+      SET full_name = ${user.name ?? user.full_name ?? null},
           email = ${user.email ?? ''},
           role = ${user.role ?? 'admin'},
           status = ${user.status ?? 'active'}
       WHERE id = ${id}
-      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
+      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
@@ -139,18 +139,18 @@ export async function DELETE(request: Request) {
   await requireAdmin();
 
   try {
-    const { clerkUserId } = await request.json();
-    const targetId = Number(clerkUserId);
+    const { userId } = await request.json();
+    const targetId = Number(userId);
 
-    if (!clerkUserId || Number.isNaN(targetId)) {
-      return NextResponse.json({ error: 'clerkUserId is required.' }, { status: 400 });
+    if (!userId || Number.isNaN(targetId)) {
+      return NextResponse.json({ error: 'userId is required.' }, { status: 400 });
     }
 
     const rows = await sql<AdminUserRow[]>`
       UPDATE admin_users
       SET status = 'inactive'
       WHERE id = ${targetId}
-      RETURNING id, email, name, role, status, CAST(id AS TEXT) AS user_id
+      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
     `;
 
     return NextResponse.json({ data: rows[0] ?? null, message: 'User deactivated successfully.' }, { status: 200 });

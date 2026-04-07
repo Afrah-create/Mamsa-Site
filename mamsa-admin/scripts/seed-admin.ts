@@ -21,15 +21,15 @@ async function seedAdmin() {
       status: string;
     }>
   >`
-    INSERT INTO admin_users (email, name, role, status, password_hash)
+    INSERT INTO admin_users (email, full_name, role, status, password_hash)
     VALUES (${email}, ${name}, 'super_admin', 'active', ${passwordHash})
     ON CONFLICT (email)
     DO UPDATE SET
-      name = EXCLUDED.name,
+      full_name = EXCLUDED.full_name,
       role = 'super_admin',
       status = 'active',
       password_hash = EXCLUDED.password_hash
-    RETURNING id, email, name, role, status
+    RETURNING id, email, full_name AS name, role, status
   `;
 
   console.log('Admin account seeded successfully:', rows[0]);

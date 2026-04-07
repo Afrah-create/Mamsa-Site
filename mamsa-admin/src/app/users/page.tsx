@@ -369,7 +369,7 @@ export default function UsersPage() {
 
         await adminRequest('/api/admin/users', {
           method: 'DELETE',
-          body: JSON.stringify({ clerkUserId: itemToDelete.user_id }),
+          body: JSON.stringify({ userId: itemToDelete.user_id }),
         });
 
         console.log('Successfully deleted user');
@@ -396,7 +396,7 @@ export default function UsersPage() {
           .map((item) =>
             adminRequest('/api/admin/users', {
               method: 'DELETE',
-              body: JSON.stringify({ clerkUserId: item.user_id }),
+              body: JSON.stringify({ userId: item.user_id }),
             })
           )
       );

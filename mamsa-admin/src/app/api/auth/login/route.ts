@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const rows = await sql<AdminUserRow[]>`
-      SELECT id, email, name, role, status, password_hash
+      SELECT id, email, full_name as name, role, status, password_hash
       FROM admin_users
       WHERE LOWER(email) = LOWER(${email.trim()})
         AND status = 'active'
