@@ -3,9 +3,9 @@ import sql from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 
 export async function GET() {
-  await requireAdmin();
-
   try {
+    await requireAdmin();
+
     const rows = await sql<{
       id: number;
       name: string;
@@ -31,9 +31,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  await requireAdmin();
-
   try {
+    await requireAdmin();
+
     const { id, status, updates } = (await request.json()) as {
       id: number;
       status: 'new' | 'in_progress' | 'resolved' | 'archived';
@@ -71,9 +71,9 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  await requireAdmin();
-
   try {
+    await requireAdmin();
+
     const { id } = (await request.json()) as { id: number };
 
     await sql`DELETE FROM contact_messages WHERE id = ${id}`;

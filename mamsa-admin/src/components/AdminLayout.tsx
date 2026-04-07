@@ -88,11 +88,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       });
 
       if (!response.ok) {
-        console.error('Error loading notifications:', response.statusText);
+        const text = await response.text();
+        console.error('Error loading notifications:', response.status, text);
         return;
       }
 
-      const payload = await response.json();
+      const payload = await response.json().catch(() => ({}));
       const data = (payload.data ?? []) as ContactMessageRow[];
 
       const mapped: NotificationItem[] = data.map((message) => ({
