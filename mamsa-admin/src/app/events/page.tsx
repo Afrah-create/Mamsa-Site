@@ -549,12 +549,12 @@ export default function EventsPage() {
                 {filteredEvents.map((event) => (
                   <div key={event.id} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
                     {/* Featured Image Section */}
-                    <div className="relative h-56 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
                       {event.featured_image ? (
                         <img
                           src={event.featured_image}
                           alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             // Fallback for broken images
                             const target = e.target as HTMLImageElement;

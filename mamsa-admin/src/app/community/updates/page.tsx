@@ -67,7 +67,7 @@ export default async function UpdatesPage() {
                   <img
                     src={article.featured_image}
                     alt={article.title}
-                    className="absolute inset-0 h-full w-full object-cover transition duration-300 hover:scale-105"
+                    className="absolute inset-0 h-full w-full object-cover object-center transition duration-300 hover:scale-105"
                     loading="lazy"
                   />
                 </Link>

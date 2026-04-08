@@ -48,11 +48,11 @@ export default async function UpdateDetailPage({ params }: PageProps) {
       </header>
 
       {article.featured_image && (
-        <div className="mt-10 overflow-hidden rounded-3xl border border-gray-100 bg-gray-50">
+        <div className="relative mt-10 aspect-[16/9] w-full overflow-hidden rounded-3xl border border-gray-100 bg-gray-100">
           <img
             src={article.featured_image}
             alt={article.title}
-            className="h-auto w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-center"
             loading="lazy"
           />
         </div>

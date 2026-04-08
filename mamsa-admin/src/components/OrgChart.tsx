@@ -150,7 +150,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             <img
               src={leader.image_url}
               alt={leader.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
               onError={(event) => {
                 event.currentTarget.style.display = 'none';

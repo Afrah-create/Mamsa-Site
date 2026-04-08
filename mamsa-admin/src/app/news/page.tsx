@@ -529,7 +529,7 @@ export default function NewsPage() {
                           <img
                             src={item.featured_image}
                             alt={item.title}
-                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               // Fallback for broken images
                               const target = e.target as HTMLImageElement;

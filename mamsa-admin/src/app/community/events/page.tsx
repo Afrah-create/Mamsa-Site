@@ -67,13 +67,13 @@ export default async function EventsPage() {
               key={event.id}
               className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="relative h-56 w-full overflow-hidden bg-gray-100 sm:h-64">
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
                 {event.featured_image ? (
                   <Image
                     src={event.featured_image}
                     alt={event.title}
                     fill
-                    className="object-cover transition duration-500 hover:scale-105"
+                    className="object-cover object-center transition duration-500 hover:scale-105"
                     sizes="(min-width: 1024px) 600px, 100vw"
                     priority={false}
                   />

@@ -605,7 +605,7 @@ export default function GalleryPage() {
                               <img 
                                 src={image.image_url} 
                                 alt={image.alt_text || image.title}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                                 loading="lazy"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;

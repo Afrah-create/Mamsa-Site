@@ -18,7 +18,7 @@ export default function LeaderCard({ leader }: LeaderCardProps) {
           <img
             src={leader.image_url}
             alt={leader.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-top"
             loading="lazy"
             onError={(event) => {
               event.currentTarget.style.display = 'none';

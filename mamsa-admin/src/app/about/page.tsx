@@ -401,7 +401,7 @@ export default function AboutPage() {
                               alt={alumnus.full_name}
                               fill
                               sizes="80px"
-                              className="object-cover"
+                              className="object-cover object-center"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xl font-semibold text-emerald-600">

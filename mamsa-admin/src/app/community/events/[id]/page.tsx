@@ -44,8 +44,13 @@ export default async function EventDetailPage({ params }: PageProps) {
       </header>
 
       {event.featured_image && (
-        <div className="mt-10 overflow-hidden rounded-3xl border border-gray-100 bg-gray-50">
-          <img src={event.featured_image} alt={event.title} className="h-auto w-full object-cover" loading="lazy" />
+        <div className="relative mt-10 aspect-[16/9] w-full overflow-hidden rounded-3xl border border-gray-100 bg-gray-100">
+          <img
+            src={event.featured_image}
+            alt={event.title}
+            className="absolute inset-0 h-full w-full object-cover object-center"
+            loading="lazy"
+          />
         </div>
       )}
 

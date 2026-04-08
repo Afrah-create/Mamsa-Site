@@ -83,14 +83,14 @@ export default function EventCarousel({ events }: Props) {
           return (
             <Link key={event.id} href={`/community/events/${event.id}`} className="w-full flex-none block">
               <article className="w-full h-full">
-                <div className="relative h-[320px] w-full overflow-hidden sm:h-[360px] lg:h-[420px] cursor-pointer">
+                <div className="relative h-[320px] w-full cursor-pointer overflow-hidden sm:h-[360px] lg:h-[420px]">
                 {event.featured_image ? (
                   <Image
                     src={event.featured_image}
                     alt={event.title}
                     fill
                     sizes="(min-width: 1024px) 60vw, 100vw"
-                    className="object-cover"
+                    className="object-cover object-center"
                     priority={slideIndex === 0}
                   />
                 ) : (

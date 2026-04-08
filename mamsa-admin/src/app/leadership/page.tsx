@@ -503,14 +503,14 @@ export default function LeadershipPage() {
                   {filteredLeadership.map((member) => (
                     <div key={member.id} className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl hover:border-purple-200 transition-all duration-300 transform hover:-translate-y-1">
                       {/* Featured Image Section */}
-                      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-purple-50 to-indigo-100">
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-purple-50 to-indigo-100">
                         {member.image_url ? (
                           <Image
                             src={member.image_url}
                             alt={member.name}
-                            width={400}
-                            height={192}
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                            fill
+                            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                            className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               // Fallback for broken images
                               const target = e.target as HTMLImageElement;
