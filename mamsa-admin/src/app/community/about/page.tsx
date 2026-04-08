@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchPublishedAlumni, type NotableAlumnus } from '@/lib/public-content';
+import NotableAlumniCard from '@/components/NotableAlumniCard';
+import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchPublishedAlumni } from '@/lib/public-content';
 
 export const revalidate = 180;
 
@@ -29,23 +30,6 @@ const splitIntoParagraphs = (value: string | undefined) =>
         .split(/\n{2,}/)
         .map((paragraph, index) => ({ id: index, text: paragraph.trim() }))
     : [];
-
-const buildAlumniSocialLinks = (alumnus: NotableAlumnus) => {
-  const links: Array<{ label: string; href: string }> = [];
-  const { profile_links: profileLinks } = alumnus;
-
-  if (profileLinks?.linkedin) {
-    links.push({ label: 'LinkedIn', href: profileLinks.linkedin });
-  }
-  if (profileLinks?.twitter) {
-    links.push({ label: 'Twitter / X', href: profileLinks.twitter });
-  }
-  if (profileLinks?.website) {
-    links.push({ label: 'Website', href: profileLinks.website });
-  }
-
-  return links;
-};
 
 const FALLBACK_ABOUT_TEXT =
   'Our story is still being written. Stay tuned as we publish more about the history, mission, vision, and values of MAMSA.';
@@ -195,86 +179,30 @@ export default async function CommunityAboutPage() {
           </div>
         </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:py-20">
-          <div className="flex flex-col gap-4 text-center md:text-left">
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Community Champions</p>
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-[2.2rem]">Notable Alumni</h2>
-            <p className="max-w-3xl text-sm text-gray-600 sm:text-base">
-              Our alumni embody the spirit of MAMSA beyond campus. They lead in various fields and sectors—creating ripple effects that inspire current Madi students at Makerere to keep aiming higher.
-            </p>
+      <section className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:py-20" id="notable-alumni">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="text-center md:text-left">
+              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Community Champions</p>
+              <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-[2.2rem]">Notable Alumni</h2>
+              <p className="mt-3 max-w-3xl text-sm text-gray-600 sm:text-base">
+                Our alumni embody the spirit of MAMSA beyond campus. They lead in various fields and sectors—creating ripple effects that inspire current Madi students at Makerere to keep aiming higher.
+              </p>
+            </div>
+            {hasAlumni && (
+              <Link
+                href="/community/alumni"
+                className="inline-flex items-center justify-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 md:shrink-0"
+              >
+                View all alumni →
+              </Link>
+            )}
           </div>
 
           {hasAlumni ? (
             <div className="mt-10 grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
-              {alumni.map((alumnus) => {
-                const socialLinks = buildAlumniSocialLinks(alumnus);
-                return (
-                  <article
-                    key={alumnus.id}
-                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                  >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-emerald-50">
-                      {alumnus.image_url ? (
-                        <Image
-                          src={alumnus.image_url}
-                          alt={alumnus.full_name}
-                          fill
-                          className="object-contain p-4 transition duration-500 group-hover:scale-105"
-                          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 50vw, 100vw"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-emerald-100 text-emerald-600">
-                          <span className="text-sm font-semibold uppercase tracking-wide">MAMSA Alumni</span>
-                        </div>
-                      )}
-                      {alumnus.featured && (
-                        <span className="absolute left-4 top-4 inline-flex items-center rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600 shadow">
-                          Featured
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col gap-4 px-6 py-6">
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-700">{alumnus.full_name}</h3>
-                        <p className="text-sm font-medium text-emerald-600">
-                          {[alumnus.current_position, alumnus.organization].filter(Boolean).join(' • ') || alumnus.specialty || 'Community Leader'}
-                        </p>
-                        {alumnus.graduation_year && (
-                          <p className="text-xs uppercase tracking-wide text-gray-500">Class of {alumnus.graduation_year}</p>
-                        )}
-                      </div>
-                      <p className="flex-1 text-sm leading-relaxed text-gray-600">
-                        {alumnus.biography?.trim() || alumnus.achievements?.trim() || 'Profile coming soon.'}
-                      </p>
-                      {socialLinks.length > 0 && (
-                        <div className="flex flex-wrap gap-3 text-sm">
-                          {socialLinks.map((link) => (
-                            <a
-                              key={link.label}
-                              href={link.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700 transition hover:bg-emerald-100"
-                            >
-                              <span>{link.label}</span>
-                              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                                <path
-                                  d="M3 9L9 3M9 3H4.5M9 3V7.5"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
+              {alumni.slice(0, 6).map((alumnus) => (
+                <NotableAlumniCard key={alumnus.id} alumnus={alumnus} />
+              ))}
             </div>
           ) : (
             <div className="mt-10 rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">

@@ -2,14 +2,20 @@ import Image from 'next/image';
 import Link from 'next/link';
 import PublicFooter from '@/components/PublicFooter';
 import PublicNavbar from '@/components/PublicNavbar';
-import { fetchHomeContent } from '@/lib/public-content';
+import NotableAlumniCard from '@/components/NotableAlumniCard';
+import { fetchHomeContent, fetchPublishedAlumni } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
 import EventCarousel from '@/components/EventCarousel';
 
 export const revalidate = 180; // Increase to 3 minutes - home page content changes moderately
 
 export default async function HomePage() {
-  const { news, events, about, hasError, stats } = await fetchHomeContent();
+  const [{ news, events, about, hasError, stats }, { data: alumniList }] = await Promise.all([
+    fetchHomeContent(),
+    fetchPublishedAlumni(12),
+  ]);
+  const featuredAlumni = alumniList.filter((a) => a.featured);
+  const alumniSpotlight = (featuredAlumni.length > 0 ? featuredAlumni : alumniList).slice(0, 3);
   const hasAboutContent = Object.values(about).some((value) => value?.trim().length);
   const aboutCards = [
     {
@@ -245,6 +251,33 @@ export default async function HomePage() {
             )}
           </div>
         </section>
+
+        {alumniSpotlight.length > 0 && (
+          <section className="border-y border-emerald-100/80 bg-emerald-50/35">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Notable alumni</p>
+                  <h2 className="mt-2 text-3xl font-bold text-gray-900">Leaders from our community</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-gray-600 sm:text-base">
+                    Graduates who continue to inspire Madi students at Makerere—published from the admin directory.
+                  </p>
+                </div>
+                <Link
+                  href="/community/alumni"
+                  className="inline-flex shrink-0 items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                >
+                  View all alumni →
+                </Link>
+              </div>
+              <div className="mt-10 grid gap-8 md:grid-cols-3">
+                {alumniSpotlight.map((alumnus) => (
+                  <NotableAlumniCard key={alumnus.id} alumnus={alumnus} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section id="events" className="bg-gray-50">
           <div className="mx-auto max-w-6xl px-6 py-20">

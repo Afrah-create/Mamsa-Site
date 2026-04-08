@@ -57,6 +57,7 @@ export type Leader = {
 export type NotableAlumnus = {
   id: number;
   full_name: string;
+  slug: string | null;
   graduation_year: number | null;
   biography: string | null;
   achievements: string | null;
@@ -121,6 +122,91 @@ const optimizeCloudinary = (val: string | null, maxWidth: number) => {
   const resolved = resolveImage(val);
   return resolved ? applyCloudinaryTransforms(resolved, maxWidth) : null;
 };
+
+function parseAlumniProfileLinks(raw: unknown): NotableAlumnus['profile_links'] {
+  if (raw == null) return null;
+  let obj: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof obj !== 'object' || obj === null) return null;
+  const o = obj as Record<string, unknown>;
+  const str = (k: string) => (typeof o[k] === 'string' ? (o[k] as string) : null);
+  const linkedin = str('linkedin');
+  const twitter = str('twitter');
+  const website = str('website');
+  if (!linkedin && !twitter && !website) return null;
+  return { linkedin, twitter, website };
+}
+
+function mapNotableAlumniRow(
+  row: {
+    id: number;
+    full_name: string;
+    slug: string | null;
+    graduation_year: number | null;
+    biography: string | null;
+    achievements: string | null;
+    current_position: string | null;
+    organization: string | null;
+    specialty: string | null;
+    image_url: string | null;
+    profile_links: unknown;
+    featured: boolean;
+    order_position: number | null;
+  },
+  imageMaxWidth: number = CLOUD_W.portrait,
+): NotableAlumnus {
+  const resolved = resolveImage(row.image_url);
+  return {
+    id: row.id,
+    full_name: row.full_name,
+    slug: row.slug,
+    graduation_year: row.graduation_year,
+    biography: row.biography,
+    achievements: row.achievements,
+    current_position: row.current_position,
+    organization: row.organization,
+    specialty: row.specialty,
+    image_url: resolved ? applyCloudinaryTransforms(resolved, imageMaxWidth) : null,
+    profile_links: parseAlumniProfileLinks(row.profile_links),
+    featured: row.featured,
+    order_position: row.order_position,
+    status: 'published',
+  };
+}
+
+export async function getPublishedNotableAlumni(limit?: number) {
+  const rows = await sql<
+    Array<{
+      id: number;
+      full_name: string;
+      slug: string | null;
+      graduation_year: number | null;
+      biography: string | null;
+      achievements: string | null;
+      current_position: string | null;
+      organization: string | null;
+      specialty: string | null;
+      image_url: string | null;
+      profile_links: unknown;
+      featured: boolean;
+      order_position: number | null;
+    }>
+  >`
+    SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, order_position
+    FROM notable_alumni
+    WHERE status = 'published'
+    ORDER BY order_position ASC NULLS FIRST, created_at DESC
+    ${limit != null ? sql`LIMIT ${limit}` : sql``}
+  `;
+
+  return rows.map((row) => mapNotableAlumniRow(row));
+}
 
 export async function getAboutSections() {
   const rows = await sql<Array<{ id: number; section: string; content: string | null; created_at: string; updated_at: string | null }>>`
@@ -587,30 +673,47 @@ export async function fetchAboutSnapshot() {
 
 export async function fetchPublishedAlumni(limit?: number) {
   try {
-    const rows = await getLeadershipMembers(limit);
-
-    return {
-      data: rows.map((row) => ({
-        id: row.id,
-        full_name: row.name,
-        graduation_year: row.year ? Number(row.year) || null : null,
-        biography: row.bio,
-        achievements: null,
-        current_position: row.position,
-        organization: row.department,
-        specialty: row.department,
-        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.portrait) : null,
-        profile_links: row.social_links,
-        featured: false,
-        order_position: row.order_position,
-        status: 'published' as const,
-      })),
-      error: null,
-    };
+    const data = await getPublishedNotableAlumni(limit);
+    return { data, error: null };
   } catch (error) {
     return { data: [] as NotableAlumnus[], error: error as Error };
   }
 }
+
+export const fetchPublishedAlumniById = cache(async (id: number) => {
+  try {
+    const rows = await sql<
+      Array<{
+        id: number;
+        full_name: string;
+        slug: string | null;
+        graduation_year: number | null;
+        biography: string | null;
+        achievements: string | null;
+        current_position: string | null;
+        organization: string | null;
+        specialty: string | null;
+        image_url: string | null;
+        profile_links: unknown;
+        featured: boolean;
+        order_position: number | null;
+      }>
+    >`
+      SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, order_position
+      FROM notable_alumni
+      WHERE id = ${id} AND status = 'published'
+      LIMIT 1
+    `;
+
+    const row = rows[0];
+    return {
+      data: row ? mapNotableAlumniRow(row, CLOUD_W.detailHero) : null,
+      error: null,
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+});
 
 async function getHomeStats(): Promise<HomeContentStats> {
   try {

@@ -63,14 +63,21 @@ export default async function UpdatesPage() {
               className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
             >
               {article.featured_image && (
-                <Link href={`/community/updates/${article.id}`} className="relative block aspect-[4/3] overflow-hidden bg-gray-100">
+                <div className="relative w-full shrink-0 overflow-hidden bg-gray-100">
+                  {/* In-flow spacer: flex items ignore absolutely positioned children for sizing, so aspect-ratio alone can collapse to 0 height. */}
+                  <div className="w-full pb-[75%]" aria-hidden />
                   <img
                     src={article.featured_image}
-                    alt={article.title}
+                    alt=""
                     className="absolute inset-0 h-full w-full object-cover object-center transition duration-300 hover:scale-105"
                     loading="lazy"
                   />
-                </Link>
+                  <Link
+                    href={`/community/updates/${article.id}`}
+                    className="absolute inset-0 z-10"
+                    aria-label={`Read article: ${article.title}`}
+                  />
+                </div>
               )}
               <div className="flex flex-1 flex-col space-y-4 px-6 py-6 sm:px-8">
                 <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
