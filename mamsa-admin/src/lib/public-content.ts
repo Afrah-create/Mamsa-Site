@@ -1,5 +1,6 @@
+import { cache } from 'react';
 import sql from '@/lib/db';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { applyCloudinaryTransforms, getPublicUrl } from '@/lib/cloudinary';
 
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
@@ -99,14 +100,27 @@ export type HomeContentStats = {
 export type HomeContent = {
   news: NewsArticle[];
   events: Event[];
-  leadership: Leader[];
-  gallery: GalleryImage[];
   about: AboutSnapshot;
   hasError: boolean;
   stats: HomeContentStats;
 };
 
+/** Display widths for Cloudinary `f_auto` delivery (2× for common DPR caps). */
+const CLOUD_W = {
+  listCard: 800,
+  homeNews: 720,
+  homeEvent: 1280,
+  detailHero: 1200,
+  galleryThumb: 960,
+  portrait: 480,
+} as const;
+
 const resolveImage = (val: string | null) => (!val ? null : val.startsWith('http') ? val : getPublicUrl(val));
+
+const optimizeCloudinary = (val: string | null, maxWidth: number) => {
+  const resolved = resolveImage(val);
+  return resolved ? applyCloudinaryTransforms(resolved, maxWidth) : null;
+};
 
 export async function getAboutSections() {
   const rows = await sql<Array<{ id: number; section: string; content: string | null; created_at: string; updated_at: string | null }>>`
@@ -359,7 +373,9 @@ export async function fetchPublishedNews(limit?: number) {
       date: row.published_at,
       author: row.author,
       image: null,
-      featured_image: row.featured_image,
+      featured_image: row.featured_image
+        ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.listCard)
+        : null,
       status: row.status,
       published_at: row.published_at,
       tags: row.tags,
@@ -373,31 +389,66 @@ export async function fetchPublishedNews(limit?: number) {
 
 export async function fetchPublishedNewsArticle(id: number) {
   try {
-    const rows = await getNewsArticles();
-    const item = rows.find((row) => row.id === id) ?? null;
+    const articleRows = await sql<
+      Array<{
+        id: number;
+        title: string;
+        content: string | null;
+        excerpt: string | null;
+        author: string | null;
+        published_at: string | null;
+        status: 'published' | 'draft' | 'archived' | null;
+        featured_image: string | null;
+        tags: string[] | null;
+      }>
+    >`
+      SELECT id, title, content, excerpt, author, published_at, status, featured_image, tags
+      FROM news_articles
+      WHERE id = ${id} AND status = 'published'
+      LIMIT 1
+    `;
 
-    if (item) {
+    const article = articleRows[0];
+    if (article) {
       return {
         data: {
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          excerpt: item.excerpt,
+          id: article.id,
+          title: article.title,
+          content: article.content,
+          excerpt: article.excerpt,
           category: 'general',
-          date: item.published_at,
-          author: item.author,
+          date: article.published_at,
+          author: article.author,
           image: null,
-          featured_image: item.featured_image,
-          status: item.status,
-          published_at: item.published_at,
-          tags: item.tags,
+          featured_image: optimizeCloudinary(article.featured_image, CLOUD_W.detailHero),
+          status: article.status,
+          published_at: article.published_at,
+          tags: article.tags,
         },
         error: null,
       };
     }
 
-    const newsRows = await getNews();
-    const newsItem = newsRows.find((row) => row.id === id) ?? null;
+    const legacyRows = await sql<
+      Array<{
+        id: number;
+        title: string;
+        content: string | null;
+        excerpt: string | null;
+        category: string | null;
+        date: string | null;
+        image: string | null;
+        author: string | null;
+        tags: string[] | null;
+      }>
+    >`
+      SELECT id, title, content, excerpt, category, date, image, author, tags
+      FROM news
+      WHERE id = ${id}
+      LIMIT 1
+    `;
+
+    const newsItem = legacyRows[0] ?? null;
 
     return {
       data: newsItem
@@ -409,8 +460,8 @@ export async function fetchPublishedNewsArticle(id: number) {
             category: newsItem.category,
             date: newsItem.date,
             author: newsItem.author,
-            image: newsItem.image,
-            featured_image: newsItem.image,
+            image: optimizeCloudinary(newsItem.image, CLOUD_W.detailHero),
+            featured_image: optimizeCloudinary(newsItem.image, CLOUD_W.detailHero),
             status: 'published',
             published_at: newsItem.date,
             tags: newsItem.tags,
@@ -454,7 +505,7 @@ export async function fetchEventById(id: number) {
     return {
       data: {
         ...row,
-        featured_image: resolveImage(row.featured_image),
+        featured_image: optimizeCloudinary(row.featured_image, CLOUD_W.detailHero),
       } as Event,
       error: null,
     };
@@ -466,7 +517,15 @@ export async function fetchEventById(id: number) {
 export async function fetchActiveEvents(limit?: number) {
   try {
     const data = await getEvents(limit);
-    return { data, error: null };
+    return {
+      data: data.map((row) => ({
+        ...row,
+        featured_image: row.featured_image
+          ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.listCard)
+          : null,
+      })),
+      error: null,
+    };
   } catch (error) {
     return { data: [] as Event[], error: error as Error };
   }
@@ -475,7 +534,13 @@ export async function fetchActiveEvents(limit?: number) {
 export async function fetchPublishedGallery(limit?: number) {
   try {
     const data = await getGallery(limit);
-    return { data, error: null };
+    return {
+      data: data.map((row) => ({
+        ...row,
+        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.galleryThumb) : null,
+      })),
+      error: null,
+    };
   } catch (error) {
     return { data: [] as GalleryImage[], error: error as Error };
   }
@@ -484,7 +549,13 @@ export async function fetchPublishedGallery(limit?: number) {
 export async function fetchLeadership(limit?: number) {
   try {
     const data = await getLeadership(limit);
-    return { data, error: null };
+    return {
+      data: data.map((row) => ({
+        ...row,
+        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.portrait) : null,
+      })),
+      error: null,
+    };
   } catch (error) {
     return { data: [] as Leader[], error: error as Error };
   }
@@ -528,7 +599,7 @@ export async function fetchPublishedAlumni(limit?: number) {
         current_position: row.position,
         organization: row.department,
         specialty: row.department,
-        image_url: row.image_url,
+        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.portrait) : null,
         profile_links: row.social_links,
         featured: false,
         order_position: row.order_position,
@@ -541,51 +612,78 @@ export async function fetchPublishedAlumni(limit?: number) {
   }
 }
 
-export async function fetchHomeContent(): Promise<HomeContent> {
-  const [newsResult, eventsResult, leadershipResult, galleryResult, aboutResult] = await Promise.all([
+async function getHomeStats(): Promise<HomeContentStats> {
+  try {
+    const [newsCount, eventsCount, leadersCount] = await Promise.all([
+      sql<Array<{ count: string }>>`SELECT COUNT(*)::text AS count FROM news`,
+      sql<Array<{ count: string }>>`
+        SELECT COUNT(*)::text AS count FROM events WHERE status IN ('upcoming', 'ongoing')
+      `,
+      sql<Array<{ count: string }>>`SELECT COUNT(*)::text AS count FROM leadership WHERE status = 'active'`,
+    ]);
+
+    return {
+      storiesCount: Number(newsCount[0]?.count ?? 0),
+      eventsCount: Number(eventsCount[0]?.count ?? 0),
+      leadersCount: Number(leadersCount[0]?.count ?? 0),
+    };
+  } catch {
+    return { storiesCount: 0, eventsCount: 0, leadersCount: 0 };
+  }
+}
+
+export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
+  const [newsResult, eventsResult, aboutResult, stats] = await Promise.all([
     (async () => {
       try {
         const rows = await getNews();
-        const mapped: NewsArticle[] = rows.slice(0, 3).map((row) => ({
-          id: row.id,
-          title: row.title,
-          content: row.content,
-          excerpt: row.excerpt,
-          category: row.category,
-          date: row.date,
-          author: row.author,
-          image: row.image,
-          featured_image: row.image,
-          published_at: row.date,
-          tags: row.tags,
-        }));
+        const mapped: NewsArticle[] = rows.slice(0, 3).map((row) => {
+          const img = optimizeCloudinary(row.image, CLOUD_W.homeNews);
+          return {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            excerpt: row.excerpt,
+            category: row.category,
+            date: row.date,
+            author: row.author,
+            image: img,
+            featured_image: img,
+            published_at: row.date,
+            tags: row.tags,
+          };
+        });
 
         return { data: mapped, error: null };
       } catch (error) {
         return { data: [] as NewsArticle[], error: error as Error };
       }
     })(),
-    fetchActiveEvents(10),
-    fetchLeadership(6),
-    fetchPublishedGallery(12),
+    (async () => {
+      try {
+        const rows = await getEvents(10);
+        const data: Event[] = rows.map((row) => ({
+          ...row,
+          featured_image: row.featured_image
+            ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.homeEvent)
+            : null,
+        }));
+        return { data, error: null };
+      } catch (error) {
+        return { data: [] as Event[], error: error as Error };
+      }
+    })(),
     fetchAboutSnapshot(),
+    getHomeStats(),
   ]);
 
-  const hasError = Boolean(
-    newsResult.error || eventsResult.error || leadershipResult.error || galleryResult.error || aboutResult.error
-  );
+  const hasError = Boolean(newsResult.error || eventsResult.error || aboutResult.error);
 
   return {
     news: newsResult.data,
     events: eventsResult.data,
-    leadership: leadershipResult.data,
-    gallery: galleryResult.data,
     about: aboutResult.data,
     hasError,
-    stats: {
-      storiesCount: newsResult.data.length,
-      eventsCount: eventsResult.data.length,
-      leadersCount: leadershipResult.data.length,
-    },
+    stats,
   };
-}
+});

@@ -77,7 +77,7 @@ export default function EventCarousel({ events }: Props) {
         className="flex transition-transform duration-700 ease-out"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
       >
-        {slides.map((event) => {
+        {slides.map((event, slideIndex) => {
           const hasDetails = Boolean(event.location || event.time || event.organizer);
 
           return (
@@ -91,7 +91,7 @@ export default function EventCarousel({ events }: Props) {
                     fill
                     sizes="(min-width: 1024px) 60vw, 100vw"
                     className="object-cover"
-                    priority
+                    priority={slideIndex === 0}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 text-white">

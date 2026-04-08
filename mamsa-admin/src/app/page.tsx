@@ -9,7 +9,7 @@ import EventCarousel from '@/components/EventCarousel';
 export const revalidate = 180; // Increase to 3 minutes - home page content changes moderately
 
 export default async function HomePage() {
-  const { news, events, leadership, about, hasError, stats } = await fetchHomeContent();
+  const { news, events, about, hasError, stats } = await fetchHomeContent();
   const hasAboutContent = Object.values(about).some((value) => value?.trim().length);
   const aboutCards = [
     {
