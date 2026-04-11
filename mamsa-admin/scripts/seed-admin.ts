@@ -1,13 +1,23 @@
-import sql from '../src/lib/db';
-import { hashPassword } from '../src/lib/password';
+import path from 'node:path';
+import { config as loadEnv } from 'dotenv';
 
-async function seedAdmin() {
+loadEnv({ path: path.resolve(process.cwd(), '.env.local') });
+loadEnv({ path: path.resolve(process.cwd(), '.env') });
+
+async function main() {
+  const [{ default: sql }, { hashPassword }] = await Promise.all([
+    import('../src/lib/db'),
+    import('../src/lib/password'),
+  ]);
+
   const email = (process.env.SEED_ADMIN_EMAIL ?? 'admin@mamsa.org').trim().toLowerCase();
   const name = (process.env.SEED_ADMIN_NAME ?? 'MAMSA Admin').trim();
   const password = process.env.SEED_ADMIN_PASSWORD;
 
   if (!password) {
-    throw new Error('Missing SEED_ADMIN_PASSWORD. Set it before running this script.');
+    throw new Error(
+      'Missing SEED_ADMIN_PASSWORD. Add it to .env.local or set it in the shell before running npm run seed:admin.',
+    );
   }
 
   const passwordHash = await hashPassword(password);
@@ -38,13 +48,10 @@ async function seedAdmin() {
   `;
 
   console.log('Admin account seeded successfully:', rows[0]);
+  await sql.end();
 }
 
-void seedAdmin()
-  .catch((error) => {
-    console.error('Failed to seed admin account:', error);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await sql.end({ timeout: 5 });
-  });
+void main().catch((error) => {
+  console.error('Failed to seed admin account:', error);
+  process.exit(1);
+});
