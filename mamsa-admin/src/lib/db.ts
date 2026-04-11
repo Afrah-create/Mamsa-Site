@@ -1,6 +1,12 @@
 import mysql from 'mysql2/promise';
 import type { RowDataPacket, ResultSetHeader, ExecuteValues } from 'mysql2';
 
+/**
+ * DATABASE_URL must be a MySQL URI for mysql2 createPool(), e.g.
+ * mysql://USER:PASSWORD@HOST:PORT/DATABASE
+ * (empty password: mysql://root:@localhost:3306/dbname)
+ * Use URL-encoded credentials if they contain special characters.
+ */
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {

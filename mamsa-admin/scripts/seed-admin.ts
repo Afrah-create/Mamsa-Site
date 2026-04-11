@@ -12,6 +12,16 @@ async function seedAdmin() {
 
   const passwordHash = await hashPassword(password);
 
+  await sql`
+    INSERT INTO admin_users (email, full_name, role, status, password_hash)
+    VALUES (${email}, ${name}, 'super_admin', 'active', ${passwordHash})
+    ON DUPLICATE KEY UPDATE
+      full_name = VALUES(full_name),
+      role = 'super_admin',
+      status = 'active',
+      password_hash = VALUES(password_hash)
+  `;
+
   const rows = await sql<
     Array<{
       id: number;
@@ -21,15 +31,10 @@ async function seedAdmin() {
       status: string;
     }>
   >`
-    INSERT INTO admin_users (email, full_name, role, status, password_hash)
-    VALUES (${email}, ${name}, 'super_admin', 'active', ${passwordHash})
-    ON CONFLICT (email)
-    DO UPDATE SET
-      full_name = EXCLUDED.full_name,
-      role = 'super_admin',
-      status = 'active',
-      password_hash = EXCLUDED.password_hash
-    RETURNING id, email, full_name AS name, role, status
+    SELECT id, email, full_name AS name, role, status
+    FROM admin_users
+    WHERE email = ${email}
+    LIMIT 1
   `;
 
   console.log('Admin account seeded successfully:', rows[0]);

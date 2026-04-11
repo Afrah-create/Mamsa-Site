@@ -1,0 +1,17 @@
+# Neon Database
+# keep Neon credentials secure: do not expose them to client-side code
+
+# keep Neon credentials secure: do not expose them to client-side code
+
+DATABASE_URL=postgresql://neondb_owner:npg_4irODQK2ZTHh@ep-delicate-pine-abju3bp1.eu-west-2.aws.neon.tech/neondb?sslmode=requireJWT_SECRET=934701a9ef214ddc9d6fa10edf36cca71db16f4f92424a0c9680558f1a07acef
+
+# Cloudinary
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dundtsg1e
+CLOUDINARY_API_KEY=111127722967733
+CLOUDINARY_API_SECRET=co2w0inhNLdT_0mBqhmO2Beg20E
+
+# Resend (email — already in your project)
+RESEND_API_KEY=re_UkJagRuh_MUyntRAN34jJxJijKwbsxSUz
+
+
+JWT_SECRET=ee2141b68a720383b9b63752845b93ac58321dfa9bb7782eff7b13ae54e936c7702dffb5803e24835fbe0804208f66ccf6bd2a7a854215cfc46184d2960ba00b
