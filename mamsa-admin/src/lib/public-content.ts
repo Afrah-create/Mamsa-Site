@@ -106,6 +106,26 @@ export type HomeContent = {
   stats: HomeContentStats;
 };
 
+export type SkilledStudentPublic = {
+  id: number;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  profile_image: string | null;
+  bio: string | null;
+  category: 'skill' | 'business';
+  title: string;
+  description: string | null;
+  location: string | null;
+  website_url: string | null;
+  social_links: Record<string, unknown> | null;
+  is_featured: boolean;
+  latest_payment_amount: string | null;
+  latest_payment_currency: string | null;
+  latest_payment_date: string | null;
+  latest_payment_expiry: string | null;
+};
+
 /** Display widths for Cloudinary `f_auto` delivery (2× for common DPR caps). */
 const CLOUD_W = {
   listCard: 800,
@@ -122,6 +142,22 @@ const optimizeCloudinary = (val: string | null, maxWidth: number) => {
   const resolved = resolveImage(val);
   return resolved ? applyCloudinaryTransforms(resolved, maxWidth) : null;
 };
+
+function parseSkilledSocialLinks(raw: unknown): Record<string, unknown> | null {
+  if (raw == null) return null;
+  let obj: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+    return obj as Record<string, unknown>;
+  }
+  return null;
+}
 
 function parseAlumniProfileLinks(raw: unknown): NotableAlumnus['profile_links'] {
   if (raw == null) return null;
@@ -734,6 +770,84 @@ async function getHomeStats(): Promise<HomeContentStats> {
     return { storiesCount: 0, eventsCount: 0, leadersCount: 0 };
   }
 }
+
+type ActiveSkilledStudentRow = {
+  id: number;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  profile_image: string | null;
+  bio: string | null;
+  category: 'skill' | 'business';
+  title: string;
+  description: string | null;
+  location: string | null;
+  website_url: string | null;
+  social_links: unknown;
+  is_active: number;
+  is_featured: number;
+  created_at: string;
+  updated_at: string | null;
+  latest_payment_id: number;
+  latest_payment_amount: string | number | null;
+  latest_payment_currency: string | null;
+  latest_payment_date: string | null;
+  latest_payment_expiry: string | null;
+  latest_payment_status: string | null;
+  latest_payment_method: string | null;
+  latest_payment_ref: string | null;
+};
+
+function mapActiveSkilledStudentRow(row: ActiveSkilledStudentRow): SkilledStudentPublic {
+  const rawImg = row.profile_image
+    ? row.profile_image.startsWith('http')
+      ? row.profile_image
+      : getPublicUrl(row.profile_image) || row.profile_image
+    : null;
+  const profileImage = rawImg ? applyCloudinaryTransforms(rawImg, CLOUD_W.portrait) : null;
+
+  return {
+    id: row.id,
+    full_name: row.full_name,
+    email: row.email,
+    phone: row.phone,
+    profile_image: profileImage,
+    bio: row.bio,
+    category: row.category,
+    title: row.title,
+    description: row.description,
+    location: row.location,
+    website_url: row.website_url,
+    social_links: parseSkilledSocialLinks(row.social_links),
+    is_featured: Boolean(row.is_featured),
+    latest_payment_amount: row.latest_payment_amount != null ? String(row.latest_payment_amount) : null,
+    latest_payment_currency: row.latest_payment_currency ?? null,
+    latest_payment_date: row.latest_payment_date ?? null,
+    latest_payment_expiry: row.latest_payment_expiry ?? null,
+  };
+}
+
+/** Published skilled students: `active_skilled_students` view (valid payment + listing on). */
+export const getActiveSkilledStudents = cache(async (category?: string): Promise<SkilledStudentPublic[]> => {
+  const catOk = category === 'skill' || category === 'business' ? category : null;
+  const rows = await sql<ActiveSkilledStudentRow[]>`
+    SELECT *
+    FROM active_skilled_students
+    WHERE 1 = 1
+      ${catOk ? sql`AND category = ${catOk}` : sql``}
+    ORDER BY is_featured DESC, created_at DESC
+  `;
+  return rows.map(mapActiveSkilledStudentRow);
+});
+
+/** Single public profile if the student appears on the active view. */
+export const getSkilledStudentById = cache(async (id: number): Promise<SkilledStudentPublic | null> => {
+  const rows = await sql<ActiveSkilledStudentRow[]>`
+    SELECT * FROM active_skilled_students WHERE id = ${id} LIMIT 1
+  `;
+  const row = rows[0];
+  return row ? mapActiveSkilledStudentRow(row) : null;
+});
 
 export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
   const [newsResult, eventsResult, aboutResult, stats] = await Promise.all([
