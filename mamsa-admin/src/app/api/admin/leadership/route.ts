@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import sql from '@/lib/db';
+import sql, { insertAndGetId } from '@/lib/db';
+import { toMysqlJson } from '@/lib/mysql-json';
 import { isBase64Image } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -37,10 +38,17 @@ export async function POST(request: Request) {
         ).public_id
       : imageValue;
 
-    const rows = await sql`
+    const socialLinksJson = toMysqlJson(body.social_links ?? null);
+    const insertId = await insertAndGetId`
       INSERT INTO leadership (name, position, bio, image_url, email, phone, department, year, social_links, status, order_position, created_by, updated_by)
-      VALUES (${body.name}, ${body.position ?? null}, ${body.bio ?? null}, ${image}, ${body.email ?? null}, ${body.phone ?? null}, ${body.department ?? null}, ${body.year ?? null}, ${body.social_links ?? null}, ${body.status ?? 'active'}, ${body.order_position ?? 0}, ${body.created_by ?? null}, ${body.updated_by ?? null})
-      RETURNING *
+      VALUES (${body.name}, ${body.position ?? null}, ${body.bio ?? null}, ${image}, ${body.email ?? null}, ${body.phone ?? null}, ${body.department ?? null}, ${body.year ?? null}, ${socialLinksJson}, ${body.status ?? 'active'}, ${body.order_position ?? 0}, ${body.created_by ?? null}, ${body.updated_by ?? null})
+    `;
+
+    const rows = await sql<Record<string, unknown>[]>`
+      SELECT *
+      FROM leadership
+      WHERE id = ${insertId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] }, { status: 201 });

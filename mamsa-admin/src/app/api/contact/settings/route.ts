@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import sql from '@/lib/db';
+import sql, { insertAndGetId } from '@/lib/db';
 
 type ContactRow = {
   id: number;
@@ -61,7 +61,7 @@ export async function GET() {
     const rows = await sql<ContactRow[]>`
       SELECT id, phone, email, address, office_hours, social_media, updated_at
       FROM contact
-      ORDER BY updated_at DESC NULLS LAST, id DESC
+      ORDER BY updated_at IS NULL ASC, updated_at DESC, id DESC
       LIMIT 1
     `;
 
@@ -81,7 +81,7 @@ export async function PATCH(request: Request) {
     const existingRows = await sql<ContactRow[]>`
       SELECT id, phone, email, address, office_hours, social_media, updated_at
       FROM contact
-      ORDER BY updated_at DESC NULLS LAST, id DESC
+      ORDER BY updated_at IS NULL ASC, updated_at DESC, id DESC
       LIMIT 1
     `;
 
@@ -98,24 +98,36 @@ export async function PATCH(request: Request) {
     const mergedSocialJson = JSON.stringify(mergedSocial);
 
     if (existing) {
-      const updatedRows = await sql<ContactRow[]>`
+      await sql`
         UPDATE contact
         SET address = ${body.address ?? existing.address ?? null},
             email = ${body.email ?? existing.email ?? null},
             phone = ${body.phone ?? existing.phone ?? null},
-            social_media = ${mergedSocialJson}::jsonb,
+            social_media = ${mergedSocialJson},
             updated_at = NOW()
         WHERE id = ${existing.id}
-        RETURNING id, phone, email, address, office_hours, social_media, updated_at
+      `;
+
+      const updatedRows = await sql<ContactRow[]>`
+        SELECT id, phone, email, address, office_hours, social_media, updated_at
+        FROM contact
+        WHERE id = ${existing.id}
+        LIMIT 1
       `;
 
       return NextResponse.json({ data: mapRowToResponse(updatedRows[0] ?? null) });
     }
 
-    const insertedRows = await sql<ContactRow[]>`
+    const insertId = await insertAndGetId`
       INSERT INTO contact (address, email, phone, office_hours, social_media)
-      VALUES (${body.address ?? null}, ${body.email ?? null}, ${body.phone ?? null}, ${null}, ${mergedSocialJson}::jsonb)
-      RETURNING id, phone, email, address, office_hours, social_media, updated_at
+      VALUES (${body.address ?? null}, ${body.email ?? null}, ${body.phone ?? null}, ${null}, ${mergedSocialJson})
+    `;
+
+    const insertedRows = await sql<ContactRow[]>`
+      SELECT id, phone, email, address, office_hours, social_media, updated_at
+      FROM contact
+      WHERE id = ${insertId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: mapRowToResponse(insertedRows[0] ?? null) });

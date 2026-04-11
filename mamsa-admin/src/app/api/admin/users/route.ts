@@ -35,7 +35,7 @@ export async function GET() {
 
   try {
     const users = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
+      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
       FROM admin_users
       ORDER BY id DESC
     `;
@@ -78,16 +78,21 @@ export async function POST(request: Request) {
     const normalizedEmail = user.email.trim().toLowerCase();
     const passwordHash = await hashPassword(finalPassword);
 
-    const rows = await sql<AdminUserRow[]>`
+    await sql`
       INSERT INTO admin_users (email, full_name, role, status, password_hash)
       VALUES (${normalizedEmail}, ${displayName}, ${user.role}, ${user.status ?? 'active'}, ${passwordHash})
-      ON CONFLICT (email)
-      DO UPDATE SET
-        full_name = EXCLUDED.full_name,
-        role = EXCLUDED.role,
-        status = EXCLUDED.status,
-        password_hash = EXCLUDED.password_hash
-      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
+      ON DUPLICATE KEY UPDATE
+        full_name = VALUES(full_name),
+        role = VALUES(role),
+        status = VALUES(status),
+        password_hash = VALUES(password_hash)
+    `;
+
+    const rows = await sql<AdminUserRow[]>`
+      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
+      FROM admin_users
+      WHERE email = ${normalizedEmail}
+      LIMIT 1
     `;
 
     const adminUser = rows[0];
@@ -115,14 +120,20 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'id is required.' }, { status: 400 });
     }
 
-    const rows = await sql<AdminUserRow[]>`
+    await sql`
       UPDATE admin_users
       SET full_name = ${user.name ?? user.full_name ?? null},
           email = ${user.email ?? ''},
           role = ${user.role ?? 'admin'},
           status = ${user.status ?? 'active'}
       WHERE id = ${id}
-      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
+    `;
+
+    const rows = await sql<AdminUserRow[]>`
+      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
+      FROM admin_users
+      WHERE id = ${id}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
@@ -146,11 +157,17 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'userId is required.' }, { status: 400 });
     }
 
-    const rows = await sql<AdminUserRow[]>`
+    await sql`
       UPDATE admin_users
       SET status = 'inactive'
       WHERE id = ${targetId}
-      RETURNING id, email, full_name AS name, role, status, CAST(id AS TEXT) AS user_id
+    `;
+
+    const rows = await sql<AdminUserRow[]>`
+      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
+      FROM admin_users
+      WHERE id = ${targetId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] ?? null, message: 'User deactivated successfully.' }, { status: 200 });

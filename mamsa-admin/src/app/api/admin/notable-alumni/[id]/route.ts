@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { toMysqlJson } from '@/lib/mysql-json';
 import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -33,7 +34,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       imageUrl = uploaded.public_id;
     }
 
-    const rows = await sql`
+    const profileLinksJson = toMysqlJson(body.profile_links ?? null);
+    await sql`
       UPDATE notable_alumni
       SET full_name = ${body.full_name},
           slug = ${body.slug ?? null},
@@ -44,13 +46,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           organization = ${body.organization ?? null},
           specialty = ${body.specialty ?? null},
             image_url = ${imageUrl},
-          profile_links = ${body.profile_links ?? null},
+          profile_links = ${profileLinksJson},
           featured = ${body.featured ?? false},
           status = ${body.status},
           order_position = ${body.order_position ?? 0},
           updated_at = ${new Date().toISOString()}
           WHERE id = ${numericId}
-      RETURNING id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at
+    `;
+
+    const rows = await sql`
+      SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at
+      FROM notable_alumni
+      WHERE id = ${numericId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] ?? null });

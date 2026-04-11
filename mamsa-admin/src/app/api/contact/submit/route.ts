@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import sql from '@/lib/db';
+import sql, { insertAndGetId } from '@/lib/db';
 
 const ADMIN_NOTIFICATION_EMAIL = process.env.CONTACT_NOTIFICATION_EMAIL;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -42,6 +42,11 @@ export async function POST(request: Request) {
       message,
     });
 
+    const insertId = await insertAndGetId`
+      INSERT INTO contact_messages (name, email, message)
+      VALUES (${name}, ${email}, ${storedMessage})
+    `;
+
     const rows = await sql<{
       id: number;
       name: string;
@@ -49,9 +54,10 @@ export async function POST(request: Request) {
       message: string;
       created_at: string;
     }[]>`
-      INSERT INTO contact_messages (name, email, message)
-      VALUES (${name}, ${email}, ${storedMessage})
-      RETURNING id, name, email, message, created_at
+      SELECT id, name, email, message, created_at
+      FROM contact_messages
+      WHERE id = ${insertId}
+      LIMIT 1
     `;
 
     const data = rows[0] ?? null;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { toMysqlJsonArray } from '@/lib/mysql-json';
 import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -50,7 +51,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       ? String(body.category).trim()
       : 'general';
 
-    const rows = await sql`
+    const tagsJson = toMysqlJsonArray(body.tags);
+    await sql`
       UPDATE news
       SET title = ${body.title ?? ''},
           excerpt = ${body.excerpt ?? null},
@@ -60,10 +62,16 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           image = ${image},
           featured = ${body.featured ?? false},
           author = ${body.author ?? 'Admin'},
-          tags = ${body.tags ?? []},
+          tags = ${tagsJson},
           updated_at = NOW()
       WHERE id = ${id}
-      RETURNING *
+    `;
+
+    const rows = await sql<Record<string, unknown>[]>`
+      SELECT *
+      FROM news
+      WHERE id = ${id}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: { ...rows[0], featured_image: rows[0]?.image, status: 'published' } });
@@ -85,14 +93,17 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     }
 
     const rows = await sql<Array<{ id: number; image: string | null }>>`
-      DELETE FROM news
+      SELECT id, image
+      FROM news
       WHERE id = ${id}
-      RETURNING id, image
+      LIMIT 1
     `;
 
     if (!rows[0]) {
       return NextResponse.json({ error: 'News article not found' }, { status: 404 });
     }
+
+    await sql`DELETE FROM news WHERE id = ${id}`;
 
     if (isCloudinaryPublicId(rows[0].image)) {
       await cloudinary.uploader.destroy(rows[0].image as string);

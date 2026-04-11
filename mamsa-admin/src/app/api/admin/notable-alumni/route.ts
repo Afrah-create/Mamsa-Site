@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import sql from '@/lib/db';
+import sql, { insertAndGetId } from '@/lib/db';
+import { toMysqlJson } from '@/lib/mysql-json';
 import { isBase64Image } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -11,7 +12,7 @@ export async function GET() {
     const rows = await sql`
       SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at
       FROM notable_alumni
-      ORDER BY order_position ASC NULLS FIRST, created_at DESC
+      ORDER BY order_position IS NULL DESC, order_position ASC, created_at DESC
     `;
 
     return NextResponse.json({ data: rows });
@@ -36,10 +37,17 @@ export async function POST(request: Request) {
         ).public_id
       : (body.image_url ?? null);
 
-    const rows = await sql`
+    const profileLinksJson = toMysqlJson(body.profile_links ?? null);
+    const insertId = await insertAndGetId`
       INSERT INTO notable_alumni (full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position)
-      VALUES (${body.full_name}, ${body.slug ?? null}, ${body.graduation_year ?? null}, ${body.biography}, ${body.achievements ?? null}, ${body.current_position ?? null}, ${body.organization ?? null}, ${body.specialty ?? null}, ${imageUrl}, ${body.profile_links ?? null}, ${body.featured ?? false}, ${body.status}, ${body.order_position ?? 0})
-      RETURNING id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at
+      VALUES (${body.full_name}, ${body.slug ?? null}, ${body.graduation_year ?? null}, ${body.biography}, ${body.achievements ?? null}, ${body.current_position ?? null}, ${body.organization ?? null}, ${body.specialty ?? null}, ${imageUrl}, ${profileLinksJson}, ${body.featured ?? false}, ${body.status}, ${body.order_position ?? 0})
+    `;
+
+    const rows = await sql`
+      SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, status, order_position, created_at
+      FROM notable_alumni
+      WHERE id = ${insertId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] }, { status: 201 });

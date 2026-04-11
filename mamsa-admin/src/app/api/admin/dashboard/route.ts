@@ -9,11 +9,11 @@ export async function GET() {
 
   try {
     const [newsRows, eventRows, leadershipRows, galleryRows, adminRows] = await Promise.all([
-      sql<StatRow[]>`SELECT COUNT(*)::int AS count FROM news_articles`,
-      sql<StatRow[]>`SELECT COUNT(*)::int AS count FROM events`,
-      sql<StatRow[]>`SELECT COUNT(*)::int AS count FROM leadership`,
-      sql<StatRow[]>`SELECT COUNT(*)::int AS count FROM gallery`,
-      sql<StatRow[]>`SELECT COUNT(*)::int AS count FROM admin_users WHERE status = 'active'`,
+      sql<StatRow[]>`SELECT COUNT(*) AS count FROM news_articles`,
+      sql<StatRow[]>`SELECT COUNT(*) AS count FROM events`,
+      sql<StatRow[]>`SELECT COUNT(*) AS count FROM leadership`,
+      sql<StatRow[]>`SELECT COUNT(*) AS count FROM gallery`,
+      sql<StatRow[]>`SELECT COUNT(*) AS count FROM admin_users WHERE status = 'active'`,
     ]);
 
     const [news, events, leadership, gallery, totalUsers] = [

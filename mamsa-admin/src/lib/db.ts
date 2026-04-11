@@ -36,6 +36,16 @@ function flatten(
   return { query, params };
 }
 
+/** Run INSERT; returns auto-increment id from the driver (safe with connection pool). */
+export async function insertAndGetId(
+  strings: TemplateStringsArray,
+  ...values: SqlTaggedValue[]
+): Promise<number> {
+  const { query, params } = flatten(strings, values);
+  const [result] = await pool.execute(query, params as ExecuteValues[]);
+  return (result as ResultSetHeader).insertId;
+}
+
 class SqlTagged<T = RowDataPacket[] | ResultSetHeader> implements PromiseLike<T> {
   constructor(
     readonly strings: TemplateStringsArray,

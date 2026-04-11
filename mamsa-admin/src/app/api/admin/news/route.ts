@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
-import sql from '@/lib/db';
+import sql, { insertAndGetId } from '@/lib/db';
+import { toMysqlJsonArray } from '@/lib/mysql-json';
 import { isBase64Image } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -51,10 +52,17 @@ export async function POST(request: Request) {
         ).public_id
       : imageValue;
 
-    const rows = await sql`
+    const tagsJson = toMysqlJsonArray(body.tags);
+    const insertId = await insertAndGetId`
       INSERT INTO news (title, excerpt, content, category, date, image, featured, author, tags, updated_at)
-      VALUES (${title}, ${body.excerpt ?? null}, ${content}, ${category}, ${body.date ?? new Date().toISOString()}, ${image}, ${body.featured ?? false}, ${body.author ?? 'Admin'}, ${body.tags ?? []}, NOW())
-      RETURNING *
+      VALUES (${title}, ${body.excerpt ?? null}, ${content}, ${category}, ${body.date ?? new Date().toISOString()}, ${image}, ${body.featured ?? false}, ${body.author ?? 'Admin'}, ${tagsJson}, NOW())
+    `;
+
+    const rows = await sql<Record<string, unknown>[]>`
+      SELECT *
+      FROM news
+      WHERE id = ${insertId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: { ...rows[0], featured_image: rows[0]?.image, status: 'published' } }, { status: 201 });

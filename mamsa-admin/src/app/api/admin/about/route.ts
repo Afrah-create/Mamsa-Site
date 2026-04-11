@@ -30,18 +30,26 @@ export async function PATCH(request: Request) {
   try {
     const body = (await request.json()) as Array<{ section: string; content: string }>;
     const rows = await Promise.all(
-      body.map((item) =>
-        sql`
+      body.map(async (item) => {
+        const updatedAt = new Date().toISOString();
+        await sql`
           INSERT INTO about (section, content, updated_at)
-          VALUES (${item.section}, ${item.content}, ${new Date().toISOString()})
-          ON CONFLICT (section)
-          DO UPDATE SET content = EXCLUDED.content, updated_at = EXCLUDED.updated_at
-          RETURNING id, section, content, updated_at
-        `
-      )
+          VALUES (${item.section}, ${item.content}, ${updatedAt})
+          ON DUPLICATE KEY UPDATE
+            content = VALUES(content),
+            updated_at = VALUES(updated_at)
+        `;
+        const out = await sql<{ id: number; section: string; content: string; updated_at: string | null }[]>`
+          SELECT id, section, content, updated_at
+          FROM about
+          WHERE section = ${item.section}
+          LIMIT 1
+        `;
+        return out[0];
+      }),
     );
 
-    return NextResponse.json({ data: rows.flat() });
+    return NextResponse.json({ data: rows.filter(Boolean) });
   } catch (error) {
     console.error('[api/admin/about][PATCH] Unexpected error:', error);
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Unexpected error' }, { status: 500 });

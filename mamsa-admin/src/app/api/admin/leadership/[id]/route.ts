@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { toMysqlJson } from '@/lib/mysql-json';
 import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -34,7 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       image = uploaded.public_id;
     }
 
-    const rows = await sql`
+    const socialLinksJson = toMysqlJson(body.social_links ?? null);
+    await sql`
       UPDATE leadership
       SET name = ${body.name},
           position = ${body.position ?? null},
@@ -44,13 +46,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           phone = ${body.phone ?? null},
           department = ${body.department ?? null},
           year = ${body.year ?? null},
-          social_links = ${body.social_links ?? null},
+          social_links = ${socialLinksJson},
           status = ${body.status ?? 'active'},
           order_position = ${body.order_position ?? 0},
           updated_by = ${body.updated_by ?? null},
           updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
-      RETURNING *
+    `;
+
+    const rows = await sql<Record<string, unknown>[]>`
+      SELECT *
+      FROM leadership
+      WHERE id = ${numericId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] ?? null });

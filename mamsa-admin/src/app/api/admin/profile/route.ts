@@ -82,7 +82,7 @@ export async function PATCH(request: Request) {
       avatarUrl = uploaded.public_id;
     }
 
-    const rows = await sql<ProfileRow[]>`
+    await sql`
       UPDATE admin_users
       SET email = ${body.email ?? user.email},
           full_name = ${body.full_name ?? user.name ?? ''},
@@ -92,7 +92,14 @@ export async function PATCH(request: Request) {
           updated_at = ${new Date().toISOString()}
       WHERE id = ${user.id}
          OR LOWER(email) = LOWER(${user.email})
-      RETURNING id, user_id, email, full_name, avatar_url, phone, bio, role, created_at, updated_at
+    `;
+
+    const rows = await sql<ProfileRow[]>`
+      SELECT id, user_id, email, full_name, avatar_url, phone, bio, role, created_at, updated_at
+      FROM admin_users
+      WHERE id = ${user.id}
+         OR LOWER(email) = LOWER(${user.email})
+      LIMIT 1
     `;
 
     if (!rows[0]) {

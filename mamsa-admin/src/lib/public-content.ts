@@ -201,7 +201,7 @@ export async function getPublishedNotableAlumni(limit?: number) {
     SELECT id, full_name, slug, graduation_year, biography, achievements, current_position, organization, specialty, image_url, profile_links, featured, order_position
     FROM notable_alumni
     WHERE status = 'published'
-    ORDER BY order_position ASC NULLS FIRST, created_at DESC
+    ORDER BY order_position IS NULL DESC, order_position ASC, created_at DESC
     ${limit != null ? sql`LIMIT ${limit}` : sql``}
   `;
 
@@ -718,11 +718,11 @@ export const fetchPublishedAlumniById = cache(async (id: number) => {
 async function getHomeStats(): Promise<HomeContentStats> {
   try {
     const [newsCount, eventsCount, leadersCount] = await Promise.all([
-      sql<Array<{ count: string }>>`SELECT COUNT(*)::text AS count FROM news`,
-      sql<Array<{ count: string }>>`
-        SELECT COUNT(*)::text AS count FROM events WHERE status IN ('upcoming', 'ongoing')
+      sql<Array<{ count: number | string | bigint }>>`SELECT COUNT(*) AS count FROM news`,
+      sql<Array<{ count: number | string | bigint }>>`
+        SELECT COUNT(*) AS count FROM events WHERE status IN ('upcoming', 'ongoing')
       `,
-      sql<Array<{ count: string }>>`SELECT COUNT(*)::text AS count FROM leadership WHERE status = 'active'`,
+      sql<Array<{ count: number | string | bigint }>>`SELECT COUNT(*) AS count FROM leadership WHERE status = 'active'`,
     ]);
 
     return {

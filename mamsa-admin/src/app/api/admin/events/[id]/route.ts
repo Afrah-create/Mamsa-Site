@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { toMysqlJsonArray } from '@/lib/mysql-json';
 import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
 import { cloudinary } from '@/lib/cloudinary-server';
 
@@ -34,7 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       featuredImage = uploaded.public_id;
     }
 
-    const rows = await sql`
+    const tagsJson = toMysqlJsonArray(body.tags);
+    await sql`
       UPDATE events
       SET title = ${body.title},
           description = ${body.description ?? null},
@@ -49,11 +51,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           organizer = ${body.organizer ?? null},
             contact_email = ${body.contact_email ?? null},
             contact_phone = ${body.contact_phone ?? null},
-            tags = ${body.tags ?? []},
+            tags = ${tagsJson},
             updated_by = ${body.updated_by ?? null},
           updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
-      RETURNING *
+    `;
+
+    const rows = await sql<Record<string, unknown>[]>`
+      SELECT *
+      FROM events
+      WHERE id = ${numericId}
+      LIMIT 1
     `;
 
     return NextResponse.json({ data: rows[0] ?? null });
