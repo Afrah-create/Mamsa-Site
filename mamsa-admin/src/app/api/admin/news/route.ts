@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { isBase64Image } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { isBase64Image, saveImage } from '@/lib/upload';
 
 const allowedCategories = new Set(['general', 'events', 'announcements']);
 
@@ -42,15 +41,7 @@ export async function POST(request: Request) {
       : 'general';
 
     const imageValue = body.image ?? body.featured_image ?? null;
-    const image = isBase64Image(imageValue)
-      ? (
-          await cloudinary.uploader.upload(imageValue, {
-            folder: 'mamsa/news',
-            resource_type: 'image',
-            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-          })
-        ).public_id
-      : imageValue;
+    const image = isBase64Image(imageValue) ? await saveImage(imageValue, 'news') : imageValue;
 
     const tagsJson = toMysqlJsonArray(body.tags);
     const insertId = await insertAndGetId`

@@ -1,8 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { toMysqlJson } from '@/lib/mysql-json';
-import { isBase64Image } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { isBase64Image, saveImage } from '@/lib/upload';
 import { apiEnvelope } from '@/lib/api-envelope';
 
 const latestPaymentJoin = sql`
@@ -132,18 +131,13 @@ export async function POST(request: Request) {
     let profileImage: string | null = body.profile_image ?? body.profileImage ?? null;
     if (isBase64Image(profileImage)) {
       try {
-        const uploaded = await cloudinary.uploader.upload(profileImage as string, {
-          folder: 'mamsa/students',
-          resource_type: 'image',
-          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-        });
-        profileImage = uploaded.public_id;
+        profileImage = await saveImage(profileImage as string, 'students');
       } catch (e) {
-        console.error('[api/admin/skilled-students][POST] Cloudinary upload failed', e);
+        console.error('[api/admin/skilled-students][POST] Image upload failed', e);
         return apiEnvelope(false, {
           status: 500,
           error: e instanceof Error ? e.message : 'Image upload failed',
-          message: 'Cloudinary error',
+          message: 'Image upload error',
         });
       }
     }

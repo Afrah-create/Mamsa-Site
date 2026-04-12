@@ -1,4 +1,4 @@
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 
 export type SkilledStudentRecord = {
   id: number;
@@ -21,7 +21,7 @@ export function resolveStudentImagePreview(profileImage: string | null | undefin
   if (!profileImage) return '';
   const t = String(profileImage).trim();
   if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('data:')) return t;
-  return getPublicUrl(t.replace(/^\/+/, '')) || t;
+  return publicAssetUrl(t);
 }
 
 export function socialLinksToText(raw: unknown): string {

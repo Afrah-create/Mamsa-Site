@@ -144,7 +144,7 @@ export default function SkilledStudentsAdminList() {
         title="Delete student"
         message={
           deleteTarget
-            ? `Permanently delete ${deleteTarget.full_name}? This removes all payment records and the Cloudinary image.`
+            ? `Permanently delete ${deleteTarget.full_name}? This removes all payment records and the profile image file.`
             : ''
         }
         confirmText="Delete"

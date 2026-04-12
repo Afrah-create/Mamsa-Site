@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJson } from '@/lib/mysql-json';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -23,16 +22,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const imageValue = body.image ?? body.image_url ?? null;
     let image = imageValue ?? existing[0]?.image_url ?? null;
     if (isBase64Image(imageValue)) {
-      if (isCloudinaryPublicId(existing[0]?.image_url)) {
-        await cloudinary.uploader.destroy(existing[0].image_url as string);
+      if (isLocalUploadPath(existing[0]?.image_url)) {
+        await deleteImage(existing[0].image_url);
       }
 
-      const uploaded = await cloudinary.uploader.upload(imageValue, {
-        folder: 'mamsa/leadership',
-        resource_type: 'image',
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-      });
-      image = uploaded.public_id;
+      image = await saveImage(imageValue, 'leadership');
     }
 
     const socialLinksJson = toMysqlJson(body.social_links ?? null);
@@ -83,9 +77,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
     await sql`DELETE FROM leadership WHERE id = ${numericId}`;
 
-    if (isCloudinaryPublicId(existing[0]?.image_url)) {
-      await cloudinary.uploader.destroy(existing[0].image_url as string);
-    }
+    await deleteImage(existing[0]?.image_url);
 
     return NextResponse.json({ data: true });
   } catch (error) {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
 import { adminRequest } from '@/lib/admin-api';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 import { optimizeImageForUpload } from '@/lib/image-client';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
@@ -39,7 +39,7 @@ export default function ProfilePage() {
   const resolveImageUrl = (value?: string | null) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return getPublicUrl(value) || '';
+    return publicAssetUrl(value);
   };
 
   useEffect(() => {

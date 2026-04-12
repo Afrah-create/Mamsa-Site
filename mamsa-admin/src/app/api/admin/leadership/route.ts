@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { toMysqlJson } from '@/lib/mysql-json';
-import { isBase64Image } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { isBase64Image, saveImage } from '@/lib/upload';
 
 export async function GET() {
   await requireAdmin();
@@ -28,15 +27,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const imageValue = body.image ?? body.image_url ?? null;
-    const image = isBase64Image(imageValue)
-      ? (
-          await cloudinary.uploader.upload(imageValue, {
-            folder: 'mamsa/leadership',
-            resource_type: 'image',
-            transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-          })
-        ).public_id
-      : imageValue;
+    const image = isBase64Image(imageValue) ? await saveImage(imageValue, 'leadership') : imageValue;
 
     const socialLinksJson = toMysqlJson(body.social_links ?? null);
     const insertId = await insertAndGetId`

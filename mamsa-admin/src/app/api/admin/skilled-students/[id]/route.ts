@@ -1,8 +1,7 @@
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJson } from '@/lib/mysql-json';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
 import { apiEnvelope } from '@/lib/api-envelope';
 
 type StudentRow = {
@@ -82,21 +81,16 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     const imgVal = body.profile_image ?? body.profileImage;
     if (isBase64Image(imgVal)) {
       try {
-        if (isCloudinaryPublicId(existing.profile_image)) {
-          await cloudinary.uploader.destroy(existing.profile_image as string);
+        if (isLocalUploadPath(existing.profile_image)) {
+          await deleteImage(existing.profile_image);
         }
-        const uploaded = await cloudinary.uploader.upload(imgVal as string, {
-          folder: 'mamsa/students',
-          resource_type: 'image',
-          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-        });
-        profileImage = uploaded.public_id;
+        profileImage = await saveImage(imgVal as string, 'students');
       } catch (e) {
-        console.error('[api/admin/skilled-students/[id]][PUT] Cloudinary', e);
+        console.error('[api/admin/skilled-students/[id]][PUT] Image upload failed', e);
         return apiEnvelope(false, {
           status: 500,
           error: e instanceof Error ? e.message : 'Image upload failed',
-          message: 'Cloudinary error',
+          message: 'Image upload error',
         });
       }
     } else if (imgVal !== undefined && imgVal !== null && !isBase64Image(imgVal)) {
@@ -190,12 +184,10 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       return apiEnvelope(false, { status: 404, error: 'Student not found', message: 'Not found' });
     }
 
-    if (isCloudinaryPublicId(existing[0].profile_image)) {
-      try {
-        await cloudinary.uploader.destroy(existing[0].profile_image as string);
-      } catch (e) {
-        console.warn('[api/admin/skilled-students/[id]][DELETE] Cloudinary destroy failed', e);
-      }
+    try {
+      await deleteImage(existing[0].profile_image);
+    } catch (e) {
+      console.warn('[api/admin/skilled-students/[id]][DELETE] Local file delete failed', e);
     }
 
     await sql`DELETE FROM skilled_students WHERE id = ${numericId}`;

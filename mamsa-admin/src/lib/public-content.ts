@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import sql from '@/lib/db';
-import { applyCloudinaryTransforms, getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
@@ -126,22 +126,11 @@ export type SkilledStudentPublic = {
   latest_payment_expiry: string | null;
 };
 
-/** Display widths for Cloudinary `f_auto` delivery (2× for common DPR caps). */
-const CLOUD_W = {
-  listCard: 800,
-  homeNews: 720,
-  homeEvent: 1280,
-  detailHero: 1200,
-  galleryThumb: 960,
-  portrait: 480,
-} as const;
-
-const resolveImage = (val: string | null) => (!val ? null : val.startsWith('http') ? val : getPublicUrl(val));
-
-const optimizeCloudinary = (val: string | null, maxWidth: number) => {
-  const resolved = resolveImage(val);
-  return resolved ? applyCloudinaryTransforms(resolved, maxWidth) : null;
-};
+function publicImagePath(val: string | null): string | null {
+  if (val == null || val === '') return null;
+  const u = publicAssetUrl(val);
+  return u || null;
+}
 
 function parseSkilledSocialLinks(raw: unknown): Record<string, unknown> | null {
   if (raw == null) return null;
@@ -179,25 +168,21 @@ function parseAlumniProfileLinks(raw: unknown): NotableAlumnus['profile_links'] 
   return { linkedin, twitter, website };
 }
 
-function mapNotableAlumniRow(
-  row: {
-    id: number;
-    full_name: string;
-    slug: string | null;
-    graduation_year: number | null;
-    biography: string | null;
-    achievements: string | null;
-    current_position: string | null;
-    organization: string | null;
-    specialty: string | null;
-    image_url: string | null;
-    profile_links: unknown;
-    featured: boolean;
-    order_position: number | null;
-  },
-  imageMaxWidth: number = CLOUD_W.portrait,
-): NotableAlumnus {
-  const resolved = resolveImage(row.image_url);
+function mapNotableAlumniRow(row: {
+  id: number;
+  full_name: string;
+  slug: string | null;
+  graduation_year: number | null;
+  biography: string | null;
+  achievements: string | null;
+  current_position: string | null;
+  organization: string | null;
+  specialty: string | null;
+  image_url: string | null;
+  profile_links: unknown;
+  featured: boolean;
+  order_position: number | null;
+}): NotableAlumnus {
   return {
     id: row.id,
     full_name: row.full_name,
@@ -208,7 +193,7 @@ function mapNotableAlumniRow(
     current_position: row.current_position,
     organization: row.organization,
     specialty: row.specialty,
-    image_url: resolved ? applyCloudinaryTransforms(resolved, imageMaxWidth) : null,
+    image_url: publicImagePath(row.image_url),
     profile_links: parseAlumniProfileLinks(row.profile_links),
     featured: row.featured,
     order_position: row.order_position,
@@ -282,7 +267,7 @@ export async function getNews() {
 
   return rows.map((row) => ({
     ...row,
-    image: resolveImage(row.image),
+    image: publicImagePath(row.image),
   }));
 }
 
@@ -310,7 +295,7 @@ export async function getNewsArticles() {
 
   return rows.map((row) => ({
     ...row,
-    featured_image: resolveImage(row.featured_image),
+    featured_image: publicImagePath(row.featured_image),
   }));
 }
 
@@ -338,7 +323,7 @@ export async function getEvents(limit?: number) {
 
   return rows.map((row) => ({
     ...row,
-    featured_image: resolveImage(row.featured_image),
+    featured_image: publicImagePath(row.featured_image),
   }));
 }
 
@@ -364,7 +349,7 @@ export async function getGallery(limit?: number) {
 
   return rows.map((row) => ({
     ...row,
-    image_url: resolveImage(row.image_url),
+    image_url: publicImagePath(row.image_url),
   }));
 }
 
@@ -389,7 +374,7 @@ export async function getGalleryImages(_galleryId?: number) {
 
   return rows.map((row) => ({
     ...row,
-    image_url: resolveImage(row.image_url),
+    image_url: publicImagePath(row.image_url),
   }));
 }
 
@@ -417,7 +402,7 @@ export async function getLeadership(limit?: number) {
 
   return rows.map((row) => ({
     ...row,
-    image_url: resolveImage(row.image_url),
+    image_url: publicImagePath(row.image_url),
   }));
 }
 
@@ -447,7 +432,7 @@ export async function getLeadershipMembers(limit?: number) {
 
   return rows.map((row) => ({
     ...row,
-    image_url: resolveImage(row.image_url),
+    image_url: publicImagePath(row.image_url),
   }));
 }
 
@@ -495,9 +480,7 @@ export async function fetchPublishedNews(limit?: number) {
       date: row.published_at,
       author: row.author,
       image: null,
-      featured_image: row.featured_image
-        ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.listCard)
-        : null,
+      featured_image: publicImagePath(row.featured_image),
       status: row.status,
       published_at: row.published_at,
       tags: row.tags,
@@ -542,7 +525,7 @@ export async function fetchPublishedNewsArticle(id: number) {
           date: article.published_at,
           author: article.author,
           image: null,
-          featured_image: optimizeCloudinary(article.featured_image, CLOUD_W.detailHero),
+          featured_image: publicImagePath(article.featured_image),
           status: article.status,
           published_at: article.published_at,
           tags: article.tags,
@@ -582,8 +565,8 @@ export async function fetchPublishedNewsArticle(id: number) {
             category: newsItem.category,
             date: newsItem.date,
             author: newsItem.author,
-            image: optimizeCloudinary(newsItem.image, CLOUD_W.detailHero),
-            featured_image: optimizeCloudinary(newsItem.image, CLOUD_W.detailHero),
+            image: publicImagePath(newsItem.image),
+            featured_image: publicImagePath(newsItem.image),
             status: 'published',
             published_at: newsItem.date,
             tags: newsItem.tags,
@@ -627,7 +610,7 @@ export async function fetchEventById(id: number) {
     return {
       data: {
         ...row,
-        featured_image: optimizeCloudinary(row.featured_image, CLOUD_W.detailHero),
+        featured_image: publicImagePath(row.featured_image),
       } as Event,
       error: null,
     };
@@ -642,9 +625,7 @@ export async function fetchActiveEvents(limit?: number) {
     return {
       data: data.map((row) => ({
         ...row,
-        featured_image: row.featured_image
-          ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.listCard)
-          : null,
+        featured_image: publicImagePath(row.featured_image),
       })),
       error: null,
     };
@@ -659,7 +640,7 @@ export async function fetchPublishedGallery(limit?: number) {
     return {
       data: data.map((row) => ({
         ...row,
-        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.galleryThumb) : null,
+        image_url: publicImagePath(row.image_url),
       })),
       error: null,
     };
@@ -674,7 +655,7 @@ export async function fetchLeadership(limit?: number) {
     return {
       data: data.map((row) => ({
         ...row,
-        image_url: row.image_url ? applyCloudinaryTransforms(row.image_url, CLOUD_W.portrait) : null,
+        image_url: publicImagePath(row.image_url),
       })),
       error: null,
     };
@@ -743,7 +724,7 @@ export const fetchPublishedAlumniById = cache(async (id: number) => {
 
     const row = rows[0];
     return {
-      data: row ? mapNotableAlumniRow(row, CLOUD_W.detailHero) : null,
+      data: row ? mapNotableAlumniRow(row) : null,
       error: null,
     };
   } catch (error) {
@@ -799,12 +780,7 @@ type ActiveSkilledStudentRow = {
 };
 
 function mapActiveSkilledStudentRow(row: ActiveSkilledStudentRow): SkilledStudentPublic {
-  const rawImg = row.profile_image
-    ? row.profile_image.startsWith('http')
-      ? row.profile_image
-      : getPublicUrl(row.profile_image) || row.profile_image
-    : null;
-  const profileImage = rawImg ? applyCloudinaryTransforms(rawImg, CLOUD_W.portrait) : null;
+  const profileImage = publicImagePath(row.profile_image);
 
   return {
     id: row.id,
@@ -855,7 +831,7 @@ export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
       try {
         const rows = await getNews();
         const mapped: NewsArticle[] = rows.slice(0, 3).map((row) => {
-          const img = optimizeCloudinary(row.image, CLOUD_W.homeNews);
+          const img = publicImagePath(row.image);
           return {
             id: row.id,
             title: row.title,
@@ -881,9 +857,7 @@ export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
         const rows = await getEvents(10);
         const data: Event[] = rows.map((row) => ({
           ...row,
-          featured_image: row.featured_image
-            ? applyCloudinaryTransforms(row.featured_image, CLOUD_W.homeEvent)
-            : null,
+          featured_image: publicImagePath(row.featured_image),
         }));
         return { data, error: null };
       } catch (error) {

@@ -8,7 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface NewsItem {
@@ -110,7 +110,7 @@ export default function NewsPage() {
             ...item,
             featured_image:
               item.featured_image && !item.featured_image.startsWith('http')
-                ? (getPublicUrl(item.featured_image) || item.featured_image)
+                ? publicAssetUrl(item.featured_image)
                 : item.featured_image,
           }));
           console.log('Loaded news from database:', data.length, 'articles');
@@ -238,7 +238,7 @@ export default function NewsPage() {
           ...data,
           featured_image:
             data.featured_image && !data.featured_image.startsWith('http')
-              ? (getPublicUrl(data.featured_image) || data.featured_image)
+              ? publicAssetUrl(data.featured_image)
               : data.featured_image,
         };
         setNews(prev => prev.map(item => item.id === editingItem.id ? normalized : item));
@@ -285,7 +285,7 @@ export default function NewsPage() {
           ...data,
           featured_image:
             data.featured_image && !data.featured_image.startsWith('http')
-              ? (getPublicUrl(data.featured_image) || data.featured_image)
+              ? publicAssetUrl(data.featured_image)
               : data.featured_image,
         };
         setNews(prev => [normalized, ...prev]);

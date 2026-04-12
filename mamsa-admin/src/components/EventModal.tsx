@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface EventItem {
@@ -54,7 +54,7 @@ export default function EventModal({ isOpen, onClose, onSave, editingItem }: Eve
   const resolvePreviewUrl = (value?: string) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return getPublicUrl(value) || value;
+    return publicAssetUrl(value) || value;
   };
 
   useEffect(() => {

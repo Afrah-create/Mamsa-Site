@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 
 type AlumniStatus = 'draft' | 'published' | 'archived';
 
@@ -75,7 +75,7 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
   const resolvePreviewUrl = (value?: string | null) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return getPublicUrl(value) || value;
+    return publicAssetUrl(value) || value;
   };
 
   useEffect(() => {

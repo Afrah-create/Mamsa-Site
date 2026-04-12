@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -23,16 +22,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const imageValue = body.image ?? body.featured_image ?? null;
     let featuredImage = imageValue ?? existing[0]?.featured_image ?? null;
     if (isBase64Image(imageValue)) {
-      if (isCloudinaryPublicId(existing[0]?.featured_image)) {
-        await cloudinary.uploader.destroy(existing[0].featured_image as string);
+      if (isLocalUploadPath(existing[0]?.featured_image)) {
+        await deleteImage(existing[0].featured_image);
       }
 
-      const uploaded = await cloudinary.uploader.upload(imageValue, {
-        folder: 'mamsa/events',
-        resource_type: 'image',
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-      });
-      featuredImage = uploaded.public_id;
+      featuredImage = await saveImage(imageValue, 'events');
     }
 
     const tagsJson = toMysqlJsonArray(body.tags);
@@ -86,9 +80,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
     await sql`DELETE FROM events WHERE id = ${numericId}`;
 
-    if (isCloudinaryPublicId(existing[0]?.featured_image)) {
-      await cloudinary.uploader.destroy(existing[0].featured_image as string);
-    }
+    await deleteImage(existing[0]?.featured_image);
 
     return NextResponse.json({ data: true });
   } catch (error) {

@@ -9,7 +9,7 @@ import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 
 interface GalleryImage {
   id: number;
@@ -84,7 +84,7 @@ export default function GalleryPage() {
       return `/${cleaned}`;
     }
 
-    return getPublicUrl(cleaned);
+    return publicAssetUrl(cleaned);
   };
 
   const normalizeGalleryImage = (image: GalleryApiRow): GalleryImage => ({

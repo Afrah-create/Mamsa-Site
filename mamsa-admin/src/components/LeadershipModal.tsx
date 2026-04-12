@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { getPublicUrl } from '@/lib/cloudinary';
+import { publicAssetUrl } from '@/lib/upload';
 import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface LeadershipMember {
@@ -55,7 +55,7 @@ export default function LeadershipModal({ isOpen, onClose, onSave, editingItem }
   const resolvePreviewUrl = (value?: string) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return getPublicUrl(value) || value;
+    return publicAssetUrl(value) || value;
   };
 
   useEffect(() => {

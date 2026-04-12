@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
 
 const allowedCategories = new Set(['general', 'events', 'announcements']);
 
@@ -34,17 +33,11 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     let image = imageValue ?? existing[0].image;
 
     if (isBase64Image(imageValue)) {
-      if (isCloudinaryPublicId(existing[0].image)) {
-        await cloudinary.uploader.destroy(existing[0].image as string);
+      if (isLocalUploadPath(existing[0].image)) {
+        await deleteImage(existing[0].image);
       }
 
-      image = (
-        await cloudinary.uploader.upload(imageValue, {
-          folder: 'mamsa/news',
-          resource_type: 'image',
-          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-        })
-      ).public_id;
+      image = await saveImage(imageValue, 'news');
     }
 
     const category = allowedCategories.has(String(body.category ?? '').trim())
@@ -105,9 +98,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
 
     await sql`DELETE FROM news WHERE id = ${id}`;
 
-    if (isCloudinaryPublicId(rows[0].image)) {
-      await cloudinary.uploader.destroy(rows[0].image as string);
-    }
+    await deleteImage(rows[0].image);
 
     return NextResponse.json({ data: { id } });
   } catch (error) {

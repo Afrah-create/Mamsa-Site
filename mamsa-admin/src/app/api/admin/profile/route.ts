@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { getPublicUrl } from '@/lib/cloudinary';
-import { isBase64Image, isCloudinaryPublicId } from '@/lib/cloudinary';
-import { cloudinary } from '@/lib/cloudinary-server';
+import { deleteImage, isBase64Image, isLocalUploadPath, publicAssetUrl, saveImage } from '@/lib/upload';
 
 type ProfileRow = {
   id: number;
@@ -22,7 +20,7 @@ const mapProfileForClient = (row: ProfileRow | null) => {
   if (!row) return null;
   return {
     ...row,
-    avatar_url: row.avatar_url && !row.avatar_url.startsWith('http') ? (getPublicUrl(row.avatar_url) || row.avatar_url) : row.avatar_url,
+    avatar_url: row.avatar_url ? publicAssetUrl(row.avatar_url) : null,
   };
 };
 
@@ -70,16 +68,11 @@ export async function PATCH(request: Request) {
     const imageValue = body.image ?? body.avatar_url ?? null;
     let avatarUrl = imageValue ?? existing[0]?.avatar_url ?? '';
     if (isBase64Image(imageValue)) {
-      if (isCloudinaryPublicId(existing[0]?.avatar_url)) {
-        await cloudinary.uploader.destroy(existing[0].avatar_url as string);
+      if (isLocalUploadPath(existing[0]?.avatar_url)) {
+        await deleteImage(existing[0].avatar_url);
       }
 
-      const uploaded = await cloudinary.uploader.upload(imageValue, {
-        folder: 'mamsa/admin_users',
-        resource_type: 'image',
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }],
-      });
-      avatarUrl = uploaded.public_id;
+      avatarUrl = await saveImage(imageValue, 'avatars');
     }
 
     await sql`
