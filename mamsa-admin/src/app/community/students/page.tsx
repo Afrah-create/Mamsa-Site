@@ -1,17 +1,17 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import SkilledStudentCard from '@/components/SkilledStudentCard';
+import StudentsDirectoryClient from './StudentsDirectoryClient';
 import { getActiveSkilledStudents, type SkilledStudentPublic } from '@/lib/public-content';
 
 export const revalidate = 300;
 
 export default async function SkilledStudentsPage() {
   let students: SkilledStudentPublic[] = [];
-  let error = false;
+  let loadError = false;
   try {
     students = await getActiveSkilledStudents();
   } catch {
-    error = true;
+    loadError = true;
   }
 
   return (
@@ -46,40 +46,7 @@ export default async function SkilledStudentsPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:px-10 lg:py-16">
-        {error && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <svg className="h-5 w-5 flex-shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div>
-                <h2 className="text-sm font-semibold text-amber-900">Directory unavailable</h2>
-                <p className="mt-1 text-sm text-amber-800">
-                  We couldn&apos;t load listings right now. Please refresh in a moment or try again later.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!error && students.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-800">Listings coming soon</h2>
-            <p className="mt-2 text-sm text-gray-500">
-              Active skilled students and business profiles from the admin site will appear here automatically.
-            </p>
-          </div>
-        ) : null}
-
-        {!error && students.length > 0 ? (
-          <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
-            {students.map((student) => (
-              <SkilledStudentCard key={student.id} student={student} />
-            ))}
-          </div>
-        ) : null}
-      </div>
+      <StudentsDirectoryClient students={students} loadError={loadError} />
     </>
   );
 }

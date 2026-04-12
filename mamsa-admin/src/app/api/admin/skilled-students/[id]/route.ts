@@ -190,12 +190,6 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       return apiEnvelope(false, { status: 404, error: 'Student not found', message: 'Not found' });
     }
 
-    await sql`
-      UPDATE skilled_students
-      SET is_active = 0, updated_at = ${new Date().toISOString()}
-      WHERE id = ${numericId}
-    `;
-
     if (isCloudinaryPublicId(existing[0].profile_image)) {
       try {
         await cloudinary.uploader.destroy(existing[0].profile_image as string);
@@ -204,13 +198,15 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
       }
     }
 
-    return apiEnvelope(true, { data: { id: numericId, is_active: 0 }, message: 'Student deactivated' });
+    await sql`DELETE FROM skilled_students WHERE id = ${numericId}`;
+
+    return apiEnvelope(true, { data: { id: numericId, deleted: true }, message: 'Student deleted' });
   } catch (error) {
     console.error('[api/admin/skilled-students/[id]][DELETE]', error);
     return apiEnvelope(false, {
       status: 500,
       error: error instanceof Error ? error.message : 'Database error',
-      message: 'Failed to deactivate student',
+      message: 'Failed to delete student',
     });
   }
 }
