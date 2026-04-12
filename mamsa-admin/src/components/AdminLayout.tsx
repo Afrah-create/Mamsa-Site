@@ -83,7 +83,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const loadNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
-      const response = await fetch('/api/admin/contact', {
+      const response = await fetch('/api/admin/contact-messages', {
         credentials: 'include',
       });
 
@@ -390,7 +390,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
       if (notification.type === 'contact' && notification.unread) {
         try {
-          await fetch('/api/admin/contact', {
+          await fetch('/api/admin/contact-messages', {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },

@@ -1,7 +1,7 @@
 import { requireSession } from '@/lib/auth';
-import AboutPage from '../../about/page';
+import AdminAboutPageClient from '@/components/admin/about/AdminAboutPageClient';
 
 export default async function AdminAboutPage() {
   await requireSession();
-  return <AboutPage />;
+  return <AdminAboutPageClient />;
 }

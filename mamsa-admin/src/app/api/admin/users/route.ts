@@ -1,52 +1,50 @@
-import { NextResponse } from 'next/server';
-import sql from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import sql, { insertAndGetId } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
+import { isBase64Image, saveImage } from '@/lib/upload';
+import { apiEnvelope } from '@/lib/api-envelope';
 
-type AdminUserRow = {
+export type AdminUserPublic = {
   id: number;
   email: string;
-  name: string | null;
-  role: 'super_admin' | 'admin' | 'moderator';
-  status: 'active' | 'inactive' | 'suspended';
-  user_id: string;
-};
-
-type Permissions = {
-  news: boolean;
-  events: boolean;
-  leadership: boolean;
-  gallery: boolean;
-  users: boolean;
-  reports: boolean;
-};
-
-type IncomingUser = {
-  full_name?: string;
-  name?: string;
-  email: string;
-  role: 'super_admin' | 'admin' | 'moderator';
-  permissions?: Permissions;
-  status: 'active' | 'inactive' | 'suspended';
+  full_name: string | null;
+  role: string;
+  status: string;
+  avatar_url: string | null;
+  phone: string;
+  bio: string;
+  created_at: string;
+  updated_at: string | null;
 };
 
 export async function GET() {
   await requireAdmin();
 
   try {
-    const users = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
+    const rows = await sql<AdminUserPublic[]>`
+      SELECT
+        id,
+        email,
+        full_name,
+        role,
+        status,
+        avatar_url,
+        phone,
+        bio,
+        created_at,
+        updated_at
       FROM admin_users
       ORDER BY id DESC
     `;
 
-    return NextResponse.json({ data: users }, { status: 200 });
+    return apiEnvelope(true, { data: { items: rows }, message: 'Users loaded' });
   } catch (error) {
-    console.error('[api/admin/users][GET] Unexpected error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unexpected error' },
-      { status: 500 }
-    );
+    console.error('[api/admin/users][GET]', error);
+    return apiEnvelope(false, {
+      status: 500,
+      error: error instanceof Error ? error.message : 'Database error',
+      message: 'Failed to load users',
+    });
   }
 }
 
@@ -54,129 +52,80 @@ export async function POST(request: Request) {
   await requireAdmin();
 
   try {
-    const { user, password, createdBy }: { user: IncomingUser; password?: string; createdBy?: string | null } =
-      await request.json();
+    const body = await request.json();
+    const fullName = String(body.full_name ?? body.name ?? '').trim();
+    const email = String(body.email ?? '').trim().toLowerCase();
+    const password = String(body.password ?? '');
+    const role = String(body.role ?? 'admin').trim() || 'admin';
+    const status = body.status != null ? String(body.status) : 'active';
 
-    const displayName = user?.name?.trim() || user?.full_name?.trim();
-
-    if (!user || !user.email || !displayName) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    if (!fullName || !email) {
+      return apiEnvelope(false, {
+        status: 400,
+        error: 'full_name and email are required',
+        message: 'Validation failed',
+      });
     }
 
-    const finalPassword = password || (user.role === 'super_admin' ? 'adminmamsa' : null);
-
-    if (!finalPassword) {
-      return NextResponse.json({ error: 'Password is required for non-super-admin users.' }, { status: 400 });
+    if (password.length < 8) {
+      return apiEnvelope(false, {
+        status: 400,
+        error: 'Password must be at least 8 characters',
+        message: 'Validation failed',
+      });
     }
 
-    if (finalPassword.length < 8) {
-      return NextResponse.json({ 
-        error: 'Password must be at least 8 characters long.' 
-      }, { status: 400 });
+    let avatarUrl: string | null = body.avatar_url ?? body.avatar ?? null;
+    const avatarVal = body.avatar ?? body.avatar_url;
+    if (isBase64Image(avatarVal)) {
+      try {
+        avatarUrl = await saveImage(avatarVal as string, 'avatars');
+      } catch (e) {
+        return apiEnvelope(false, {
+          status: 500,
+          error: e instanceof Error ? e.message : 'Avatar upload failed',
+          message: 'Image upload error',
+        });
+      }
     }
 
-    const normalizedEmail = user.email.trim().toLowerCase();
-    const passwordHash = await hashPassword(finalPassword);
+    const passwordHash = await hashPassword(password);
+    const phone = body.phone != null ? String(body.phone) : '';
+    const bio = body.bio != null ? String(body.bio) : '';
 
-    await sql`
-      INSERT INTO admin_users (email, full_name, role, status, password_hash)
-      VALUES (${normalizedEmail}, ${displayName}, ${user.role}, ${user.status ?? 'active'}, ${passwordHash})
-      ON DUPLICATE KEY UPDATE
-        full_name = VALUES(full_name),
-        role = VALUES(role),
-        status = VALUES(status),
-        password_hash = VALUES(password_hash)
+    const insertId = await insertAndGetId`
+      INSERT INTO admin_users (email, full_name, role, status, password_hash, avatar_url, phone, bio)
+      VALUES (${email}, ${fullName}, ${role}, ${status}, ${passwordHash}, ${avatarUrl}, ${phone}, ${bio})
     `;
 
-    const rows = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
+    const rows = await sql<AdminUserPublic[]>`
+      SELECT
+        id,
+        email,
+        full_name,
+        role,
+        status,
+        avatar_url,
+        phone,
+        bio,
+        created_at,
+        updated_at
       FROM admin_users
-      WHERE email = ${normalizedEmail}
+      WHERE id = ${insertId}
       LIMIT 1
     `;
 
-    const adminUser = rows[0];
-
-    return NextResponse.json({ 
-      data: adminUser,
-      message: 'User created successfully.'
-    }, { status: 201 });
+    return apiEnvelope(true, { status: 201, data: rows[0], message: 'User created' });
   } catch (error) {
-    console.error('[api/admin/users] Unexpected error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unexpected error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(request: Request) {
-  await requireAdmin();
-
-  try {
-    const { id, user }: { id: number; user: Partial<IncomingUser> & { full_name?: string; avatar_url?: string; phone?: string; bio?: string; department?: string; position?: string; permissions?: Permissions } } = await request.json();
-
-    if (!id) {
-      return NextResponse.json({ error: 'id is required.' }, { status: 400 });
+    console.error('[api/admin/users][POST]', error);
+    const msg = error instanceof Error ? error.message : 'Database error';
+    if (msg.includes('Duplicate') || msg.includes('duplicate')) {
+      return apiEnvelope(false, { status: 409, error: 'Email already exists', message: 'Conflict' });
     }
-
-    await sql`
-      UPDATE admin_users
-      SET full_name = ${user.name ?? user.full_name ?? null},
-          email = ${user.email ?? ''},
-          role = ${user.role ?? 'admin'},
-          status = ${user.status ?? 'active'}
-      WHERE id = ${id}
-    `;
-
-    const rows = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
-      FROM admin_users
-      WHERE id = ${id}
-      LIMIT 1
-    `;
-
-    return NextResponse.json({ data: rows[0] ?? null }, { status: 200 });
-  } catch (error) {
-    console.error('[api/admin/users][PATCH] Unexpected error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unexpected error' },
-      { status: 500 }
-    );
+    return apiEnvelope(false, {
+      status: 500,
+      error: msg,
+      message: 'Failed to create user',
+    });
   }
 }
-
-export async function DELETE(request: Request) {
-  await requireAdmin();
-
-  try {
-    const { userId } = await request.json();
-    const targetId = Number(userId);
-
-    if (!userId || Number.isNaN(targetId)) {
-      return NextResponse.json({ error: 'userId is required.' }, { status: 400 });
-    }
-
-    await sql`
-      UPDATE admin_users
-      SET status = 'inactive'
-      WHERE id = ${targetId}
-    `;
-
-    const rows = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name AS name, role, status, CAST(id AS CHAR) AS user_id
-      FROM admin_users
-      WHERE id = ${targetId}
-      LIMIT 1
-    `;
-
-    return NextResponse.json({ data: rows[0] ?? null, message: 'User deactivated successfully.' }, { status: 200 });
-  } catch (error) {
-    console.error('[api/admin/users][DELETE] Unexpected error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unexpected error' },
-      { status: 500 }
-    );
-  }
-}
-

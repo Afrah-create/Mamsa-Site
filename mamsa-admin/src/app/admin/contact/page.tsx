@@ -1,7 +1,7 @@
 import { requireSession } from '@/lib/auth';
-import ContactManagementPage from '../../contact-management/page';
+import AdminSiteContactPageClient from '@/components/admin/contact/AdminSiteContactPageClient';
 
 export default async function AdminContactPage() {
   await requireSession();
-  return <ContactManagementPage />;
+  return <AdminSiteContactPageClient />;
 }

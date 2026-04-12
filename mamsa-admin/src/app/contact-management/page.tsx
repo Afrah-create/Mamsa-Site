@@ -141,7 +141,7 @@ function ContactManagementContent() {
   const loadMessages = useCallback(async () => {
     try {
       setLoadingMessages(true);
-      const data = await adminRequest<ContactMessage[]>('/api/admin/contact');
+      const data = await adminRequest<ContactMessage[]>('/api/admin/contact-messages');
       setMessages(data ?? []);
     } catch (error) {
       console.error('Failed to load contact messages:', error);
@@ -179,7 +179,7 @@ function ContactManagementContent() {
 
           if (message.status === 'new') {
             try {
-              const data = await adminRequest<ContactMessage>('/api/admin/contact', {
+              const data = await adminRequest<ContactMessage>('/api/admin/contact-messages', {
                 method: 'PATCH',
                 body: JSON.stringify({ id: message.id, status: 'in_progress', updates: { responded_at: null } }),
               });
@@ -196,7 +196,7 @@ function ContactManagementContent() {
       const updateMessage = useCallback(
         async (id: number, updates: Partial<ContactMessage>) => {
           try {
-            const data = await adminRequest<ContactMessage>('/api/admin/contact', {
+            const data = await adminRequest<ContactMessage>('/api/admin/contact-messages', {
               method: 'PATCH',
               body: JSON.stringify({
                 id,
@@ -253,7 +253,7 @@ function ContactManagementContent() {
           }
 
           try {
-            await adminRequest('/api/admin/contact', {
+            await adminRequest('/api/admin/contact-messages', {
               method: 'DELETE',
               body: JSON.stringify({ id }),
             });
