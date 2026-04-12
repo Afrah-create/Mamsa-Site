@@ -8,6 +8,7 @@ const footerLinks = [
   { label: 'Events', href: '/community/events' },
   { label: 'Leadership', href: '/community/leadership' },
   { label: 'Alumni', href: '/community/alumni' },
+  { label: 'Skilled students', href: '/community/students' },
   { label: 'Gallery', href: '/community/gallery' },
   { label: 'Contact', href: '/contact' },
 ];
