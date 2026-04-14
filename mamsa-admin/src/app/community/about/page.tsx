@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ABOUT_SECTIONS, fetchAboutSnapshot } from '@/lib/public-content';
+import OrgChart from '@/components/OrgChart';
+import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchLeadership } from '@/lib/public-content';
 
 export const revalidate = 180;
 
@@ -34,7 +35,10 @@ const FALLBACK_ABOUT_TEXT =
   'Our story is still being written. Stay tuned as we publish more about the history, mission, vision, and values of MAMSA.';
 
 export default async function CommunityAboutPage() {
-  const { data: about, error: aboutError } = await fetchAboutSnapshot();
+  const [{ data: about, error: aboutError }, { data: leaders, error: leadershipError }] = await Promise.all([
+    fetchAboutSnapshot(),
+    fetchLeadership(50),
+  ]);
 
   const hasError = Boolean(aboutError);
   const sectionParagraphs = ABOUT_SECTIONS.reduce<Record<SectionKey, ReturnType<typeof splitIntoParagraphs>>>(
@@ -175,17 +179,25 @@ export default async function CommunityAboutPage() {
         </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 lg:pb-20">
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 text-center sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Notable Alumni</h2>
-          <p className="mt-2 text-sm text-gray-600 sm:text-base">
-            View alumni profiles on the alumni page.
-          </p>
-          <Link
-            href="/community/alumni"
-            className="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            Open Alumni Page
-          </Link>
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 sm:p-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Leadership Hierarchy</h2>
+            <p className="mt-2 text-sm text-gray-600 sm:text-base">
+              Explore the MAMSA leadership structure from top roles to team representatives.
+            </p>
+          </div>
+
+          {leadershipError ? (
+            <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm">
+              <p className="text-sm font-semibold text-amber-900">Leadership chart is temporarily unavailable.</p>
+              <p className="mt-1 text-sm text-amber-800">Please refresh this page in a moment.</p>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <OrgChart leaders={leaders} />
+            </div>
+          )}
+          
         </div>
       </section>
     </>

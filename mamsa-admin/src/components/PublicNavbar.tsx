@@ -64,7 +64,6 @@ export default function PublicNavbar() {
   const communityTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
   const [communityAccordionOpen, setCommunityAccordionOpen] = useState(false);
@@ -98,10 +97,6 @@ export default function PublicNavbar() {
 
   const closeMobile = useCallback(() => setMobileOpen(false), []);
   const toggleMobile = useCallback(() => setMobileOpen((o) => !o), []);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -297,30 +292,32 @@ export default function PublicNavbar() {
         </button>
       </div>
 
-      {/* Mobile drawer + overlay */}
-      {mounted && (
-        <>
-          <button
-            type="button"
-            aria-label="Close navigation overlay"
-            className={[
-              'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
-              mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
-            ].join(' ')}
-            onClick={closeMobile}
-          />
+      {/* Mobile menu + overlay */}
+      <>
+        <button
+          type="button"
+          aria-label="Close navigation overlay"
+          className={[
+            'fixed inset-0 z-40 bg-emerald-950/35 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden',
+            mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+          ].join(' ')}
+          onClick={closeMobile}
+        />
 
-          <div
-            id={menuId}
-            inert={!mobileOpen ? true : undefined}
-            className={[
-              'fixed inset-y-0 left-0 z-50 flex w-[min(100%,20rem)] max-w-full flex-col border-r border-emerald-100 bg-white shadow-xl transition-transform duration-300 ease-out dark:border-emerald-800 dark:bg-emerald-950 lg:hidden',
-              mobileOpen ? 'translate-x-0' : '-translate-x-full',
-            ].join(' ')}
-            aria-hidden={!mobileOpen}
-          >
-            <div className="flex items-center justify-between border-b border-emerald-100 px-4 py-3 dark:border-emerald-800">
-              <span className="text-sm font-semibold tracking-wide text-emerald-800 dark:text-emerald-100">Menu</span>
+        <div
+          id={menuId}
+          className={[
+            'fixed left-4 right-4 top-[4.5rem] z-50 flex max-h-[calc(100vh-5.25rem)] flex-col overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/95 shadow-2xl shadow-emerald-900/15 backdrop-blur dark:border-emerald-800 dark:bg-emerald-950/95 lg:hidden',
+            'origin-top-right transition-all duration-300 ease-out',
+            mobileOpen ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-[0.985] opacity-0',
+          ].join(' ')}
+          aria-hidden={!mobileOpen}
+        >
+            <div className="flex items-center justify-between border-b border-emerald-100/90 bg-emerald-50/70 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-900/35">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">Navigation</p>
+                <p className="text-sm font-semibold tracking-wide text-emerald-900 dark:text-emerald-100">MAMSA Menu</p>
+              </div>
               <button
                 type="button"
                 aria-label="Close menu"
@@ -331,34 +328,36 @@ export default function PublicNavbar() {
               </button>
             </div>
 
-            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4 scrollbar-hide" aria-label="Mobile primary">
-              {PRIMARY_NAV.map((item) => {
-                const Icon = item.icon;
-                const active = pathMatches(item.href, pathname);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={closeMobile}
-                    className={[
-                      'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
-                      active
-                        ? 'border-l-4 border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-400 dark:bg-emerald-900/60 dark:text-white'
-                        : 'border-l-4 border-transparent text-gray-700 hover:bg-emerald-50/80 dark:text-emerald-100/90 dark:hover:bg-emerald-900/50',
-                    ].join(' ')}
-                  >
-                    <Icon className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
-                    <span className="flex-1">{item.label}</span>
-                  </Link>
-                );
-              })}
+            <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 scrollbar-hide" aria-label="Mobile primary">
+              <div className="rounded-xl border border-emerald-100/80 bg-white p-1 dark:border-emerald-800 dark:bg-emerald-950/40">
+                {PRIMARY_NAV.map((item) => {
+                  const Icon = item.icon;
+                  const active = pathMatches(item.href, pathname);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMobile}
+                      className={[
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
+                        active
+                          ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-900/60 dark:text-white'
+                          : 'text-gray-700 hover:bg-emerald-50/80 dark:text-emerald-100/90 dark:hover:bg-emerald-900/50',
+                      ].join(' ')}
+                    >
+                      <Icon className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                      <span className="flex-1">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
 
-              <div className="mt-2 border-t border-emerald-100 pt-2 dark:border-emerald-800">
+              <div className="rounded-xl border border-emerald-100/80 bg-white p-1 dark:border-emerald-800 dark:bg-emerald-950/40">
                 <button
                   type="button"
                   aria-expanded={communityAccordionOpen}
                   aria-controls={`${menuId}-community-panel`}
-                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium tracking-wide text-gray-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:text-emerald-50 dark:hover:bg-emerald-900/50"
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-medium tracking-wide text-gray-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:text-emerald-50 dark:hover:bg-emerald-900/50"
                   onClick={() => setCommunityAccordionOpen((o) => !o)}
                 >
                   <span className="flex items-center gap-3">
@@ -372,7 +371,7 @@ export default function PublicNavbar() {
                 </button>
                 <div
                   id={`${menuId}-community-panel`}
-                  className={communityAccordionOpen ? 'mt-1 flex flex-col gap-1 pl-1' : 'hidden'}
+                  className={communityAccordionOpen ? 'mt-1 flex flex-col gap-1 px-1 pb-1' : 'hidden'}
                   role="group"
                   aria-label="Community links"
                 >
@@ -387,7 +386,7 @@ export default function PublicNavbar() {
                         className={[
                           'flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
                           active
-                            ? 'bg-emerald-50 font-semibold text-emerald-900 dark:bg-emerald-900/60 dark:text-white'
+                            ? 'bg-emerald-50 font-semibold text-emerald-900 shadow-sm dark:bg-emerald-900/60 dark:text-white'
                             : 'text-gray-700 hover:bg-emerald-50/80 dark:text-emerald-100/85 dark:hover:bg-emerald-900/40',
                         ].join(' ')}
                       >
@@ -405,20 +404,19 @@ export default function PublicNavbar() {
               </div>
             </nav>
 
-            <div className="border-t border-emerald-100 p-4 dark:border-emerald-800">
+            <div className="border-t border-emerald-100 bg-white/90 p-4 dark:border-emerald-800 dark:bg-emerald-950/80">
               <Link
                 href={LOGIN_HREF}
                 onClick={closeMobile}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                 aria-label="Admin login"
               >
                 <LogIn className="h-4 w-4" aria-hidden />
                 Admin Login
               </Link>
             </div>
-          </div>
-        </>
-      )}
+        </div>
+      </>
     </header>
   );
 }

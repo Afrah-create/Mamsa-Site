@@ -31,7 +31,6 @@ const XIcon = ({ className }: { className?: string }) => (
 const footerExploreLinks = [
   { label: 'Updates', href: '/community/updates' },
   { label: 'Events', href: '/community/events' },
-  { label: 'Leadership', href: '/community/leadership' },
   { label: 'Contact', href: '/contact' },
 ];
 
