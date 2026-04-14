@@ -262,10 +262,11 @@ export default function GalleryPage() {
       setLoading(true);
       console.log('Loading gallery from database...');
       
-      const data = await adminRequest<GalleryApiRow[]>('/api/admin/gallery');
+      const data = await adminRequest<GalleryApiRow[] | { items?: GalleryApiRow[] }>('/api/admin/gallery');
 
       console.log('Successfully loaded gallery:', data);
-      setGallery((data || []).map(normalizeGalleryImage));
+      const rows = Array.isArray(data) ? data : (data?.items ?? []);
+      setGallery(rows.map(normalizeGalleryImage));
     } catch (error) {
       console.error('Failed to load gallery:', error);
       // Fallback to static data if database fails
