@@ -22,6 +22,18 @@ type AlumniRow = {
   order_position: number;
 };
 
+function toNullableString(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  const parsed = String(value).trim();
+  return parsed.length > 0 ? parsed : null;
+}
+
+function toNullableNumber(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   await requireAdmin();
 
@@ -94,20 +106,29 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       return apiEnvelope(false, { status: 400, error: 'full_name is required', message: 'Validation failed' });
     }
 
-    const slug = body.slug !== undefined ? body.slug : existing.slug;
-    const graduationYear =
-      body.graduation_year !== undefined ? body.graduation_year : existing.graduation_year;
-    const biography = body.biography !== undefined || body.bio !== undefined ? (body.biography ?? body.bio) : existing.biography;
-    const achievements =
+    const slug = toNullableString(body.slug !== undefined ? body.slug : existing.slug);
+    const graduationYear = toNullableNumber(
+      body.graduation_year !== undefined ? body.graduation_year : existing.graduation_year,
+    );
+    const biography = toNullableString(
+      body.biography !== undefined || body.bio !== undefined
+        ? (body.biography ?? body.bio)
+        : existing.biography,
+    );
+    const achievements = toNullableString(
       body.achievements !== undefined || body.achievement !== undefined
         ? (body.achievements ?? body.achievement)
-        : existing.achievements;
-    const currentPosition =
+        : existing.achievements,
+    );
+    const currentPosition = toNullableString(
       body.current_position !== undefined || body.profession !== undefined
         ? (body.current_position ?? body.profession)
-        : existing.current_position;
-    const organization = body.organization !== undefined ? body.organization : existing.organization;
-    const specialty = body.specialty !== undefined ? body.specialty : existing.specialty;
+        : existing.current_position,
+    );
+    const organization = toNullableString(
+      body.organization !== undefined ? body.organization : existing.organization,
+    );
+    const specialty = toNullableString(body.specialty !== undefined ? body.specialty : existing.specialty);
     const profileLinksJson = toMysqlJson(
       body.profile_links !== undefined ? body.profile_links : existing.profile_links,
     );
@@ -115,7 +136,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       body.is_featured !== undefined || body.featured !== undefined
         ? Number(body.is_featured ?? body.featured) ? 1 : 0
         : existing.featured;
-    const status = body.status !== undefined ? String(body.status) : existing.status;
+    const status = toNullableString(body.status !== undefined ? body.status : existing.status) ?? 'draft';
     const orderPosition =
       body.order_position !== undefined ? Number(body.order_position) || 0 : existing.order_position;
 

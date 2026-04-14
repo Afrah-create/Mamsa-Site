@@ -20,6 +20,7 @@ interface NotificationItem {
   recordId: number;
   title: string;
   subtitle?: string;
+  preview?: string;
   time: string;
   unread: boolean;
   type: NotificationType;
@@ -29,6 +30,7 @@ interface ContactMessageRow {
   id: number;
   name: string;
   subject: string | null;
+  message: string;
   status: 'new' | 'in_progress' | 'resolved' | 'archived';
   created_at: string;
   updated_at: string | null;
@@ -96,6 +98,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
             ? `New message from ${message.name}`
             : `Message from ${message.name}`,
         subtitle: message.subject ?? '',
+        preview: message.message ?? '',
         time: formatRelativeTime(message.updated_at ?? message.created_at),
         unread: message.status === 'new',
         type: 'contact',
@@ -466,6 +469,15 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     [loadNotifications, notifications]
   );
 
+  const openNotification = useCallback(
+    async (notification: NotificationItem) => {
+      await markNotificationAsRead(notification.id);
+      setShowNotifications(false);
+      router.push(`/contact-management?message=${notification.recordId}`);
+    },
+    [markNotificationAsRead, router]
+  );
+
   const headerAvatarSrc = profile?.avatar_url
     ? resolveImageSrc(profile.avatar_url)
     : currentUser?.avatar_url
@@ -703,50 +715,75 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                         <div className="p-4 text-sm text-gray-500 text-center">No notifications yet.</div>
                       ) : (
                         notifications.map((notification) => (
-                          <Link
+                          <div
                             key={notification.id}
-                            href={`/contact-management?message=${notification.recordId}`}
-                            onClick={() => {
-                              markNotificationAsRead(notification.id);
-                              setShowNotifications(false);
-                            }}
-                            className={`block p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors duration-150 ${
-                              notification.unread ? 'bg-emerald-50' : ''
+                            className={`border-b border-gray-100 p-3 sm:p-4 transition-colors duration-150 ${
+                              notification.unread ? 'bg-emerald-50' : 'hover:bg-gray-50'
                             }`}
                           >
                             <div className="flex items-start gap-3">
                               <div className={`h-2 w-2 rounded-full mt-2 flex-shrink-0 ${
                                 notification.unread ? 'bg-emerald-500' : 'bg-gray-300'
                               }`} />
-                              <div className="flex-1 min-w-0">
+                              <button
+                                type="button"
+                                onClick={() => openNotification(notification)}
+                                className="flex-1 min-w-0 text-left"
+                              >
                                 <p className="text-sm font-semibold text-gray-900 leading-tight">
                                   {notification.title}
                                 </p>
                                 {notification.subtitle && (
-                                  <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                                  <p className="mt-1 text-xs text-gray-500 line-clamp-1">
                                     {notification.subtitle}
                                   </p>
                                 )}
-                              </div>
+                                {notification.preview && (
+                                  <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+                                    {notification.preview}
+                                  </p>
+                                )}
+                              </button>
                               <span className="text-xs text-gray-400 whitespace-nowrap">
                                 {notification.time}
                               </span>
                             </div>
-                          </Link>
+                            <div className="mt-2 flex items-center justify-end gap-2">
+                              {notification.unread && (
+                                <button
+                                  type="button"
+                                  onClick={() => markNotificationAsRead(notification.id)}
+                                  className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                                >
+                                  Mark as read
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openNotification(notification)}
+                                className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-600 hover:border-emerald-200 hover:text-emerald-700"
+                              >
+                                Open
+                              </button>
+                            </div>
+                          </div>
                         ))
                       )}
                     </div>
                     <div className="p-3 sm:p-4 border-t border-gray-200">
-                      <Link
-                        href="/contact-management"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowNotifications(false);
+                          router.push('/contact-management');
+                        }}
                         className="inline-flex items-center text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors duration-150"
-                        onClick={() => setShowNotifications(false)}
                       >
                         View contact inbox
                         <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
                         </svg>
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 )}
