@@ -13,6 +13,8 @@ import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import CreateStudentModal from './CreateStudentModal';
 import EditStudentModal from './EditStudentModal';
 import { rowToStudentRecord, type SkilledStudentRecord } from './student-form-utils';
+import { AvatarImage } from '@/components/ui/AvatarImage';
+import { resolveImageSrc } from '@/lib/image-utils';
 
 type ListPayload = {
   items: Record<string, unknown>[];
@@ -207,6 +209,7 @@ export default function SkilledStudentsAdminList() {
             <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
               <thead className="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
                 <tr>
+                  <th className="px-4 py-3">Photo</th>
                   <th className="px-4 py-3">Member</th>
                   <th className="px-4 py-3">Category</th>
                   <th className="px-4 py-3">Listing</th>
@@ -217,7 +220,7 @@ export default function SkilledStudentsAdminList() {
               <tbody className="divide-y divide-gray-100">
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
+                    <td colSpan={6} className="px-4 py-10 text-center text-gray-500">
                       No skilled students yet. Click &quot;Add student&quot; to create one.
                     </td>
                   </tr>
@@ -226,8 +229,13 @@ export default function SkilledStudentsAdminList() {
                     const id = Number(r.id);
                     const isActive = Number(r.is_active);
                     const isFeatured = Number(r.is_featured);
+                    const imageValue = r.profile_image != null ? String(r.profile_image) : null;
+                    const imageSrc = resolveImageSrc(imageValue);
                     return (
                       <tr key={id} className="hover:bg-gray-50/80">
+                        <td className="px-4 py-3">
+                          <AvatarImage src={imageSrc} name={String(r.full_name ?? 'Student')} size="md" />
+                        </td>
                         <td className="px-4 py-3">
                           <div className="font-medium text-gray-900">{String(r.full_name ?? '')}</div>
                           <div className="text-xs text-gray-500">{String(r.email ?? '')}</div>

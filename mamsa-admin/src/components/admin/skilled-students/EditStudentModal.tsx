@@ -104,6 +104,9 @@ export default function EditStudentModal({ isOpen, onClose, student, onSuccess }
         is_active: isActive ? 1 : 0,
       };
       if (imageBase64) body.profile_image = imageBase64;
+      // #region agent log
+      fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'edit-student-put-1',hypothesisId:'H1',location:'EditStudentModal.tsx:107',message:'Submitting edit student payload shape',data:{studentId:student.id,keys:Object.keys(body),hasProfileImage:Boolean(body.profile_image),isActiveType:typeof body.is_active,isFeaturedType:typeof body.is_featured,websiteUrlType:typeof body.website_url,phoneType:typeof body.phone,bioType:typeof body.bio,descriptionType:typeof body.description,locationType:typeof body.location,socialLinksType:typeof body.social_links},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
 
       await adminRequest<unknown>(`/api/admin/skilled-students/${student.id}`, {
         method: 'PUT',

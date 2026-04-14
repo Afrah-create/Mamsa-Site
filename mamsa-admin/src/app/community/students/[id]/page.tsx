@@ -1,8 +1,9 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { UserRound } from 'lucide-react';
 import { getSkilledStudentById, type SkilledStudentPublic } from '@/lib/public-content';
+import { CardImage } from '@/components/ui/CardImage';
 
 export const revalidate = 300;
 
@@ -106,22 +107,15 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
 
       <div className="mt-10 flex flex-col gap-10 md:flex-row md:items-start">
         <div className="relative mx-auto w-full max-w-xs shrink-0 overflow-hidden rounded-2xl border border-gray-100 bg-emerald-50 shadow-sm md:mx-0">
-          <div className="relative aspect-[4/5] w-full">
-            {student.profile_image ? (
-              <Image
-                src={student.profile_image}
-                alt={student.full_name}
-                fill
-                className="object-cover object-center"
-                sizes="(min-width: 768px) 320px, 100vw"
-                priority
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center bg-emerald-100 text-emerald-600">
-                <span className="text-sm font-semibold uppercase tracking-wide">MAMSA</span>
-              </div>
-            )}
-          </div>
+          <CardImage
+            src={student.profile_image}
+            alt={student.full_name || 'Student'}
+            aspect="portrait"
+            position="top"
+            rounded="all"
+            placeholderIcon={<UserRound className="h-8 w-8 text-gray-300" />}
+            placeholderLabel="No photo"
+          />
         </div>
 
         <div className="min-w-0 flex-1 space-y-8">

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -22,14 +21,16 @@ import {
   type PaymentRecord,
   type SkilledStudentRecord,
 } from './student-form-utils';
+import { CardImage } from '@/components/ui/CardImage';
+import { UserRound } from 'lucide-react';
 
 type DetailPayload = {
   student: SkilledStudentRecord;
   payments: Record<string, unknown>[];
 };
 
-function imageSrc(profileImage: string | null) {
-  if (!profileImage) return '';
+function imageSrc(profileImage: string | null): string | null {
+  if (!profileImage) return null;
   const t = String(profileImage).trim();
   if (t.startsWith('http://') || t.startsWith('https://')) return t;
   return resolveImageSrc(t);
@@ -229,13 +230,16 @@ export default function SkilledStudentDetailAdmin() {
 
             <div className="grid gap-8 lg:grid-cols-[minmax(0,280px)_1fr]">
               <div className="space-y-4">
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                  {img ? (
-                    <Image src={img} alt={s.full_name} fill className="object-cover" sizes="280px" unoptimized />
-                  ) : (
-                    <div className="flex h-full min-h-[200px] items-center justify-center text-sm text-gray-400">No image</div>
-                  )}
-                </div>
+                <CardImage
+                  src={img}
+                  alt={s.full_name || 'Student'}
+                  aspect="portrait"
+                  position="top"
+                  rounded="all"
+                  placeholderIcon={<UserRound className="h-8 w-8 text-gray-300" />}
+                  placeholderLabel="No photo"
+                  className="w-full border border-gray-200"
+                />
                 <Link
                   href={`/community/students/${s.id}`}
                   target="_blank"
