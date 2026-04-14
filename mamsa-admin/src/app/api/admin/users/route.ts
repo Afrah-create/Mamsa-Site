@@ -1,7 +1,8 @@
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
-import { isBase64Image, saveImage } from '@/lib/upload';
+import { isBase64Image } from '@/lib/upload';
+import { saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
 
 export type AdminUserPublic = {

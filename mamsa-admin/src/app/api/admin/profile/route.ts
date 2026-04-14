@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import sql from '@/lib/db';
 import { getSession } from '@/lib/auth';
-import { deleteImage, isBase64Image, isLocalUploadPath, publicAssetUrl, saveImage } from '@/lib/upload';
+import { isBase64Image, isLocalUploadPath, publicAssetUrl } from '@/lib/upload';
+import { deleteImage, saveImage } from '@/lib/upload-server';
 
 type ProfileRow = {
   id: number;

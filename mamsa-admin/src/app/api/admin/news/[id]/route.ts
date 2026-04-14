@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
+import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
+import { deleteImage, saveImage } from '@/lib/upload-server';
 
 const allowedCategories = new Set(['general', 'events', 'announcements']);
 

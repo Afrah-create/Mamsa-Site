@@ -1,7 +1,8 @@
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { toMysqlJson, toMysqlJsonArray } from '@/lib/mysql-json';
-import { isBase64Image, saveImage } from '@/lib/upload';
+import { isBase64Image } from '@/lib/upload';
+import { saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
 
 function parseTags(input: unknown): string[] {

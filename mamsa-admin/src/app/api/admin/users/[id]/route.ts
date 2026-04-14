@@ -1,7 +1,8 @@
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { hashPassword } from '@/lib/password';
-import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
+import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
+import { deleteImage, saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
 import type { AdminUserPublic } from '../route';
 

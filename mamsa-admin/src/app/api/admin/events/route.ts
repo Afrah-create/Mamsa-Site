@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { isBase64Image, saveImage } from '@/lib/upload';
+import { isBase64Image } from '@/lib/upload';
+import { saveImage } from '@/lib/upload-server';
 
 export async function GET() {
   await requireAdmin();

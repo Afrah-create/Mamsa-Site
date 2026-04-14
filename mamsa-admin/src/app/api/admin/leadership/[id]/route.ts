@@ -1,7 +1,8 @@
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJson } from '@/lib/mysql-json';
-import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
+import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
+import { deleteImage, saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
 
 type LeadershipRow = {

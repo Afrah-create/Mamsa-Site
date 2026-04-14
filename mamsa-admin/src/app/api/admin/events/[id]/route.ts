@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
 import { toMysqlJsonArray } from '@/lib/mysql-json';
-import { deleteImage, isBase64Image, isLocalUploadPath, saveImage } from '@/lib/upload';
+import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
+import { deleteImage, saveImage } from '@/lib/upload-server';
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
