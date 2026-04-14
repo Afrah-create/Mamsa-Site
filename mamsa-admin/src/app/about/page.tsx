@@ -91,9 +91,11 @@ export default function AboutPage() {
     }
   }, []);
 
-  const loadContent = useCallback(async () => {
+  const loadContent = useCallback(async (options?: { silent?: boolean }) => {
     try {
-      setLoading(true);
+      if (!options?.silent) {
+        setLoading(true);
+      }
       const data = await adminRequest<Array<AboutRow> | { rows?: AboutRow[]; sections?: Record<string, string> }>(
         '/api/admin/about',
       );
@@ -123,7 +125,9 @@ export default function AboutPage() {
       console.error('Failed to load about content:', err);
       showToast('error', 'Failed to load about content.');
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, [showToast]);
 
@@ -152,7 +156,8 @@ export default function AboutPage() {
     loadContent();
     loadAlumni();
     const interval = window.setInterval(() => {
-      loadContent();
+      // Keep background refresh from unmounting the page/modal.
+      void loadContent({ silent: true });
       loadAlumni();
     }, 30000);
 
@@ -168,14 +173,14 @@ export default function AboutPage() {
 
     setSaving(true);
     try {
-      const rows = sections.map((section) => ({
-        section: section.key,
-        content: formData[section.key].trim(),
-      }));
+      const sectionsPayload = sections.reduce<Record<AboutSectionKey, string>>((acc, section) => {
+        acc[section.key] = formData[section.key].trim();
+        return acc;
+      }, { ...EMPTY_FORM });
 
       await adminRequest('/api/admin/about', {
-        method: 'PATCH',
-        body: JSON.stringify(rows),
+        method: 'PUT',
+        body: JSON.stringify({ sections: sectionsPayload }),
       });
 
       showToast('success', 'About content saved successfully.');
@@ -287,7 +292,9 @@ export default function AboutPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={loadContent}
+              onClick={() => {
+                void loadContent();
+              }}
               className="inline-flex items-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:border-emerald-500 hover:text-emerald-600"
               disabled={saving}
             >
