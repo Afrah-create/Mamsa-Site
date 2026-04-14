@@ -10,60 +10,28 @@ interface OrgChartProps {
   leaders: Leader[];
 }
 
-// Determine hierarchy level based on position title
-function getHierarchyLevel(position: string | null): number {
-  if (!position) return 4;
-  const pos = position.toLowerCase();
-  
-  // Level 0 - Top level: President only
-  if (pos.includes('president') && !pos.includes('vice')) {
-    return 0;
+function getDisplayLevel(leader: Leader): number {
+  if (typeof leader.order_position === 'number' && Number.isFinite(leader.order_position)) {
+    return leader.order_position;
   }
-  
-  // Level 1 - Second tier: Vice President, Secretary General
-  if (pos.includes('vice president') || pos.includes('vice-president') || 
-      pos.includes('secretary general') || pos.includes('secretary-general')) {
-    return 1;
-  }
-  
-  // Level 2 - Third tier: Ministers, Directors, Coordinators, Heads
-  if (pos.includes('minister') || pos.includes('director') || 
-      pos.includes('coordinator') || pos.includes('head') || 
-      pos.includes('secretary') || pos.includes('treasurer')) {
-    return 2;
-  }
-  
-  // Level 3 - Fourth tier: Representatives, Officers
-  if (pos.includes('representative') || pos.includes('rep') || 
-      pos.includes('officer') || pos.includes('assistant')) {
-    return 3;
-  }
-  
-  // Level 4 - Fifth tier: Members, Others
-  return 4;
+  return Number.MAX_SAFE_INTEGER;
 }
 
-// Group leaders by hierarchy level
+// Group leaders by display order number.
 function groupLeadersByLevel(leaders: Leader[]): Map<number, Leader[]> {
   const grouped = new Map<number, Leader[]>();
   
   leaders.forEach(leader => {
-    const level = getHierarchyLevel(leader.position);
+    const level = getDisplayLevel(leader);
     if (!grouped.has(level)) {
       grouped.set(level, []);
     }
     grouped.get(level)!.push(leader);
   });
   
-  // Sort each group by position name for consistency
-  grouped.forEach((leaders, level) => {
-    leaders.sort((a, b) => {
-      // Sort by position name, then by name
-      if (a.position && b.position) {
-        return a.position.localeCompare(b.position);
-      }
-      return a.name.localeCompare(b.name);
-    });
+  // Sort each group by name for consistency within the same display order.
+  grouped.forEach((items) => {
+    items.sort((a, b) => a.name.localeCompare(b.name));
   });
   
   return grouped;
@@ -92,9 +60,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     };
   }, [activeLeader]);
 
-  // Get level styling
-  const getLevelStyles = (level: number) => {
-    switch (level) {
+  // Get row styling by visual rank in chart.
+  const getLevelStyles = (levelRank: number) => {
+    switch (levelRank) {
       case 0: // President
         return {
           card: 'bg-white border-2 border-emerald-500 shadow-md',
@@ -153,8 +121,8 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     }
   };
 
-  const renderLeaderCard = (leader: Leader, level: number) => {
-    const styles = getLevelStyles(level);
+  const renderLeaderCard = (leader: Leader, levelRank: number) => {
+    const styles = getLevelStyles(levelRank);
     
     return (
       <button
@@ -165,10 +133,10 @@ export default function OrgChart({ leaders }: OrgChartProps) {
       >
         {/* Circular Profile Image */}
         <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md group-hover:shadow-lg transition-all duration-300 ${styles.imageSize} ${
-          level === 0 ? 'group-hover:ring-2 group-hover:ring-emerald-500/20' : 
-          level === 1 ? 'group-hover:ring-2 group-hover:ring-blue-500/20' : 
-          level === 2 ? 'group-hover:ring-2 group-hover:ring-purple-500/20' : 
-          level === 3 ? 'group-hover:ring-2 group-hover:ring-amber-500/20' : 
+          levelRank === 0 ? 'group-hover:ring-2 group-hover:ring-emerald-500/20' : 
+          levelRank === 1 ? 'group-hover:ring-2 group-hover:ring-blue-500/20' : 
+          levelRank === 2 ? 'group-hover:ring-2 group-hover:ring-purple-500/20' : 
+          levelRank === 3 ? 'group-hover:ring-2 group-hover:ring-amber-500/20' : 
           'group-hover:ring-2 group-hover:ring-gray-500/20'
         }`}>
           <AppImage
@@ -177,8 +145,8 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-110"
             fallback={
               <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold ${styles.text} ${
-                level === 0 ? 'text-base sm:text-lg md:text-xl' :
-                level <= 2 ? 'text-sm sm:text-base md:text-lg' :
+                levelRank === 0 ? 'text-base sm:text-lg md:text-xl' :
+                levelRank <= 2 ? 'text-sm sm:text-base md:text-lg' :
                 'text-xs sm:text-sm md:text-base'
               }`}>
                 {getInitials(leader.name)}
@@ -200,14 +168,15 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     );
   };
 
-  const renderLevel = (level: number, leaders: Leader[]) => {
+  const renderLevel = (level: number, leaders: Leader[], levelRank: number) => {
     const sortedLevels = Array.from(groupedLeaders.keys()).sort((a, b) => a - b);
     const isLastLevel = level === sortedLevels[sortedLevels.length - 1];
 
     return (
       <div key={level} className="w-full flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
         {/* Centered horizontal layout - pyramid structure */}
-        <div className="flex flex-wrap justify-center items-start gap-2 sm:gap-2.5 md:gap-3 px-2 sm:px-3">
+        <div className="w-full md:overflow-x-auto">
+          <div className="flex flex-wrap justify-center items-start gap-2 sm:gap-2.5 md:gap-3 px-2 sm:px-3 md:flex-nowrap md:min-w-max md:justify-center">
           {leaders.map((leader, index) => (
             <div
               key={leader.id}
@@ -215,9 +184,10 @@ export default function OrgChart({ leaders }: OrgChartProps) {
                 animation: `fadeIn 0.3s ease-out ${index * 50}ms both`,
               }}
             >
-              {renderLeaderCard(leader, level)}
+              {renderLeaderCard(leader, levelRank)}
             </div>
           ))}
+          </div>
         </div>
 
         {/* Connecting line between levels */}
@@ -262,7 +232,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
           
           {/* Content */}
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
-            {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
+            {sortedLevels.map((level, index) => renderLevel(level, groupedLeaders.get(level)!, index))}
           </div>
         </div>
       </div>

@@ -56,6 +56,7 @@ export type Leader = {
   department: string | null;
   email?: string | null;
   phone?: string | null;
+  order_position?: number | null;
 };
 
 export type NotableAlumnus = {
