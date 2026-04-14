@@ -269,7 +269,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
 
       {activeLeader ? (
         <div
-          className="fixed inset-0 z-[75] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[75] flex items-center justify-center bg-black/70 p-3 sm:p-4"
           role="presentation"
           onClick={() => setActiveLeaderId(null)}
         >
@@ -278,7 +278,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             aria-modal="true"
             aria-label={activeLeader.name}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            className="relative max-h-[84vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl"
           >
             <button
               type="button"
@@ -289,9 +289,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="grid gap-6 p-5 sm:grid-cols-[220px,1fr] sm:p-6">
+            <div className="grid gap-4 p-4 sm:grid-cols-[180px,1fr] sm:gap-5 sm:p-5">
               <div className="overflow-hidden rounded-xl border border-gray-200">
-                <div className="relative h-[280px] w-full bg-gray-100">
+                <div className="relative h-[220px] w-full bg-gray-100 sm:h-[250px]">
                   <AppImage
                     src={activeLeader.image_url}
                     alt={activeLeader.name}
@@ -307,7 +307,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{activeLeader.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900">{activeLeader.name}</h3>
                   <p className="mt-1 text-sm font-medium text-emerald-700">{activeLeader.position || 'Leadership Team'}</p>
                   {activeLeader.department ? (
                     <p className="mt-1 text-xs text-gray-500">Department: {activeLeader.department}</p>

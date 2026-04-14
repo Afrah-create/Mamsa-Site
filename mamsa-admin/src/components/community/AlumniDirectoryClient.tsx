@@ -83,7 +83,7 @@ export default function AlumniDirectoryClient({ alumni }: Props) {
 
       {activeAlumnus ? (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-3 sm:p-4"
           role="presentation"
           onClick={() => setActiveId(null)}
         >
@@ -91,7 +91,7 @@ export default function AlumniDirectoryClient({ alumni }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={activeAlumnus.full_name}
-            className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            className="relative max-h-[84vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -103,7 +103,7 @@ export default function AlumniDirectoryClient({ alumni }: Props) {
               <X className="h-5 w-5" />
             </button>
 
-            <div className="grid gap-6 p-5 sm:grid-cols-[220px,1fr] sm:p-6">
+            <div className="grid gap-4 p-4 sm:grid-cols-[180px,1fr] sm:gap-5 sm:p-5">
               <div className="overflow-hidden rounded-xl border border-gray-200">
                 <CardImage
                   src={activeAlumnus.image_url}
@@ -118,7 +118,7 @@ export default function AlumniDirectoryClient({ alumni }: Props) {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{activeAlumnus.full_name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900">{activeAlumnus.full_name}</h3>
                   <p className="mt-1 text-sm text-emerald-700">
                     {activeAlumnus.current_position || activeAlumnus.specialty || 'MAMSA Alumni'}
                     {activeAlumnus.organization ? ` • ${activeAlumnus.organization}` : ''}
