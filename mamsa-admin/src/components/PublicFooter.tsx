@@ -3,14 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const footerLinks = [
+const footerExploreLinks = [
   { label: 'Updates', href: '/community/updates' },
   { label: 'Events', href: '/community/events' },
   { label: 'Leadership', href: '/community/leadership' },
+  { label: 'Contact', href: '/contact' },
+];
+
+const footerCommunityLinks = [
   { label: 'Alumni', href: '/community/alumni' },
   { label: 'Skilled students', href: '/community/students' },
   { label: 'Gallery', href: '/community/gallery' },
-  { label: 'Contact', href: '/contact' },
 ];
 
 export default function PublicFooter() {
@@ -37,13 +40,25 @@ export default function PublicFooter() {
             <p className="mt-1 text-sm text-emerald-200/80">Olu Alu Vu Ozoni</p>
           </div>
         </div>
-        <nav className="flex flex-wrap items-center gap-4 text-sm font-medium text-emerald-100/80">
-          {footerLinks.map((item) => (
-            <Link key={item.href} href={item.href} className="transition hover:text-white">
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex flex-col gap-5 text-sm font-medium text-emerald-100/80 md:items-end">
+          <nav className="flex flex-wrap items-center gap-4" aria-label="Site sections">
+            {footerExploreLinks.map((item) => (
+              <Link key={item.href} href={item.href} className="transition hover:text-white">
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-300/90">Community</p>
+            <nav className="flex flex-wrap items-center gap-4" aria-label="Community">
+              {footerCommunityLinks.map((item) => (
+                <Link key={item.href} href={item.href} className="transition hover:text-white">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
       </div>
       <div className="bg-emerald-900/40 py-4 text-center text-xs text-emerald-200/80">
         © {copyrightYear ?? ''} MAMSA. All rights reserved.

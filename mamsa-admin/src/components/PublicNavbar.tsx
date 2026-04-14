@@ -1,148 +1,420 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  BookOpen,
+  CalendarDays,
+  ChevronDown,
+  GraduationCap,
+  Home,
+  Images,
+  Info,
+  LogIn,
+  Mail,
+  Menu,
+  Newspaper,
+  Users,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
-const navigation = [
-  { label: 'Home', href: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h3' },
-  { label: 'About', href: '/community/about', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-  { label: 'Updates', href: '/community/updates', icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z' },
-  { label: 'Events', href: '/community/events', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { label: 'Leadership', href: '/community/leadership', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-  { label: 'Alumni', href: '/community/alumni', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+const PRIMARY_NAV = [
+  { label: 'Home', href: '/', icon: Home },
+  { label: 'About', href: '/community/about', icon: Info },
+  { label: 'News', href: '/community/updates', icon: Newspaper },
+  { label: 'Events', href: '/community/events', icon: CalendarDays },
+  { label: 'Contact', href: '/contact', icon: Mail },
+] as const;
+
+const COMMUNITY_ITEMS = [
   {
-    label: 'Skilled students',
-    href: '/community/students',
-    icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+    label: 'Alumni',
+    href: '/community/alumni',
+    icon: GraduationCap,
+    description: 'Notable graduates and profiles',
   },
-  { label: 'Gallery', href: '/community/gallery', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { label: 'Contact', href: '/contact', icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-];
+  {
+    label: 'Skilled Students',
+    href: '/community/students',
+    icon: BookOpen,
+    description: 'Student achievements directory',
+  },
+  {
+    label: 'Gallery',
+    href: '/community/gallery',
+    icon: Images,
+    description: 'Photos from MAMSA life',
+  },
+] as const;
+
+const LOGIN_HREF = '/login';
+
+function pathMatches(href: string, pathname: string | null) {
+  if (!pathname) return false;
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export default function PublicNavbar() {
+  const pathname = usePathname();
+  const menuId = useId();
+  const communityMenuId = useId();
+  const communityWrapRef = useRef<HTMLDivElement>(null);
+  const communityTriggerRef = useRef<HTMLButtonElement>(null);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [communityOpen, setCommunityOpen] = useState(false);
+  const [communityAccordionOpen, setCommunityAccordionOpen] = useState(false);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Ensure component is mounted before showing mobile menu to prevent hydration mismatch
+  const clearLeaveTimer = useCallback(() => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+  }, []);
+
+  const openCommunity = useCallback(() => {
+    clearLeaveTimer();
+    setCommunityOpen(true);
+  }, [clearLeaveTimer]);
+
+  const scheduleCloseCommunity = useCallback(() => {
+    clearLeaveTimer();
+    leaveTimerRef.current = setTimeout(() => setCommunityOpen(false), 160);
+  }, [clearLeaveTimer]);
+
+  const closeCommunity = useCallback(() => {
+    clearLeaveTimer();
+    setCommunityOpen(false);
+  }, [clearLeaveTimer]);
+
+  const toggleCommunity = useCallback(() => {
+    setCommunityOpen((o) => !o);
+  }, []);
+
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const toggleMobile = useCallback(() => setMobileOpen((o) => !o), []);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const toggleMobile = () => setMobileOpen((open) => !open);
-  const closeMobile = () => setMobileOpen(false);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeCommunity();
+        setMobileOpen(false);
+        communityTriggerRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [closeCommunity]);
+
+  useEffect(() => {
+    if (!communityOpen) return;
+    const onPointerDown = (e: Event) => {
+      const el = communityWrapRef.current;
+      const target = e.target;
+      if (el && target instanceof Node && !el.contains(target)) closeCommunity();
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [communityOpen, closeCommunity]);
+
+  useEffect(() => {
+    return () => clearLeaveTimer();
+  }, [clearLeaveTimer]);
+
+  const communityChildActive = COMMUNITY_ITEMS.some((item) => pathMatches(item.href, pathname));
+
+  const desktopNavLinkClass = (href: string, extra?: string) => {
+    const active = pathMatches(href, pathname);
+    return [
+      'relative rounded-md px-2 py-2 text-sm font-medium tracking-wide text-gray-600 transition-colors duration-150 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-100/85 dark:hover:text-white',
+      active
+        ? 'font-semibold text-emerald-700 after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-600 dark:text-white'
+        : '',
+      extra ?? '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-emerald-100 bg-white/95 backdrop-blur" suppressHydrationWarning>
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+    <header
+      className="fixed inset-x-0 top-0 z-50 bg-white/90 shadow-sm shadow-emerald-900/5 backdrop-blur-md dark:bg-emerald-950/90 dark:shadow-black/20"
+      suppressHydrationWarning
+    >
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
         <Link
           href="/"
-          className="flex items-center gap-3 text-lg font-semibold text-emerald-700 transition hover:text-emerald-800"
+          className="flex min-w-0 flex-shrink-0 items-center gap-3 text-lg font-semibold text-emerald-700 transition-colors duration-150 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-200 dark:hover:text-white"
+          aria-label="MAMSA home"
           onClick={closeMobile}
         >
-          <span className="relative h-10 w-10 overflow-hidden rounded-full border border-emerald-100 shadow-sm">
+          <span className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-emerald-100 shadow-sm dark:border-emerald-800">
             <Image
               src="/images/mamsa-logo.JPG"
-              alt="MAMSA logo"
+              alt=""
               fill
               sizes="40px"
               className="object-cover"
               priority
             />
           </span>
-          <span className="tracking-wide">MAMSA</span>
+          <span className="truncate tracking-wide">MAMSA</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-          {navigation.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-2 py-1 transition hover:text-emerald-600"
+        {/* Desktop center + right */}
+        <div className="hidden flex-1 items-center justify-center gap-2 lg:flex">
+          <nav className="flex flex-wrap items-center justify-center gap-1 xl:gap-2" aria-label="Primary">
+            {PRIMARY_NAV.map((item) => (
+              <Link key={item.href} href={item.href} className={desktopNavLinkClass(item.href)}>
+                {item.label}
+              </Link>
+            ))}
+
+            <div
+              ref={communityWrapRef}
+              className="relative"
+              onMouseEnter={openCommunity}
+              onMouseLeave={scheduleCloseCommunity}
             >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+              <button
+                ref={communityTriggerRef}
+                type="button"
+                className={[
+                  'relative inline-flex items-center gap-1 rounded-md px-2 py-2 text-sm font-medium tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+                  communityOpen || communityChildActive
+                    ? 'font-semibold text-emerald-700 dark:text-white'
+                    : 'text-gray-600 hover:text-emerald-700 dark:text-emerald-100/85 dark:hover:text-white',
+                  communityChildActive && !communityOpen
+                    ? 'after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-600'
+                    : '',
+                ].join(' ')}
+                aria-label="Community menu"
+                aria-expanded={communityOpen}
+                aria-haspopup="menu"
+                aria-controls={communityMenuId}
+                id={`${communityMenuId}-trigger`}
+                onClick={toggleCommunity}
+                onFocus={openCommunity}
+              >
+                Community
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                />
+              </button>
+
+              <div
+                id={communityMenuId}
+                role="menu"
+                aria-hidden={!communityOpen}
+                aria-labelledby={`${communityMenuId}-trigger`}
+                className={[
+                  'absolute left-1/2 top-full z-50 mt-2 min-w-[220px] -translate-x-1/2 rounded-xl border border-emerald-100/80 bg-white p-2 shadow-lg ring-1 ring-black/5 transition-all duration-200 ease-out dark:border-emerald-800 dark:bg-emerald-900 dark:ring-white/10',
+                  communityOpen
+                    ? 'pointer-events-auto translate-y-0 opacity-100'
+                    : 'pointer-events-none -translate-y-1 opacity-0',
+                ].join(' ')}
+                onMouseEnter={openCommunity}
+                onMouseLeave={scheduleCloseCommunity}
+              >
+                {COMMUNITY_ITEMS.map((item) => {
+                  const active = pathMatches(item.href, pathname);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      role="menuitem"
+                      className={[
+                        'flex flex-col gap-0.5 rounded-lg px-3 py-2.5 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
+                        active
+                          ? 'border-l-4 border-emerald-600 bg-emerald-50/90 pl-[calc(0.75rem-4px)] dark:border-emerald-400 dark:bg-emerald-800/60'
+                          : 'border-l-4 border-transparent hover:bg-emerald-50/70 dark:hover:bg-emerald-800/40',
+                      ].join(' ')}
+                      onClick={closeCommunity}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-emerald-50">
+                        <Icon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                        {item.label}
+                      </span>
+                      <span className="pl-6 text-xs leading-snug text-gray-500 dark:text-emerald-200/75">
+                        {item.description}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </nav>
+        </div>
+
+        <div className="hidden items-center gap-3 lg:flex">
+          <Link
+            href={LOGIN_HREF}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+            aria-label="Admin login"
+          >
+            <LogIn className="h-4 w-4" aria-hidden />
+            Admin Login
+          </Link>
+        </div>
 
         <button
           type="button"
-          aria-label="Toggle navigation"
+          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={mobileOpen}
+          aria-controls={menuId}
           onClick={toggleMobile}
-          className="relative inline-flex items-center justify-center rounded-lg border border-emerald-200 p-2.5 text-emerald-700 transition-all duration-200 hover:border-emerald-300 hover:bg-emerald-50 active:scale-95 md:hidden"
+          className="inline-flex items-center justify-center rounded-lg p-2.5 text-emerald-700 transition-colors duration-150 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-200 dark:hover:bg-emerald-900 lg:hidden"
         >
-          <svg
-            className="h-5 w-5 transition-transform duration-300"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {mobileOpen ? (
-              <path d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          {mobileOpen ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
         </button>
       </div>
 
-      {/* Mobile menu backdrop */}
-      {mounted && mobileOpen && (
-        <div
-          className="fixed inset-0 top-16 z-30 bg-black/20 backdrop-blur-sm md:hidden"
-          onClick={closeMobile}
-          suppressHydrationWarning
-        />
-      )}
+      {/* Mobile drawer + overlay */}
+      {mounted && (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation overlay"
+            className={[
+              'fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden',
+              mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+            ].join(' ')}
+            onClick={closeMobile}
+          />
 
-      {/* Mobile menu */}
-      {mounted && mobileOpen && (
-        <nav
-          className="fixed inset-x-0 top-16 z-40 border-t border-emerald-100 bg-white/98 backdrop-blur-md shadow-lg md:hidden"
-          suppressHydrationWarning
-        >
-          <div className="mx-auto max-w-6xl px-4 py-3">
-            <div className="flex flex-col gap-1">
-              {navigation.map((item, index) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={closeMobile}
-                  className="group flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-emerald-50 hover:text-emerald-700 active:bg-emerald-100"
-                  style={{
-                    animation: `slideDown 0.3s ease-out ${index * 0.05}s both`,
-                  }}
+          <div
+            id={menuId}
+            inert={!mobileOpen ? true : undefined}
+            className={[
+              'fixed inset-y-0 left-0 z-50 flex w-[min(100%,20rem)] max-w-full flex-col border-r border-emerald-100 bg-white shadow-xl transition-transform duration-300 ease-out dark:border-emerald-800 dark:bg-emerald-950 lg:hidden',
+              mobileOpen ? 'translate-x-0' : '-translate-x-full',
+            ].join(' ')}
+            aria-hidden={!mobileOpen}
+          >
+            <div className="flex items-center justify-between border-b border-emerald-100 px-4 py-3 dark:border-emerald-800">
+              <span className="text-sm font-semibold tracking-wide text-emerald-800 dark:text-emerald-100">Menu</span>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={closeMobile}
+                className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4 scrollbar-hide" aria-label="Mobile primary">
+              {PRIMARY_NAV.map((item) => {
+                const Icon = item.icon;
+                const active = pathMatches(item.href, pathname);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={closeMobile}
+                    className={[
+                      'flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium tracking-wide transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
+                      active
+                        ? 'border-l-4 border-emerald-600 bg-emerald-50 text-emerald-900 dark:border-emerald-400 dark:bg-emerald-900/60 dark:text-white'
+                        : 'border-l-4 border-transparent text-gray-700 hover:bg-emerald-50/80 dark:text-emerald-100/90 dark:hover:bg-emerald-900/50',
+                    ].join(' ')}
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
+                );
+              })}
+
+              <div className="mt-2 border-t border-emerald-100 pt-2 dark:border-emerald-800">
+                <button
+                  type="button"
+                  aria-expanded={communityAccordionOpen}
+                  aria-controls={`${menuId}-community-panel`}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium tracking-wide text-gray-800 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset dark:text-emerald-50 dark:hover:bg-emerald-900/50"
+                  onClick={() => setCommunityAccordionOpen((o) => !o)}
                 >
-                  <svg
-                    className="h-5 w-5 flex-shrink-0 text-emerald-600 transition-colors group-hover:text-emerald-700"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-                  </svg>
-                  <span className="flex-1">{item.label}</span>
-                  <svg
-                    className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              ))}
+                  <span className="flex items-center gap-3">
+                    <Users className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                    Community
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 text-emerald-600 transition-transform dark:text-emerald-300 ${communityAccordionOpen ? 'rotate-180' : ''}`}
+                    aria-hidden
+                  />
+                </button>
+                <div
+                  id={`${menuId}-community-panel`}
+                  className={communityAccordionOpen ? 'mt-1 flex flex-col gap-1 pl-1' : 'hidden'}
+                  role="group"
+                  aria-label="Community links"
+                >
+                  {COMMUNITY_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathMatches(item.href, pathname);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={closeMobile}
+                        className={[
+                          'flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-inset',
+                          active
+                            ? 'bg-emerald-50 font-semibold text-emerald-900 dark:bg-emerald-900/60 dark:text-white'
+                            : 'text-gray-700 hover:bg-emerald-50/80 dark:text-emerald-100/85 dark:hover:bg-emerald-900/40',
+                        ].join(' ')}
+                      >
+                        <Icon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                        <span>
+                          <span className="block font-medium">{item.label}</span>
+                          <span className="mt-0.5 block text-xs font-normal text-gray-500 dark:text-emerald-200/70">
+                            {item.description}
+                          </span>
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </nav>
+
+            <div className="border-t border-emerald-100 p-4 dark:border-emerald-800">
+              <Link
+                href={LOGIN_HREF}
+                onClick={closeMobile}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                aria-label="Admin login"
+              >
+                <LogIn className="h-4 w-4" aria-hidden />
+                Admin Login
+              </Link>
             </div>
           </div>
-        </nav>
+        </>
       )}
-
     </header>
   );
 }
-
