@@ -5,22 +5,12 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { clearSessionData, type SessionUser } from '@/lib/session-manager';
+import { AdminProfileProvider, type AdminHeaderProfile } from '@/context/AdminProfileContext';
+import { publicAssetUrl } from '@/lib/upload';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
   user?: SessionUser | null;
-}
-
-interface ProfileData {
-  id: string;
-  user_id: string;
-  full_name?: string;
-  email?: string;
-  avatar_url?: string;
-  phone?: string;
-  bio?: string;
-  role?: string;
-  created_at: string;
 }
 
 type NotificationType = 'contact';
@@ -68,7 +58,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(user ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profile, setProfile] = useState<AdminHeaderProfile>(null);
   const [currentYear, setCurrentYear] = useState(2025);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -201,81 +191,101 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         </svg>
       )
     },
-    { 
-      name: 'Profile Settings', 
-      href: '/profile', 
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      )
-    },
-    { 
-      name: 'Account Settings', 
-      href: '/profile', 
-      icon: (
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      )
-    },
   ];
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!response.ok) return;
+      const payload = (await response.json().catch(() => ({}))) as { user?: SessionUser };
+      const u = payload.user;
+      if (u) {
+        setCurrentUser({
+          id: u.id,
+          email: u.email,
+          name: u.name,
+          role: u.role,
+          avatar_url: u.avatar_url,
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const loadProfile = useCallback(async () => {
     if (!currentUser?.id) return;
-    
-    // Try to load from sessionStorage first for instant display
+
     const PROFILE_CACHE_KEY = `admin_profile_${currentUser.id}`;
     try {
       const cached = sessionStorage.getItem(PROFILE_CACHE_KEY);
       if (cached) {
-        const cachedProfile = JSON.parse(cached);
-        setProfile(cachedProfile);
+        const parsed = JSON.parse(cached) as AdminHeaderProfile;
+        if (parsed && typeof parsed.id === 'number') {
+          setProfile(parsed);
+        }
       }
-    } catch (e) {
-      // Ignore cache errors
+    } catch {
+      /* ignore cache */
     }
-    
-    try {
-      const fallbackProfile = {
-        id: String(currentUser.id),
-        user_id: String(currentUser.id),
-        email: currentUser.email,
-        full_name: currentUser.name || 'Admin',
-        role: currentUser.role || 'admin',
-        avatar_url: '',
-        created_at: new Date().toISOString()
-      };
 
-      setProfile(fallbackProfile);
-      // Cache the profile for faster loading on navigation
-      try {
-        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
-      } catch (e) {
-        // Ignore storage errors
+    try {
+      const response = await fetch('/api/admin/profile', { credentials: 'include' });
+      const json = await response.json().catch(() => ({}));
+      if (response.ok && json.success && json.data) {
+        const d = json.data as {
+          id: number;
+          full_name: string;
+          email: string;
+          role: string;
+          avatar_url: string | null;
+          created_at: string;
+        };
+        const normalized: AdminHeaderProfile = {
+          id: d.id,
+          full_name: d.full_name,
+          email: d.email,
+          role: d.role,
+          avatar_url: d.avatar_url,
+          created_at: d.created_at,
+        };
+        setProfile(normalized);
+        try {
+          sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(normalized));
+        } catch {
+          /* ignore */
+        }
+        return;
       }
     } catch (error) {
       console.error('Failed to load profile in AdminLayout:', error);
-      // Create fallback profile even if there's an error
-      const fallbackProfile = {
-        id: String(currentUser.id),
-        user_id: String(currentUser.id),
-        email: currentUser.email,
-        full_name: currentUser.name || 'Admin',
-        role: currentUser.role || 'admin',
-        avatar_url: '',
-        created_at: new Date().toISOString()
-      };
-      setProfile(fallbackProfile);
-      // Cache the fallback profile
-      try {
-        sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallbackProfile));
-      } catch (e) {
-        // Ignore storage errors
-      }
+    }
+
+    const fallback: AdminHeaderProfile = {
+      id: currentUser.id,
+      full_name: currentUser.name || 'Admin',
+      email: currentUser.email,
+      role: currentUser.role,
+      avatar_url: currentUser.avatar_url ?? null,
+      created_at: new Date().toISOString(),
+    };
+    setProfile(fallback);
+    try {
+      sessionStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(fallback));
+    } catch {
+      /* ignore */
     }
   }, [currentUser]);
+
+  const profileContextValue = useMemo(
+    () => ({
+      profile,
+      setProfile,
+      refreshProfile: loadProfile,
+      refreshSession,
+    }),
+    [profile, loadProfile, refreshSession],
+  );
 
   useEffect(() => {
     setCurrentUser(user ?? null);
@@ -406,7 +416,14 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
     [loadNotifications, notifications]
   );
 
+  const headerAvatarSrc = profile?.avatar_url
+    ? publicAssetUrl(profile.avatar_url)
+    : currentUser?.avatar_url
+      ? publicAssetUrl(currentUser.avatar_url)
+      : '';
+
   return (
+    <AdminProfileProvider value={profileContextValue}>
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Click outside to close dropdowns */}
       {showNotifications && (
@@ -462,7 +479,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
             const isActive = pathname === item.href;
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 href={item.href}
                 className={`group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 ${
                   isActive
@@ -481,6 +498,29 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
             );
           })}
         </nav>
+
+        <div className="border-t border-green-500 px-4 py-3 flex-shrink-0">
+          <Link
+            href="/admin/profile"
+            className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+              pathname === '/admin/profile'
+                ? 'bg-green-500 text-white shadow-md border-r-4 border-green-300'
+                : 'text-green-100 hover:bg-green-500 hover:text-white'
+            }`}
+          >
+            <span className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-green-400/40 ring-2 ring-white/20">
+              {headerAvatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={headerAvatarSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-xs font-bold text-white">
+                  {(profile?.full_name || currentUser?.name || currentUser?.email || 'A').charAt(0).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <span>My Profile</span>
+          </Link>
+        </div>
 
         {/* Sign Out Button */}
         <div className="border-t border-green-500 p-4 flex-shrink-0">
@@ -536,7 +576,9 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                 </svg>
               </button>
               <h1 className="ml-4 text-xl font-semibold text-gray-900 lg:ml-0">
-                {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
+                {pathname === '/admin/profile'
+                  ? 'My Profile'
+                  : navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
               </h1>
             </div>
             
@@ -654,15 +696,10 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
               {/* Profile Display */}
               <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden shadow-sm">
-                  {profile?.avatar_url ? (
-                    <Image 
-                      src={profile.avatar_url} 
-                      alt="Profile" 
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-green-600 to-green-800 shadow-sm ring-2 ring-green-100">
+                  {headerAvatarSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={headerAvatarSrc} alt="" className="h-10 w-10 object-cover" />
                   ) : (
                     <span className="text-sm font-semibold text-white">
                       {(profile?.full_name || currentUser?.name || currentUser?.email || 'Admin').charAt(0).toUpperCase()}
@@ -692,5 +729,6 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         </main>
       </div>
     </div>
+    </AdminProfileProvider>
   );
 }

@@ -10,6 +10,7 @@ type AdminUserRow = {
   role: string;
   status: string;
   password_hash: string | null;
+  avatar_url: string | null;
 };
 
 export async function POST(request: Request) {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     const rows = await sql<AdminUserRow[]>`
-      SELECT id, email, full_name as name, role, status, password_hash
+      SELECT id, email, full_name as name, role, status, password_hash, avatar_url
       FROM admin_users
       WHERE LOWER(email) = LOWER(${email.trim()})
         AND status = 'active'
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       email: admin.email,
       name: admin.name ?? admin.email,
       role: admin.role,
+      avatar_url: admin.avatar_url ?? '',
     };
 
     const token = await signJWT(payload);
@@ -59,6 +61,7 @@ export async function POST(request: Request) {
           email: payload.email,
           name: payload.name,
           role: payload.role,
+          avatar_url: payload.avatar_url,
         },
       },
       { status: 200 }

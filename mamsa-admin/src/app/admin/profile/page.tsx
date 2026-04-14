@@ -1,7 +1,7 @@
-import { requireSession } from '@/lib/auth';
-import ProfilePage from '../../profile/page';
+'use client';
 
-export default async function AdminProfilePage() {
-  await requireSession();
-  return <ProfilePage />;
+import AdminProfileSettingsClient from '@/components/admin/AdminProfileSettingsClient';
+
+export default function AdminProfilePage() {
+  return <AdminProfileSettingsClient />;
 }

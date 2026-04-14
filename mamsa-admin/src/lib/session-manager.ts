@@ -5,6 +5,7 @@ export interface SessionUser {
   email: string;
   name: string;
   role: string;
+  avatar_url?: string;
 }
 
 export interface SessionData {

@@ -8,6 +8,8 @@ export interface SessionPayload extends JWTPayload {
   email: string;
   name: string;
   role: string;
+  /** Local path or absolute URL; empty string clears display fallbacks in JWT */
+  avatar_url?: string;
 }
 
 const SESSION_COOKIE_NAME = 'admin_session';
@@ -47,6 +49,7 @@ export async function verifyJWT(token: string): Promise<SessionPayload | null> {
       email: payload.email,
       name: payload.name,
       role: payload.role,
+      avatar_url: typeof payload.avatar_url === 'string' ? payload.avatar_url : undefined,
     };
   } catch {
     return null;
