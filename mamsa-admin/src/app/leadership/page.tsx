@@ -259,7 +259,7 @@ export default function LeadershipPage() {
         };
 
         const data = await adminRequest<LeadershipMember>(`/api/admin/leadership/${editingItem.id}`, {
-          method: 'PATCH',
+          method: 'PUT',
           body: JSON.stringify(updateData),
         });
 
