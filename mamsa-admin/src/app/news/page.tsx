@@ -39,11 +39,6 @@ export default function NewsPage() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const { toast, showToast, hideToast } = useToast();
-  const debugLog = (hypothesisId: string, location: string, message: string, data: Record<string, unknown>) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'pre-fix',hypothesisId,location,message,data,timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-  };
   const normalizeTags = (raw: unknown): string[] => {
     if (Array.isArray(raw)) {
       return raw.map((t) => String(t).trim()).filter(Boolean);
@@ -131,16 +126,6 @@ export default function NewsPage() {
 
       try {
         const data = await adminRequest<NewsItem[]>('/api/admin/news');
-        debugLog('H1', 'src/app/news/page.tsx:loadNews', 'admin/news response received', {
-          isArray: Array.isArray(data),
-          length: Array.isArray(data) ? data.length : -1,
-          firstTagsType:
-            Array.isArray(data) && data.length > 0
-              ? Array.isArray(data[0].tags)
-                ? 'array'
-                : typeof data[0].tags
-              : 'none',
-        });
 
         if (data && data.length > 0) {
           const normalized = data.map((item) => ({
@@ -151,19 +136,6 @@ export default function NewsPage() {
                 ? publicAssetUrl(item.featured_image)
                 : item.featured_image,
           }));
-          debugLog('H2', 'src/app/news/page.tsx:loadNews', 'normalized news prepared', {
-            firstNonArrayTagsId:
-              normalized.find((n) => n.tags != null && !Array.isArray(n.tags))?.id ?? null,
-            firstNonArrayTagsType: (() => {
-              const row = normalized.find((n) => n.tags != null && !Array.isArray(n.tags));
-              return row ? typeof row.tags : 'none';
-            })(),
-          });
-          debugLog('H4', 'src/app/news/page.tsx:loadNews', 'post-fix normalized tags check', {
-            run: 'post-fix',
-            hasNonArrayTags: normalized.some((n) => n.tags != null && !Array.isArray(n.tags)),
-            firstTagsLength: normalized[0]?.tags?.length ?? 0,
-          });
           console.log('Loaded news from database:', data.length, 'articles');
           setNews(normalized);
         } else {
@@ -520,16 +492,6 @@ export default function NewsPage() {
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {filteredNews.map((item, index) => (
                   <div key={`${item.id}-${index}`} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    {item.tags != null && !Array.isArray(item.tags) && (
-                      (() => {
-                        debugLog('H3', 'src/app/news/page.tsx:renderCard', 'non-array tags reached render', {
-                          itemId: item.id,
-                          tagsType: typeof item.tags,
-                          tagsSample: String(item.tags).slice(0, 80),
-                        });
-                        return null;
-                      })()
-                    )}
                     {/* Article Header */}
                     <div className="p-6 pb-4">
                       <div className="flex items-start justify-between mb-4">
