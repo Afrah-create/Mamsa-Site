@@ -25,7 +25,7 @@ export default async function UpdatesPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Updates</p>
             <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Community News & Stories</h1>
             <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
-              Discover the latest highlights, announcements, and reflections from the MAMSA community.
+              Latest updates from the MAMSA community.
             </p>
           </div>
         </header>
@@ -54,7 +54,7 @@ export default async function UpdatesPage() {
         <div className="mt-12 rounded-2xl border border-dashed border-gray-200 p-10 text-center">
           <p className="text-lg font-semibold text-gray-700">No updates yet</p>
           <p className="mt-2 text-sm text-gray-500">
-            Published stories from the admin panel will appear here automatically.
+            Updates will be shown here.
           </p>
         </div>
       ) : (

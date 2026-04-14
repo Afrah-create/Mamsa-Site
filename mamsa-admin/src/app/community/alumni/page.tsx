@@ -26,8 +26,7 @@ export default async function AlumniPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Alumni</p>
           <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Notable MAMSA Alumni</h1>
           <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
-            Graduates and community champions who continue to represent the spirit of Madi students at Makerere—in
-            healthcare, research, public service, and beyond.
+            Meet alumni from the MAMSA community.
           </p>
           <div className="flex justify-center pt-2">
             <Link
@@ -59,9 +58,9 @@ export default async function AlumniPage() {
 
         {!error && alumni.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-800">Alumni highlights coming soon</h2>
+            <h2 className="text-lg font-semibold text-gray-800">No alumni yet</h2>
             <p className="mt-2 text-sm text-gray-500">
-              Published notable alumni from the admin site will appear here automatically.
+              Alumni profiles will be shown here.
             </p>
           </div>
         ) : (

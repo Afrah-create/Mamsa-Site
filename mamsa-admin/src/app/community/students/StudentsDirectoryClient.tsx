@@ -45,9 +45,9 @@ export default function StudentsDirectoryClient({ students, loadError }: Props) 
 
       {!loadError && students.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
-          <h2 className="text-lg font-semibold text-gray-800">Listings coming soon</h2>
+          <h2 className="text-lg font-semibold text-gray-800">No listings yet</h2>
           <p className="mt-2 text-sm text-gray-500">
-            Active skilled students and business profiles from the admin site will appear here automatically.
+            Student and business profiles will be shown here.
           </p>
         </div>
       ) : null}

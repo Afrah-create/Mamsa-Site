@@ -111,7 +111,7 @@ export default async function HomePage() {
                   <div className="grid gap-4 rounded-2xl border border-white/60 bg-white/95 p-5 text-green-900 shadow-inner sm:gap-5">
                     <h2 className="text-left text-lg font-semibold text-emerald-700 sm:text-xl">This Week at MAMSA</h2>
                     <p className="text-left text-sm text-emerald-800/80 sm:text-base">
-                      Highlights from our vibrant community of Madi students at Makerere — fresh stories, upcoming events, and the leaders who make it happen.
+                      Latest stories, upcoming events, and leadership updates.
                     </p>
                     <dl className="grid grid-cols-3 gap-3 text-center text-sm font-medium text-emerald-900">
                       <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
@@ -256,8 +256,8 @@ export default async function HomePage() {
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Notable alumni</p>
                   <h2 className="mt-2 text-3xl font-bold text-gray-900">Leaders from our community</h2>
-                  <p className="mt-2 max-w-2xl text-sm text-gray-600 sm:text-base">
-                    Graduates who continue to inspire Madi students at Makerere—published from the admin directory.
+                    <p className="mt-2 max-w-2xl text-sm text-gray-600 sm:text-base">
+                    Alumni profiles from our community.
                   </p>
                 </div>
                 <Link

@@ -29,7 +29,7 @@ export default function CommunityGalleryPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">Community</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Our Gallery</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600 sm:text-base">
-            Moments from events, outreach, and life in the MAMSA community — curated for everyone who walks this journey with us.
+            Photos from events and community activities.
           </p>
         </div>
       </header>

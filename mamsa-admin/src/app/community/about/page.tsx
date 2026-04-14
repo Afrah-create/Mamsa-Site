@@ -176,15 +176,15 @@ export default async function CommunityAboutPage() {
 
       <section className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 lg:pb-20">
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 text-center sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Explore Notable Alumni</h2>
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Notable Alumni</h2>
           <p className="mt-2 text-sm text-gray-600 sm:text-base">
-            Alumni stories now live on a dedicated page for a cleaner and more focused browsing experience.
+            View alumni profiles on the alumni page.
           </p>
           <Link
             href="/community/alumni"
             className="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
           >
-            Visit Alumni Page
+            Open Alumni Page
           </Link>
         </div>
       </section>

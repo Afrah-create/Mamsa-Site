@@ -57,7 +57,7 @@ export default async function EventsPage() {
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-amber-900">Events Calendar Temporarily Unavailable</h3>
               <p className="mt-1 text-sm text-amber-800">
-                We&apos;re experiencing a temporary issue loading upcoming events. Don&apos;t worry—this should resolve shortly. Try refreshing the page, or feel free to check back in a few minutes.
+                We could not load events right now. Please refresh and try again.
               </p>
             </div>
           </div>
@@ -69,7 +69,7 @@ export default async function EventsPage() {
           <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
             <p className="text-lg font-semibold text-gray-700">No upcoming events</p>
             <p className="mt-2 text-sm text-gray-500">
-              When new events are published in the admin panel, they will appear here automatically.
+              New events will be shown here.
             </p>
           </div>
         ) : (
