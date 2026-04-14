@@ -10,7 +10,6 @@ import {
   Home,
   Images,
   Info,
-  LogIn,
   Mail,
   Menu,
   Newspaper,
@@ -48,7 +47,7 @@ const COMMUNITY_ITEMS = [
   },
 ] as const;
 
-const LOGIN_HREF = '/login';
+const ALUMNI_HREF = '/community/alumni';
 
 function pathMatches(href: string, pathname: string | null) {
   if (!pathname) return false;
@@ -271,12 +270,12 @@ export default function PublicNavbar() {
 
         <div className="hidden items-center gap-3 lg:flex">
           <Link
-            href={LOGIN_HREF}
+            href={ALUMNI_HREF}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-            aria-label="Admin login"
+            aria-label="View notable alumni"
           >
-            <LogIn className="h-4 w-4" aria-hidden />
-            Admin Login
+            <GraduationCap className="h-4 w-4" aria-hidden />
+            Notable Alumni
           </Link>
         </div>
 
@@ -406,13 +405,13 @@ export default function PublicNavbar() {
 
             <div className="border-t border-emerald-100 bg-white/90 p-4 dark:border-emerald-800 dark:bg-emerald-950/80">
               <Link
-                href={LOGIN_HREF}
+                href={ALUMNI_HREF}
                 onClick={closeMobile}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-                aria-label="Admin login"
+                aria-label="View notable alumni"
               >
-                <LogIn className="h-4 w-4" aria-hidden />
-                Admin Login
+                <GraduationCap className="h-4 w-4" aria-hidden />
+                Notable Alumni
               </Link>
             </div>
         </div>
