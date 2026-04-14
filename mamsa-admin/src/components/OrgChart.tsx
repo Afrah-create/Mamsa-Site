@@ -1,7 +1,8 @@
 'use client';
 
 import { Leader } from '@/lib/public-content';
-import { useMemo } from 'react';
+import { Mail, Phone, UserRound, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppImage } from '@/components/ui/AppImage';
 import { getInitials } from '@/lib/image-utils';
 
@@ -70,6 +71,26 @@ function groupLeadersByLevel(leaders: Leader[]): Map<number, Leader[]> {
 
 export default function OrgChart({ leaders }: OrgChartProps) {
   const groupedLeaders = useMemo(() => groupLeadersByLevel(leaders), [leaders]);
+  const [activeLeaderId, setActiveLeaderId] = useState<number | null>(null);
+
+  const activeLeader = useMemo(
+    () => leaders.find((leader) => leader.id === activeLeaderId) ?? null,
+    [leaders, activeLeaderId],
+  );
+
+  useEffect(() => {
+    if (!activeLeader) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActiveLeaderId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [activeLeader]);
 
   // Get level styling
   const getLevelStyles = (level: number) => {
@@ -136,9 +157,11 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     const styles = getLevelStyles(level);
     
     return (
-      <div
+      <button
         key={leader.id}
-        className={`${styles.card} rounded-lg ${styles.padding} transition-all duration-300 hover:scale-105 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center ${styles.cardWidth} flex-shrink-0 group`}
+        type="button"
+        onClick={() => setActiveLeaderId(leader.id)}
+        className={`${styles.card} rounded-lg ${styles.padding} transition-all duration-300 hover:scale-105 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center ${styles.cardWidth} flex-shrink-0 group text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
       >
         {/* Circular Profile Image */}
         <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md group-hover:shadow-lg transition-all duration-300 ${styles.imageSize} ${
@@ -173,7 +196,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         <p className={`${styles.text} font-medium text-center line-clamp-2 leading-tight ${styles.positionSize}`}>
           {leader.position || 'Member'}
         </p>
-      </div>
+      </button>
     );
   };
 
@@ -225,22 +248,109 @@ export default function OrgChart({ leaders }: OrgChartProps) {
   const sortedLevels = Array.from(groupedLeaders.keys()).sort((a, b) => a - b);
 
   return (
-    <div className="w-full py-6 sm:py-8 md:py-10">
-      {/* Subtle background with pattern */}
-      <div className="relative bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Decorative pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgb(16, 185, 129) 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
-          }}
-        />
-        
-        {/* Content */}
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
-          {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
+    <>
+      <div className="w-full py-6 sm:py-8 md:py-10">
+        {/* Subtle background with pattern */}
+        <div className="relative bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Decorative pattern overlay */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
+            style={{
+              backgroundImage: `radial-gradient(circle at 2px 2px, rgb(16, 185, 129) 1px, transparent 0)`,
+              backgroundSize: '40px 40px'
+            }}
+          />
+          
+          {/* Content */}
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
+            {sortedLevels.map(level => renderLevel(level, groupedLeaders.get(level)!))}
+          </div>
         </div>
       </div>
-    </div>
+
+      {activeLeader ? (
+        <div
+          className="fixed inset-0 z-[75] flex items-center justify-center bg-black/70 p-4"
+          role="presentation"
+          onClick={() => setActiveLeaderId(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={activeLeader.name}
+            onClick={(event) => event.stopPropagation()}
+            className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setActiveLeaderId(null)}
+              aria-label="Close leader details"
+              className="absolute right-4 top-4 z-10 rounded-full bg-black/60 p-2 text-white transition hover:bg-black/75"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="grid gap-6 p-5 sm:grid-cols-[220px,1fr] sm:p-6">
+              <div className="overflow-hidden rounded-xl border border-gray-200">
+                <div className="relative h-[280px] w-full bg-gray-100">
+                  <AppImage
+                    src={activeLeader.image_url}
+                    alt={activeLeader.name}
+                    className="h-full w-full object-cover object-top"
+                    fallback={
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                        <UserRound className="h-12 w-12" />
+                      </div>
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">{activeLeader.name}</h3>
+                  <p className="mt-1 text-sm font-medium text-emerald-700">{activeLeader.position || 'Leadership Team'}</p>
+                  {activeLeader.department ? (
+                    <p className="mt-1 text-xs text-gray-500">Department: {activeLeader.department}</p>
+                  ) : null}
+                </div>
+
+                {activeLeader.bio ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Profile</p>
+                    <p className="mt-1 text-sm leading-relaxed text-gray-700">{activeLeader.bio}</p>
+                  </div>
+                ) : null}
+
+                {(activeLeader.email || activeLeader.phone) ? (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Available links</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {activeLeader.email ? (
+                        <a
+                          href={`mailto:${activeLeader.email}`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                          Email
+                        </a>
+                      ) : null}
+                      {activeLeader.phone ? (
+                        <a
+                          href={`tel:${activeLeader.phone}`}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                          <Phone className="h-3.5 w-3.5" />
+                          Phone
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
