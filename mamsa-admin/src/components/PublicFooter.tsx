@@ -41,8 +41,8 @@ const footerExploreLinks = [
 ];
 
 const footerCommunityLinks = [
-  { label: 'Alumni', href: '/community/alumni' },
-  { label: 'Skilled students', href: '/community/students' },
+  { label: 'Featured alumni', href: '/community/alumni' },
+  { label: 'Talent & business', href: '/community/students' },
   { label: 'Gallery', href: '/community/gallery' },
 ];
 

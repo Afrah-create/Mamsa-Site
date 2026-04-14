@@ -21,7 +21,7 @@ export default async function SkilledStudentsPage() {
         <div className="absolute inset-0 min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]">
           <Image
             src="/images/About.jpg"
-            alt="MAMSA skilled students and entrepreneurs"
+            alt="MAMSA student talent and business directory"
             fill
             priority
             sizes="100vw"
@@ -31,7 +31,7 @@ export default async function SkilledStudentsPage() {
         </div>
         <ScrollReveal className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Community</p>
-          <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Skilled students &amp; business</h1>
+          <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Student Talent &amp; Business Directory</h1>
           <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
             Members offering skills or small businesses, with an active listing on MAMSA. Connect for services,
             collaborations, and community support.

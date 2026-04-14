@@ -32,19 +32,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id: raw } = await params;
   const id = Number(raw);
   if (!Number.isFinite(id)) {
-    return { title: 'Skilled students | MAMSA' };
+    return { title: 'Student Talent & Business Directory | MAMSA' };
   }
   let student: SkilledStudentPublic | null = null;
   try {
     student = await getSkilledStudentById(id);
   } catch {
-    return { title: 'Skilled students | MAMSA' };
+    return { title: 'Student Talent & Business Directory | MAMSA' };
   }
   if (!student) {
-    return { title: 'Skilled students | MAMSA' };
+    return { title: 'Student Talent & Business Directory | MAMSA' };
   }
   return {
-    title: `${student.full_name} | Skilled students | MAMSA`,
+    title: `${student.full_name} | Student Talent & Business Directory | MAMSA`,
     description: student.bio?.slice(0, 160) || student.description?.slice(0, 160) || undefined,
   };
 }
@@ -83,7 +83,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
         </Link>
         <span className="mx-2 text-gray-400">/</span>
         <Link href="/community/students" className="hover:text-emerald-700">
-          Skilled students
+          Student Talent & Business Directory
         </Link>
         <span className="mx-2 text-gray-400">/</span>
         <span className="text-gray-500">{student.full_name}</span>

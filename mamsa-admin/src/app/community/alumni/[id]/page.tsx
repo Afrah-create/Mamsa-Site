@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Alumni | MAMSA' };
   }
   return {
-    title: `${data.full_name} | Notable Alumni | MAMSA`,
+    title: `${data.full_name} | Featured Alumni Profiles | MAMSA`,
     description: data.biography?.slice(0, 160) || data.achievements?.slice(0, 160) || undefined,
   };
 }
@@ -63,7 +63,7 @@ export default async function AlumniProfilePage({ params }: PageProps) {
         </Link>
         <span className="mx-2 text-gray-400">/</span>
         <Link href="/community/alumni" className="hover:text-emerald-700">
-          Alumni
+          Featured Alumni
         </Link>
         <span className="mx-2 text-gray-400">/</span>
         <span className="text-gray-500">{alumnus.full_name}</span>
@@ -167,7 +167,7 @@ export default async function AlumniProfilePage({ params }: PageProps) {
           href="/community/alumni"
           className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
         >
-          ← Back to all alumni
+          ← Back to featured alumni
         </Link>
       </div>
     </div>

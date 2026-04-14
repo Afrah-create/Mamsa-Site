@@ -32,16 +32,16 @@ const PRIMARY_NAV = [
 
 const COMMUNITY_ITEMS = [
   {
-    label: 'Alumni',
+    label: 'Featured Alumni',
     href: '/community/alumni',
     icon: GraduationCap,
-    description: 'Notable graduates and profiles',
+    description: 'Featured alumni profiles',
   },
   {
-    label: 'Skilled Students',
+    label: 'Talent & Business',
     href: '/community/students',
     icon: BookOpen,
-    description: 'Student achievements directory',
+    description: 'Student talent and business directory',
   },
   {
     label: 'Gallery',
@@ -323,10 +323,10 @@ export default function PublicNavbar() {
           <Link
             href={ALUMNI_HREF}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-            aria-label="View notable alumni"
+            aria-label="View featured alumni profiles"
           >
             <GraduationCap className="h-4 w-4" aria-hidden />
-            Notable Alumni
+            Featured Alumni
           </Link>
         </div>
 
@@ -459,10 +459,10 @@ export default function PublicNavbar() {
                 href={ALUMNI_HREF}
                 onClick={closeMobile}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-                aria-label="View notable alumni"
+                aria-label="View featured alumni profiles"
               >
                 <GraduationCap className="h-4 w-4" aria-hidden />
-                Notable Alumni
+                Featured Alumni
               </Link>
             </div>
         </div>

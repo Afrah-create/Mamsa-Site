@@ -23,10 +23,10 @@ export default async function AlumniPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
         </div>
         <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Alumni</p>
-          <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Notable MAMSA Alumni</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Featured Alumni</p>
+          <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Featured Alumni Profiles</h1>
           <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
-            Meet alumni from the MAMSA community.
+            Discover alumni who have chosen to be featured on the MAMSA platform.
           </p>
           <div className="flex justify-center pt-2">
             <Link
@@ -47,9 +47,9 @@ export default async function AlumniPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h2 className="text-sm font-semibold text-amber-900">Alumni profiles unavailable</h2>
+                <h2 className="text-sm font-semibold text-amber-900">Featured alumni profiles unavailable</h2>
                 <p className="mt-1 text-sm text-amber-800">
-                  We couldn&apos;t load alumni data right now. Please refresh in a moment or try again later.
+                  We couldn&apos;t load featured alumni data right now. Please refresh in a moment or try again later.
                 </p>
               </div>
             </div>
@@ -58,9 +58,9 @@ export default async function AlumniPage() {
 
         {!error && alumni.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
-            <h2 className="text-lg font-semibold text-gray-800">No alumni yet</h2>
+            <h2 className="text-lg font-semibold text-gray-800">No featured alumni yet</h2>
             <p className="mt-2 text-sm text-gray-500">
-              Alumni profiles will be shown here.
+              Featured alumni profiles will be shown here.
             </p>
           </div>
         ) : (

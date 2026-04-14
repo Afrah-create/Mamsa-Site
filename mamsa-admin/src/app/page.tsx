@@ -265,17 +265,17 @@ export default async function HomePage() {
             <div className="mx-auto max-w-6xl px-6 py-20">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Notable alumni</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Featured alumni</p>
                   <h2 className="mt-2 text-3xl font-bold text-gray-900">Leaders from our community</h2>
                     <p className="mt-2 max-w-2xl text-sm text-gray-600 sm:text-base">
-                    Alumni profiles from our community.
+                    Featured alumni profiles from our community.
                   </p>
                 </div>
                 <Link
                   href="/community/alumni"
                   className="inline-flex shrink-0 items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
                 >
-                  View all alumni →
+                  View featured alumni →
                 </Link>
               </div>
               <div className="mt-10 grid gap-8 md:grid-cols-3">
