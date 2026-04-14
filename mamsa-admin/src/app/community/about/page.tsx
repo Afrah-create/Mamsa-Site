@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import NotableAlumniCard from '@/components/NotableAlumniCard';
-import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchPublishedAlumni } from '@/lib/public-content';
+import { ABOUT_SECTIONS, fetchAboutSnapshot } from '@/lib/public-content';
 
 export const revalidate = 180;
 
@@ -35,12 +34,9 @@ const FALLBACK_ABOUT_TEXT =
   'Our story is still being written. Stay tuned as we publish more about the history, mission, vision, and values of MAMSA.';
 
 export default async function CommunityAboutPage() {
-  const [{ data: about, error: aboutError }, { data: alumni, error: alumniError }] = await Promise.all([
-    fetchAboutSnapshot(),
-    fetchPublishedAlumni(),
-  ]);
+  const { data: about, error: aboutError } = await fetchAboutSnapshot();
 
-  const hasError = Boolean(aboutError || alumniError);
+  const hasError = Boolean(aboutError);
   const sectionParagraphs = ABOUT_SECTIONS.reduce<Record<SectionKey, ReturnType<typeof splitIntoParagraphs>>>(
     (acc, key) => {
       acc[key] = splitIntoParagraphs(about[key]);
@@ -50,7 +46,6 @@ export default async function CommunityAboutPage() {
   );
   const secondarySections = ABOUT_SECTIONS.filter((key): key is SectionKey => key !== 'history');
   const highlightSections: SectionKey[] = ['mission', 'vision', 'objectives'];
-  const hasAlumni = alumni.length > 0;
 
   return (
     <>
@@ -179,39 +174,19 @@ export default async function CommunityAboutPage() {
           </div>
         </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16 sm:px-10 lg:py-20" id="notable-alumni">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="text-center md:text-left">
-              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Community Champions</p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900 sm:text-[2.2rem]">Notable Alumni</h2>
-              <p className="mt-3 max-w-3xl text-sm text-gray-600 sm:text-base">
-                Our alumni embody the spirit of MAMSA beyond campus. They lead in various fields and sectors—creating ripple effects that inspire current Madi students at Makerere to keep aiming higher.
-              </p>
-            </div>
-            {hasAlumni && (
-              <Link
-                href="/community/alumni"
-                className="inline-flex items-center justify-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 md:shrink-0"
-              >
-                View all alumni →
-              </Link>
-            )}
-          </div>
-
-          {hasAlumni ? (
-            <div className="mt-10 grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
-              {alumni.slice(0, 6).map((alumnus) => (
-                <NotableAlumniCard key={alumnus.id} alumnus={alumnus} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-10 rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
-              <h3 className="text-lg font-semibold text-gray-800">Notable alumni profiles will be featured here soon.</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Our team is curating inspiring stories from the MAMSA alumni network. Check back later for highlights.
-              </p>
-            </div>
-          )}
+      <section className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 lg:pb-20">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 text-center sm:p-8">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Explore Notable Alumni</h2>
+          <p className="mt-2 text-sm text-gray-600 sm:text-base">
+            Alumni stories now live on a dedicated page for a cleaner and more focused browsing experience.
+          </p>
+          <Link
+            href="/community/alumni"
+            className="mt-5 inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+          >
+            Visit Alumni Page
+          </Link>
+        </div>
       </section>
     </>
   );
