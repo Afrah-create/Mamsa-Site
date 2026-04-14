@@ -98,6 +98,29 @@ export default function EventsPage() {
     return trimmed;
   };
 
+  const normalizeTags = (raw: unknown): string[] => {
+    if (Array.isArray(raw)) {
+      return raw.map((t) => String(t).trim()).filter(Boolean);
+    }
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) return [];
+      try {
+        const parsed = JSON.parse(trimmed) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed.map((t) => String(t).trim()).filter(Boolean);
+        }
+      } catch {
+        return trimmed
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
+      }
+      return [];
+    }
+    return [];
+  };
+
   const normalizeEvent = (event: Event): Event => ({
     ...event,
     featured_image:
@@ -107,7 +130,8 @@ export default function EventsPage() {
     time: formatTimeForDisplay(event.time),
     registration_deadline: event.registration_deadline
       ? formatDateTimeForDisplay(event.registration_deadline)
-      : event.registration_deadline
+      : event.registration_deadline,
+    tags: normalizeTags(event.tags)
   });
 
   // Static data for demonstration
@@ -236,7 +260,8 @@ export default function EventsPage() {
 
         if (data && data.length > 0) {
           console.log('Loaded events from database:', data.length, 'events');
-          setEvents(data.map(normalizeEvent));
+          const normalized = data.map(normalizeEvent);
+          setEvents(normalized);
         } else {
           console.log('No events found in database');
           setEvents([]);
