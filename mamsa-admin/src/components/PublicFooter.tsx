@@ -10,6 +10,12 @@ const InstagramIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const FacebookIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.08 5.66 21.24 10.44 22v-7.03H7.9v-2.91h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.25.2 2.25.2v2.45h-1.27c-1.25 0-1.64.78-1.64 1.57v1.88h2.79l-.45 2.91h-2.34V22C18.34 21.24 22 17.08 22 12.06z" />
+  </svg>
+);
+
 const TikTokIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.36h-3.3v13.41a2.95 2.95 0 1 1-2.95-2.95c.23 0 .45.03.67.08V9.52a6.27 6.27 0 0 0-.67-.04A6.29 6.29 0 1 0 15.86 15V8.2A8.11 8.11 0 0 0 21 10.03V6.79a4.84 4.84 0 0 1-1.41-.1z" />
@@ -41,6 +47,11 @@ const footerCommunityLinks = [
 ];
 
 const SOCIAL_LINKS = {
+  facebook: {
+    href: 'https://www.facebook.com/profile.php?id=61575142077443',
+    label: 'Follow us on Facebook',
+    enabled: true,
+  },
   instagram: {
     href: 'https://www.instagram.com/mamsa213?igsh=MTBpNHFlZHZrbmM3ZQ==',
     label: 'Follow us on Instagram',
@@ -64,6 +75,7 @@ const SOCIAL_LINKS = {
 } as const;
 
 const socialEntries = [
+  { key: 'facebook', icon: FacebookIcon, text: 'Facebook' },
   { key: 'instagram', icon: InstagramIcon, text: 'Instagram' },
   { key: 'tiktok', icon: TikTokIcon, text: 'TikTok' },
   { key: 'whatsapp', icon: WhatsAppIcon, text: 'WhatsApp' },
