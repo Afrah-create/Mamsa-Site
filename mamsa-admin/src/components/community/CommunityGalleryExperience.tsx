@@ -166,7 +166,7 @@ export default function CommunityGalleryExperience({ items }: Props) {
           <button
             type="button"
             onClick={closeLightbox}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
+            className="absolute right-4 top-4 z-[3] rounded-full bg-white/10 p-2 text-white transition hover:bg-white/20"
             aria-label="Close gallery"
           >
             <X className="h-6 w-6" />
