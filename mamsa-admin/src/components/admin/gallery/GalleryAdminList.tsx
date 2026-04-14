@@ -1,7 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import {
+  ImageIcon,
+  ImagePlus,
+  LayoutGrid,
+  List,
+  Pencil,
+  Search,
+  Star,
+  Trash2,
+} from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -10,17 +21,9 @@ import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
 import { publicAssetUrl } from '@/lib/upload';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
+import type { GalleryItem, GalleryListResponse } from '@/types/gallery';
 import CreateGalleryModal from './CreateGalleryModal';
 import EditGalleryModal from './EditGalleryModal';
-
-type ListPayload = {
-  items: Record<string, unknown>[];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  categories: string[];
-};
 
 export default function GalleryAdminList() {
   const router = useRouter();
@@ -28,19 +31,46 @@ export default function GalleryAdminList() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
+  const [rows, setRows] = useState<GalleryItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [categories, setCategories] = useState<string[]>([]);
+  const [stats, setStats] = useState({ active: 0, featured: 0, categoriesCount: 0 });
   const [categoryTab, setCategoryTab] = useState<string>('all');
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Record<string, unknown> | null>(null);
+  const [editing, setEditing] = useState<GalleryItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GalleryItem | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('gallery-view-mode');
+      if (v === 'table' || v === 'grid') setViewMode(v);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gallery-view-mode', viewMode);
+    } catch {
+      /* ignore */
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setAppliedSearch(searchInput.trim());
+      setPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -61,13 +91,20 @@ export default function GalleryAdminList() {
         page: String(page),
         limit: '20',
       });
-      if (appliedSearch.trim()) q.set('search', appliedSearch.trim());
+      if (appliedSearch) q.set('search', appliedSearch);
       if (categoryTab && categoryTab !== 'all') q.set('category', categoryTab);
-      const data = await adminRequest<ListPayload>(`/api/admin/gallery?${q.toString()}`);
+      const data = await adminRequest<GalleryListResponse>(`/api/admin/gallery?${q.toString()}`);
       setRows(data?.items ?? []);
       setTotal(data?.total ?? 0);
       setTotalPages(data?.totalPages ?? 0);
       setCategories(data?.categories ?? []);
+      setStats(
+        data?.stats ?? {
+          active: 0,
+          featured: 0,
+          categoriesCount: (data?.categories ?? []).length,
+        },
+      );
     } catch (e) {
       console.error(e);
       setRows([]);
@@ -95,8 +132,9 @@ export default function GalleryAdminList() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
     try {
-      await adminRequest(`/api/admin/gallery/${Number(deleteTarget.id)}`, { method: 'DELETE' });
-      showToast('Item deleted.', 'success');
+      await adminRequest(`/api/admin/gallery/${deleteTarget.id}`, { method: 'DELETE' });
+      const label = deleteTarget.title;
+      showToast(`Photo "${label}" removed successfully.`, 'success');
       setDeleteTarget(null);
       afterMutation();
     } catch (e) {
@@ -106,6 +144,19 @@ export default function GalleryAdminList() {
       setDeleteLoading(false);
     }
   };
+
+  const imgSrc = useCallback((url: string | null) => {
+    const raw = url?.trim();
+    if (!raw) return '';
+    return publicAssetUrl(raw);
+  }, []);
+
+  const emptyMessage = useMemo(() => {
+    if (appliedSearch) {
+      return { title: `No results for "${appliedSearch}"`, showClear: true };
+    }
+    return { title: 'No gallery items found', showClear: false };
+  }, [appliedSearch]);
 
   if (loadingUser || !user) {
     return <AdminLoadingState />;
@@ -117,9 +168,10 @@ export default function GalleryAdminList() {
 
       <CreateGalleryModal
         isOpen={showCreate}
+        existingCategories={categories}
         onClose={() => setShowCreate(false)}
-        onSuccess={() => {
-          showToast('Gallery item created.', 'success');
+        onSuccess={({ title }) => {
+          showToast(`Photo "${title}" added successfully`, 'success');
           afterMutation();
         }}
       />
@@ -127,12 +179,13 @@ export default function GalleryAdminList() {
       <EditGalleryModal
         isOpen={showEdit}
         item={editing}
+        existingCategories={categories}
         onClose={() => {
           setShowEdit(false);
           setEditing(null);
         }}
-        onSuccess={() => {
-          showToast('Gallery item updated.', 'success');
+        onSuccess={({ title }) => {
+          showToast(`Photo "${title}" updated successfully`, 'success');
           afterMutation();
         }}
       />
@@ -142,34 +195,56 @@ export default function GalleryAdminList() {
         onClose={() => !deleteLoading && setDeleteTarget(null)}
         onConfirm={confirmDelete}
         title="Delete gallery item"
-        message={deleteTarget ? `Delete “${String(deleteTarget.title ?? '')}”?` : ''}
+        message={deleteTarget ? `Delete “${deleteTarget.title}”?` : ''}
         confirmText="Delete"
         loading={deleteLoading}
       />
 
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Gallery</h1>
-            <p className="mt-1 text-sm text-gray-500">Manage gallery images and categories.</p>
+            <p className="mt-1 text-sm text-gray-500">Manage photos and media for the site</p>
           </div>
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
-            Add item
+            <ImagePlus className="h-5 w-5 shrink-0" aria-hidden />
+            Add Item
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Total Items', value: total },
+            { label: 'Active', value: stats.active },
+            { label: 'Featured', value: stats.featured },
+            { label: 'Categories', value: stats.categoriesCount },
+          ].map((card) => (
+            <div
+              key={card.label}
+              className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+            >
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{card.label}</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{card.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             onClick={() => {
               setCategoryTab('all');
               setPage(1);
             }}
-            className={`rounded-full px-3 py-1 text-sm font-medium ${categoryTab === 'all' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
+              categoryTab === 'all'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
           >
             All
           </button>
@@ -181,41 +256,156 @@ export default function GalleryAdminList() {
                 setCategoryTab(c);
                 setPage(1);
               }}
-              className={`rounded-full px-3 py-1 text-sm font-medium ${categoryTab === c ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition ${
+                categoryTab === c
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
               {c}
             </button>
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                setAppliedSearch(searchInput.trim());
-                setPage(1);
-              }
-            }}
-            placeholder="Search title or description…"
-            className="min-w-[200px] flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:outline-none sm:max-w-md"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setAppliedSearch(searchInput.trim());
-              setPage(1);
-            }}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
-            Search
-          </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative min-w-0 flex-1 sm:max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search title or description…"
+              className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+            />
+          </div>
+          <div className="flex shrink-0 gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
+            <button
+              type="button"
+              aria-label="Grid view"
+              onClick={() => setViewMode('grid')}
+              className={`rounded-md p-2 ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Table view"
+              onClick={() => setViewMode('table')}
+              className={`rounded-md p-2 ${viewMode === 'table' ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <List className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                  <div className="aspect-square animate-pulse bg-gray-200" />
+                  <div className="space-y-2 p-3">
+                    <div className="h-4 w-[75%] animate-pulse rounded bg-gray-200" />
+                    <div className="h-3 w-[50%] animate-pulse rounded bg-gray-200" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="divide-y divide-gray-100">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3">
+                    <div className="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-gray-200" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-[33%] animate-pulse rounded bg-gray-200" />
+                      <div className="h-3 w-[25%] animate-pulse rounded bg-gray-200" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
+            <ImageIcon className="h-12 w-12 text-gray-300" aria-hidden />
+            <p className="mt-3 text-sm font-medium text-gray-800">{emptyMessage.title}</p>
+            {emptyMessage.showClear ? (
+              <button
+                type="button"
+                className="mt-4 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                onClick={() => {
+                  setSearchInput('');
+                  setAppliedSearch('');
+                  setPage(1);
+                }}
+              >
+                Clear search
+              </button>
+            ) : null}
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {rows.map((item) => {
+              const src = imgSrc(item.image_url);
+              const featured = item.is_featured === 1;
+              return (
+                <div
+                  key={item.id}
+                  className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-gray-100">
+                    {src ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={src} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-gray-300">
+                        <ImageIcon className="h-10 w-10" aria-hidden />
+                      </div>
+                    )}
+                    {featured ? (
+                      <span className="absolute right-2 top-2 rounded-full bg-black/40 p-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" aria-hidden />
+                      </span>
+                    ) : null}
+                    <div className="absolute inset-x-0 bottom-0 translate-y-full bg-black/60 p-3 transition-transform duration-300 group-hover:translate-y-0">
+                      <p className="truncate text-sm font-semibold text-white">{item.title}</p>
+                      {item.category ? (
+                        <span className="mt-1 inline-block rounded-full bg-white/20 px-2 py-0.5 text-xs text-white">
+                          {item.category}
+                        </span>
+                      ) : null}
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          className="rounded-lg bg-white/90 p-1.5 text-emerald-700 shadow hover:bg-white"
+                          aria-label="Edit"
+                          onClick={() => {
+                            setEditing(item);
+                            setShowEdit(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-lg bg-white/90 p-1.5 text-red-600 shadow hover:bg-white"
+                          aria-label="Delete"
+                          onClick={() => setDeleteTarget(item)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-50 p-3">
+                    <p className="truncate text-sm font-medium text-gray-900">{item.title}</p>
+                    <p className="truncate text-xs text-gray-500">{item.category ?? '—'}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
@@ -224,78 +414,107 @@ export default function GalleryAdminList() {
                   <th className="px-4 py-3">Image</th>
                   <th className="px-4 py-3">Title</th>
                   <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Tags</th>
                   <th className="px-4 py-3">Featured</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
-                      No gallery items yet. Add one to get started.
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((r) => {
-                    const id = Number(r.id);
-                    const src = publicAssetUrl(r.image_url != null ? String(r.image_url) : '');
-                    return (
-                      <tr key={id} className="hover:bg-gray-50/80">
-                        <td className="px-4 py-2">
-                          {src ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={src} alt="" className="h-12 w-12 rounded object-cover" />
-                          ) : (
-                            <span className="text-xs text-gray-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{String(r.title ?? '')}</td>
-                        <td className="px-4 py-3 text-gray-600">{String(r.category ?? '—')}</td>
-                        <td className="px-4 py-3">{Number(r.featured) === 1 ? 'Yes' : '—'}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditing(r);
-                                setShowEdit(true);
-                              }}
-                              className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50"
-                              aria-label="Edit"
-                            >
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteTarget(r)}
-                              className="rounded-lg p-2 text-red-600 hover:bg-red-50"
-                              aria-label="Delete"
-                            >
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                {rows.map((item) => {
+                  const src = imgSrc(item.image_url);
+                  const tags = item.tags ?? [];
+                  const shown = tags.slice(0, 2);
+                  const more = tags.length - shown.length;
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50/80">
+                      <td className="px-4 py-2">
+                        {src ? (
+                          <Image
+                            src={src}
+                            alt=""
+                            width={48}
+                            height={48}
+                            className="h-12 w-12 rounded-lg object-cover"
+                            unoptimized={/^https?:\/\//i.test(src)}
+                          />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-gray-300">
+                            <ImageIcon className="h-5 w-5" />
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                        )}
+                      </td>
+                      <td className="max-w-[200px] truncate px-4 py-3 font-medium text-gray-900">{item.title}</td>
+                      <td className="px-4 py-3 text-gray-600">{item.category ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {shown.map((t) => (
+                            <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                              {t}
+                            </span>
+                          ))}
+                          {more > 0 ? (
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                              +{more} more
+                            </span>
+                          ) : null}
+                          {tags.length === 0 ? <span className="text-xs text-gray-400">—</span> : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {item.is_featured === 1 ? (
+                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" aria-label="Featured" />
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                            item.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditing(item);
+                              setShowEdit(true);
+                            }}
+                            className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50"
+                            aria-label="Edit"
+                          >
+                            <Pencil className="h-5 w-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(item)}
+                            className="rounded-lg p-2 text-red-600 hover:bg-red-50"
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-            {total > 0 ? <p className="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">{total} total</p> : null}
           </div>
         )}
 
         {totalPages > 1 ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded border px-3 py-1 text-sm disabled:opacity-40"
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Previous
             </button>
@@ -306,7 +525,7 @@ export default function GalleryAdminList() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="rounded border px-3 py-1 text-sm disabled:opacity-40"
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Next
             </button>

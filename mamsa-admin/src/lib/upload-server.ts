@@ -10,30 +10,6 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/gif': '.gif',
 };
 
-const DEBUG_ENDPOINT = 'http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc';
-const DEBUG_SESSION = 'c5130e';
-
-function debugLog(hypothesisId: string, location: string, message: string, data: Record<string, unknown>) {
-  // #region agent log
-  fetch(DEBUG_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Debug-Session-Id': DEBUG_SESSION,
-    },
-    body: JSON.stringify({
-      sessionId: DEBUG_SESSION,
-      runId: 'pre-fix',
-      hypothesisId,
-      location,
-      message,
-      data,
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-}
-
 /**
  * Save a base64 data URL to `public/uploads/{folder}/` and return `/uploads/{folder}/{uuid}.{ext}`.
  */
@@ -63,11 +39,6 @@ export async function saveImage(base64String: string, folder: string): Promise<s
   const filename = `${randomUUID()}${ext}`;
   const diskPath = path.join(dir, filename);
   await fs.promises.writeFile(diskPath, buffer);
-  debugLog('H3', 'src/lib/upload-server.ts:saveImage', 'saveImage stored file', {
-    folder: safeFolder,
-    extension: ext,
-    bytes: buffer.length,
-  });
 
   return `/uploads/${safeFolder}/${filename}`;
 }
@@ -92,10 +63,6 @@ export async function deleteImage(storedPath: string | null | undefined): Promis
   const { default: fs } = await import('fs');
   try {
     await fs.promises.unlink(resolved);
-    debugLog('H5', 'src/lib/upload-server.ts:deleteImage', 'deleteImage removed file', {
-      storedPath,
-      resolved,
-    });
   } catch (e: unknown) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code !== 'ENOENT') throw e;

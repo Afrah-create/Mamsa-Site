@@ -1,21 +1,21 @@
 import { requireAdmin } from '@/lib/auth';
 import sql, { insertAndGetId } from '@/lib/db';
+import { parseTagsBody } from '@/lib/gallery-request-body';
 import { toMysqlJson, toMysqlJsonArray } from '@/lib/mysql-json';
 import { isBase64Image } from '@/lib/upload';
 import { saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
+import type { GalleryListResponse, GalleryRowRaw } from '@/types/gallery';
+import { parseDimensionsInput, rowToGalleryItem } from '@/types/gallery';
 
-function parseTags(input: unknown): string[] {
-  if (Array.isArray(input)) {
-    return input.map((t) => String(t).trim()).filter(Boolean);
-  }
-  if (typeof input === 'string') {
-    return input
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-  }
-  return [];
+function normalizeStatus(input: unknown): 'active' | 'inactive' {
+  if (input == null || input === '') return 'active';
+  const s = String(input).trim().toLowerCase();
+  return s === 'inactive' ? 'inactive' : 'active';
+}
+
+function normalizeFeatured(input: unknown): number {
+  return Number(input) === 1 ? 1 : 0;
 }
 
 export async function GET(request: Request) {
@@ -32,44 +32,68 @@ export async function GET(request: Request) {
     const like = search ? `%${search}%` : null;
     const catOk = category && category !== 'all' ? category : null;
 
-    const countRows = await sql<{ total: number }[]>`
-      SELECT COUNT(*) AS total
-      FROM gallery
-      WHERE 1 = 1
-        ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
-        ${catOk ? sql`AND category = ${catOk}` : sql``}
-    `;
-    const total = Number(countRows[0]?.total ?? 0);
-
-    const [rows, categoryRows] = await Promise.all([
-      sql<Record<string, unknown>[]>`
-      SELECT *
-      FROM gallery
-      WHERE 1 = 1
-        ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
-        ${catOk ? sql`AND category = ${catOk}` : sql``}
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `,
+    const [countRows, activeRows, featuredRows, categoryRows, listRows] = await Promise.all([
+      sql<{ total: number }[]>`
+        SELECT COUNT(*) AS total
+        FROM gallery
+        WHERE 1 = 1
+          ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
+          ${catOk ? sql`AND category = ${catOk}` : sql``}
+      `,
+      sql<{ c: number }[]>`
+        SELECT COUNT(*) AS c
+        FROM gallery
+        WHERE 1 = 1
+          ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
+          ${catOk ? sql`AND category = ${catOk}` : sql``}
+          AND status = 'active'
+      `,
+      sql<{ c: number }[]>`
+        SELECT COUNT(*) AS c
+        FROM gallery
+        WHERE 1 = 1
+          ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
+          ${catOk ? sql`AND category = ${catOk}` : sql``}
+          AND featured = 1
+      `,
       sql<{ category: string }[]>`
-      SELECT DISTINCT category AS category
-      FROM gallery
-      WHERE category IS NOT NULL AND TRIM(category) <> ''
-      ORDER BY category ASC
-    `,
+        SELECT DISTINCT category AS category
+        FROM gallery
+        WHERE category IS NOT NULL AND TRIM(category) <> ''
+        ORDER BY category ASC
+      `,
+      sql<GalleryRowRaw[]>`
+        SELECT *
+        FROM gallery
+        WHERE 1 = 1
+          ${like ? sql`AND (title LIKE ${like} OR description LIKE ${like})` : sql``}
+          ${catOk ? sql`AND category = ${catOk}` : sql``}
+        ORDER BY featured DESC, created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `,
     ]);
 
+    const total = Number(countRows[0]?.total ?? 0);
     const categories = categoryRows.map((r) => r.category).filter(Boolean);
+    const items = listRows.map(rowToGalleryItem);
+    const totalPages = Math.ceil(total / limit) || 0;
+
+    const payload: GalleryListResponse = {
+      items,
+      total,
+      totalPages,
+      categories,
+      page,
+      limit,
+      stats: {
+        active: Number(activeRows[0]?.c ?? 0),
+        featured: Number(featuredRows[0]?.c ?? 0),
+        categoriesCount: categories.length,
+      },
+    };
 
     return apiEnvelope(true, {
-      data: {
-        items: rows,
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 0,
-        categories,
-      },
+      data: payload,
       message: 'Gallery loaded',
     });
   } catch (error) {
@@ -83,7 +107,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   try {
     const body = await request.json();
@@ -109,9 +133,13 @@ export async function POST(request: Request) {
       }
     }
 
-    const tags = parseTags(body.tags);
+    const tags = parseTagsBody(body.tags);
     const tagsJson = toMysqlJsonArray(tags);
-    const dimensionsJson = toMysqlJson(body.dimensions ?? null);
+    const dimObj = parseDimensionsInput(body.dimensions);
+    const dimensionsJson = toMysqlJson(dimObj);
+    const status = normalizeStatus(body.status);
+    const featured = normalizeFeatured(body.is_featured ?? body.featured ?? 0);
+    const actor = String(session.id);
 
     const insertId = await insertAndGetId`
       INSERT INTO gallery (
@@ -129,19 +157,20 @@ export async function POST(request: Request) {
         ${body.event_date ?? null},
         ${body.file_size ?? null},
         ${dimensionsJson},
-        ${body.status ?? 'active'},
-        ${body.is_featured ?? body.featured ?? 0},
+        ${status},
+        ${featured},
         ${body.alt_text ?? null},
-        ${body.created_by ?? null},
-        ${body.updated_by ?? null}
+        ${actor},
+        ${actor}
       )
     `;
 
-    const rows = await sql<Record<string, unknown>[]>`
+    const rows = await sql<GalleryRowRaw[]>`
       SELECT * FROM gallery WHERE id = ${insertId} LIMIT 1
     `;
+    const item = rows[0] ? rowToGalleryItem(rows[0]) : null;
 
-    return apiEnvelope(true, { status: 201, data: rows[0], message: 'Gallery item created' });
+    return apiEnvelope(true, { status: 201, data: item, message: 'Gallery item created' });
   } catch (error) {
     console.error('[api/admin/gallery][POST]', error);
     return apiEnvelope(false, {

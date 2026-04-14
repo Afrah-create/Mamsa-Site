@@ -1,55 +1,23 @@
 import { requireAdmin } from '@/lib/auth';
 import sql from '@/lib/db';
+import { parseTagsBody } from '@/lib/gallery-request-body';
 import { toMysqlJson, toMysqlJsonArray } from '@/lib/mysql-json';
 import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
 import { deleteImage, saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
+import type { GalleryRowRaw } from '@/types/gallery';
+import { parseDimensionsFromDb, parseDimensionsInput, parseTagsFromDb, rowToGalleryItem } from '@/types/gallery';
 
-type GalleryRow = {
-  id: number;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  category: string | null;
-  tags: unknown;
-  photographer: string | null;
-  location: string | null;
-  event_date: string | null;
-  file_size: number | null;
-  dimensions: unknown;
-  status: string;
-  featured: number;
-  alt_text: string | null;
-  created_by: string | null;
-  updated_by: string | null;
-};
+type GalleryRow = GalleryRowRaw;
 
-function parseTags(input: unknown): string[] {
-  if (Array.isArray(input)) {
-    return input.map((t) => String(t).trim()).filter(Boolean);
-  }
-  if (typeof input === 'string') {
-    return input
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-  }
-  return [];
+function normalizeStatus(input: unknown): 'active' | 'inactive' {
+  if (input == null || input === '') return 'active';
+  const s = String(input).trim().toLowerCase();
+  return s === 'inactive' ? 'inactive' : 'active';
 }
 
-function tagsFromExisting(raw: unknown): string[] {
-  if (Array.isArray(raw)) {
-    return raw.map((t) => String(t).trim()).filter(Boolean);
-  }
-  if (typeof raw === 'string') {
-    try {
-      const p = JSON.parse(raw) as unknown;
-      return Array.isArray(p) ? p.map((t) => String(t).trim()).filter(Boolean) : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
+function normalizeFeatured(input: unknown): number {
+  return Number(input) === 1 ? 1 : 0;
 }
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
@@ -62,14 +30,14 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       return apiEnvelope(false, { status: 400, error: 'Invalid id', message: 'Validation failed' });
     }
 
-    const rows = await sql<Record<string, unknown>[]>`
+    const rows = await sql<GalleryRowRaw[]>`
       SELECT * FROM gallery WHERE id = ${numericId} LIMIT 1
     `;
     if (!rows[0]) {
       return apiEnvelope(false, { status: 404, error: 'Not found', message: 'Gallery item not found' });
     }
 
-    return apiEnvelope(true, { data: rows[0], message: 'Gallery item loaded' });
+    return apiEnvelope(true, { data: rowToGalleryItem(rows[0]), message: 'Gallery item loaded' });
   } catch (error) {
     console.error('[api/admin/gallery/[id]][GET]', error);
     return apiEnvelope(false, {
@@ -81,7 +49,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
 }
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const session = await requireAdmin();
 
   try {
     const { id } = await context.params;
@@ -104,7 +72,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     let imageUrl: string | null = existing.image_url;
     if (isBase64Image(imageVal)) {
       try {
-        if (isLocalUploadPath(existing.image_url)) {
+        if (existing.image_url && isLocalUploadPath(existing.image_url)) {
           await deleteImage(existing.image_url);
         }
         imageUrl = await saveImage(imageVal as string, 'gallery');
@@ -119,26 +87,40 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       imageUrl = String(imageVal);
     }
 
+    if (body.title !== undefined) {
+      const t = String(body.title).trim();
+      if (!t) {
+        return apiEnvelope(false, {
+          status: 400,
+          error: 'title cannot be empty',
+          message: 'Validation failed',
+        });
+      }
+    }
+
     const title = body.title !== undefined ? String(body.title).trim() : existing.title;
     const description = body.description !== undefined ? body.description : existing.description;
     const category = body.category !== undefined ? body.category : existing.category;
     const tagsJson =
       body.tags !== undefined
-        ? toMysqlJsonArray(parseTags(body.tags))
-        : toMysqlJsonArray(tagsFromExisting(existing.tags));
+        ? toMysqlJsonArray(parseTagsBody(body.tags))
+        : toMysqlJsonArray(parseTagsFromDb(existing.tags) ?? []);
     const photographer = body.photographer !== undefined ? body.photographer : existing.photographer;
     const location = body.location !== undefined ? body.location : existing.location;
     const eventDate = body.event_date !== undefined ? body.event_date : existing.event_date;
     const fileSize = body.file_size !== undefined ? body.file_size : existing.file_size;
     const dimensionsJson =
-      body.dimensions !== undefined ? toMysqlJson(body.dimensions) : toMysqlJson(existing.dimensions);
-    const status = body.status !== undefined ? String(body.status) : existing.status;
+      body.dimensions !== undefined
+        ? toMysqlJson(parseDimensionsInput(body.dimensions))
+        : toMysqlJson(parseDimensionsFromDb(existing.dimensions));
+    const status =
+      body.status !== undefined ? normalizeStatus(body.status) : normalizeStatus(existing.status);
     const featured =
       body.is_featured !== undefined || body.featured !== undefined
-        ? Number(body.is_featured ?? body.featured)
-        : existing.featured;
+        ? normalizeFeatured(body.is_featured ?? body.featured)
+        : normalizeFeatured(existing.featured);
     const altText = body.alt_text !== undefined ? body.alt_text : existing.alt_text;
-    const updatedBy = body.updated_by !== undefined ? body.updated_by : existing.updated_by;
+    const updatedBy = String(session.id);
 
     await sql`
       UPDATE gallery
@@ -161,11 +143,14 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       WHERE id = ${numericId}
     `;
 
-    const rows = await sql<Record<string, unknown>[]>`
+    const rows = await sql<GalleryRowRaw[]>`
       SELECT * FROM gallery WHERE id = ${numericId} LIMIT 1
     `;
 
-    return apiEnvelope(true, { data: rows[0], message: 'Gallery item updated' });
+    return apiEnvelope(true, {
+      data: rows[0] ? rowToGalleryItem(rows[0]) : null,
+      message: 'Gallery item updated',
+    });
   } catch (error) {
     console.error('[api/admin/gallery/[id]][PUT]', error);
     return apiEnvelope(false, {
@@ -194,7 +179,9 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     }
 
     try {
-      await deleteImage(existing[0].image_url);
+      if (existing[0].image_url && isLocalUploadPath(existing[0].image_url)) {
+        await deleteImage(existing[0].image_url);
+      }
     } catch (e) {
       console.warn('[api/admin/gallery/[id]][DELETE] deleteImage', e);
     }

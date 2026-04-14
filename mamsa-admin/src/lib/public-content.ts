@@ -1,6 +1,8 @@
 import { cache } from 'react';
 import sql from '@/lib/db';
 import { publicAssetUrl } from '@/lib/upload';
+import type { GalleryItem } from '@/types/gallery';
+import { rowToGalleryItem, type GalleryRowRaw } from '@/types/gallery';
 
 export const ABOUT_SECTIONS = ['history', 'mission', 'vision', 'values', 'objectives'] as const;
 export type AboutSectionKey = typeof ABOUT_SECTIONS[number];
@@ -34,6 +36,7 @@ export type Event = {
   contact_email?: string | null;
 };
 
+/** Legacy narrow shape; public gallery pages prefer `GalleryItem`. */
 export type GalleryImage = {
   id: number;
   title: string;
@@ -41,6 +44,7 @@ export type GalleryImage = {
   category: string | null;
   description: string | null;
   featured: boolean;
+  created_at?: string;
 };
 
 export type Leader = {
@@ -327,30 +331,51 @@ export async function getEvents(limit?: number) {
   }));
 }
 
-export async function getGallery(limit?: number) {
-  const rows = await sql<
-    Array<{
-      id: number;
-      title: string;
-      description: string | null;
-      image_url: string | null;
-      category: string | null;
-      featured: boolean;
-      status: string;
-      created_at: string;
-    }>
-  >`
+export const getGalleryItems = cache(async (category?: string, limit?: number) => {
+  const cat = category?.trim();
+  const rows = await sql<GalleryRowRaw[]>`
     SELECT *
     FROM gallery
     WHERE status = 'active'
-    ORDER BY created_at DESC
-    ${limit ? sql`LIMIT ${limit}` : sql``}
+    ${cat ? sql`AND category = ${cat}` : sql``}
+    ORDER BY featured DESC, created_at DESC
+    ${limit != null && limit > 0 ? sql`LIMIT ${limit}` : sql``}
   `;
 
-  return rows.map((row) => ({
-    ...row,
-    image_url: publicImagePath(row.image_url),
-  }));
+  return rows.map((row) => {
+    const item = rowToGalleryItem(row);
+    return { ...item, image_url: publicImagePath(item.image_url) } as GalleryItem;
+  });
+});
+
+export const getFeaturedGalleryItems = cache(async () => {
+  const rows = await sql<GalleryRowRaw[]>`
+    SELECT *
+    FROM gallery
+    WHERE status = 'active' AND featured = 1
+    ORDER BY created_at DESC
+    LIMIT 8
+  `;
+
+  return rows.map((row) => {
+    const item = rowToGalleryItem(row);
+    return { ...item, image_url: publicImagePath(item.image_url) } as GalleryItem;
+  });
+});
+
+export async function getGallery(limit?: number) {
+  const items = await getGalleryItems(undefined, limit);
+  return items.map(
+    (row): GalleryImage => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      image_url: row.image_url,
+      category: row.category,
+      featured: row.is_featured === 1,
+      created_at: row.created_at,
+    }),
+  );
 }
 
 export async function getGalleryImages(_galleryId?: number) {
@@ -636,16 +661,13 @@ export async function fetchActiveEvents(limit?: number) {
 
 export async function fetchPublishedGallery(limit?: number) {
   try {
-    const data = await getGallery(limit);
+    const data = await getGalleryItems(undefined, limit);
     return {
-      data: data.map((row) => ({
-        ...row,
-        image_url: publicImagePath(row.image_url),
-      })),
+      data,
       error: null,
     };
   } catch (error) {
-    return { data: [] as GalleryImage[], error: error as Error };
+    return { data: [] as GalleryItem[], error: error as Error };
   }
 }
 
