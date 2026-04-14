@@ -3,7 +3,11 @@ import type { NextRequest } from 'next/server';
 import { verifyJWT } from '@/lib/auth';
 
 function isProtectedPath(pathname: string) {
-  return pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
+  return (
+    pathname.startsWith('/admin') ||
+    pathname === '/admin-mamsa' ||
+    pathname.startsWith('/api/admin')
+  );
 }
 
 export default async function middleware(request: NextRequest) {
