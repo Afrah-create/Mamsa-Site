@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 import {
   Camera,
   ChevronLeft,
@@ -9,6 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import type { GalleryItem } from '@/types/gallery';
+import { AppImage } from '@/components/ui/AppImage';
 
 type Props = {
   items: GalleryItem[];
@@ -19,11 +19,6 @@ function formatMonthYear(iso: string | null | undefined): string | null {
   const d = new Date(iso.includes('T') ? iso : `${iso}T12:00:00`);
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-}
-
-function masonryAspectClass(id: number): string {
-  const patterns = ['aspect-[4/5]', 'aspect-[3/4]', 'aspect-square', 'aspect-[5/4]', 'aspect-video'];
-  return patterns[Math.abs(id) % patterns.length] ?? 'aspect-square';
 }
 
 export default function CommunityGalleryExperience({ items }: Props) {
@@ -126,48 +121,33 @@ export default function CommunityGalleryExperience({ items }: Props) {
         </div>
       ) : (
         <div className="mx-auto max-w-7xl columns-1 gap-4 px-4 pb-16 sm:columns-2 sm:px-6 lg:columns-3 xl:columns-4">
-          {filtered.map((item, idx) => {
+          {filtered.map((item) => {
             const src = item.image_url?.trim() ?? '';
             const alt = item.alt_text?.trim() || item.title;
             const featured = item.is_featured === 1;
-            const aspect = masonryAspectClass(item.id);
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => openAt(item.id)}
-                className={`group relative mb-4 w-full break-inside-avoid overflow-hidden rounded-xl bg-gray-100 text-left shadow-md transition duration-300 hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                className={`group relative mb-4 w-full cursor-pointer break-inside-avoid overflow-hidden rounded-xl bg-gray-100 text-left shadow-sm transition-shadow duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
                   featured ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
                 }`}
               >
-                <div className={`relative w-full ${aspect}`}>
-                  {src ? (
-                    <Image
-                      src={src}
-                      alt={alt}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      loading={idx < 4 ? 'eager' : 'lazy'}
-                      priority={idx < 4}
-                      unoptimized={/^https?:\/\//i.test(src)}
-                    />
-                  ) : (
-                    <div className="flex h-full min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400">
-                      <Camera className="h-10 w-10" aria-hidden />
-                    </div>
-                  )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  {item.category?.trim() ? (
-                    <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-xs font-medium text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      {item.category}
-                    </span>
-                  ) : null}
-                  {item.photographer?.trim() ? (
-                    <span className="pointer-events-none absolute bottom-2 left-2 max-w-[85%] truncate text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      {item.photographer}
-                    </span>
-                  ) : null}
+                <div className="relative overflow-hidden rounded-xl">
+                  <AppImage
+                    src={src}
+                    alt={alt}
+                    className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fallback={
+                      <div className="flex min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400">
+                        <Camera className="h-10 w-10" aria-hidden />
+                      </div>
+                    }
+                  />
+                  <div className="absolute inset-0 flex items-end bg-black/0 p-3 opacity-0 transition-all duration-300 group-hover:bg-black/30 group-hover:opacity-100">
+                    <p className="line-clamp-2 text-xs font-medium text-white">{item.title}</p>
+                  </div>
                 </div>
               </button>
             );
@@ -225,14 +205,12 @@ export default function CommunityGalleryExperience({ items }: Props) {
             aria-label={current.title}
           >
             <div className="relative max-h-[85vh] w-full max-w-[90vw] flex-1">
-              {current.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={current.image_url}
-                  alt={current.alt_text?.trim() || current.title}
-                  className="mx-auto max-h-[85vh] max-w-full object-contain"
-                />
-              ) : null}
+              <AppImage
+                src={current.image_url}
+                alt={current.alt_text?.trim() || current.title}
+                objectFit="contain"
+                className="mx-auto max-h-[85vh] max-w-full"
+              />
             </div>
             <div className="max-w-2xl space-y-2 px-2 text-center text-white">
               <h2 className="text-xl font-semibold">{current.title}</h2>

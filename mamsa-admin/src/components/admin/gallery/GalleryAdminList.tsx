@@ -19,7 +19,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import type { GalleryItem, GalleryListResponse } from '@/types/gallery';
 import CreateGalleryModal from './CreateGalleryModal';
@@ -148,7 +148,7 @@ export default function GalleryAdminList() {
   const imgSrc = useCallback((url: string | null) => {
     const raw = url?.trim();
     if (!raw) return '';
-    return publicAssetUrl(raw);
+    return resolveImageSrc(raw);
   }, []);
 
   const emptyMessage = useMemo(() => {

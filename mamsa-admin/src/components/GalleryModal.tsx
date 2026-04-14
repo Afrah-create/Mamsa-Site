@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { optimizeImageForUpload } from '@/lib/image-client';
 
 interface GalleryImage {
@@ -59,7 +59,7 @@ export default function GalleryModal({ isOpen, onClose, onSave, editingItem }: G
   const resolvePreviewUrl = (value?: string | null) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return publicAssetUrl(value) || value;
+    return resolveImageSrc(value) || value;
   };
 
   useEffect(() => {

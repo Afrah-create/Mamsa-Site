@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { clearSessionData, type SessionUser } from '@/lib/session-manager';
 import { AdminProfileProvider, type AdminHeaderProfile } from '@/context/AdminProfileContext';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
+import { AvatarImage } from '@/components/ui/AvatarImage';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -417,9 +417,9 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
   );
 
   const headerAvatarSrc = profile?.avatar_url
-    ? publicAssetUrl(profile.avatar_url)
+    ? resolveImageSrc(profile.avatar_url)
     : currentUser?.avatar_url
-      ? publicAssetUrl(currentUser.avatar_url)
+      ? resolveImageSrc(currentUser.avatar_url)
       : '';
 
   return (
@@ -454,13 +454,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         {/* Sidebar header - Fixed */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-green-500 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <Image 
-              src="/mamsa-logo.JPG" 
-              alt="MAMSA Logo" 
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <img src="/images/mamsa-logo.JPG" alt="MAMSA logo" className="h-8 w-8 rounded-full object-cover" />
             <span className="text-lg font-semibold text-white">MAMSA Admin</span>
           </div>
           <button
@@ -508,16 +502,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                 : 'text-green-100 hover:bg-green-500 hover:text-white'
             }`}
           >
-            <span className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-green-400/40 ring-2 ring-white/20">
-              {headerAvatarSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={headerAvatarSrc} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center text-xs font-bold text-white">
-                  {(profile?.full_name || currentUser?.name || currentUser?.email || 'A').charAt(0).toUpperCase()}
-                </span>
-              )}
-            </span>
+            <AvatarImage
+              src={headerAvatarSrc}
+              name={profile?.full_name || currentUser?.name || currentUser?.email || 'Admin'}
+              size="sm"
+              className="ring-2 ring-white/20"
+            />
             <span>My Profile</span>
           </Link>
         </div>
@@ -696,16 +686,12 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
               {/* Profile Display */}
               <div className="flex items-center space-x-3">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-green-600 to-green-800 shadow-sm ring-2 ring-green-100">
-                  {headerAvatarSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={headerAvatarSrc} alt="" className="h-10 w-10 object-cover" />
-                  ) : (
-                    <span className="text-sm font-semibold text-white">
-                      {(profile?.full_name || currentUser?.name || currentUser?.email || 'Admin').charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <AvatarImage
+                  src={headerAvatarSrc}
+                  name={profile?.full_name || currentUser?.name || currentUser?.email || 'Admin'}
+                  size="md"
+                  className="shadow-sm ring-2 ring-green-100"
+                />
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-gray-900">
                     {profile?.full_name || currentUser?.name || currentUser?.email?.split('@')[0] || 'Admin'}

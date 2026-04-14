@@ -11,7 +11,7 @@ import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import AddPaymentModal from './AddPaymentModal';
 import EditPaymentModal from './EditPaymentModal';
 import EditStudentModal from './EditStudentModal';
@@ -32,7 +32,7 @@ function imageSrc(profileImage: string | null) {
   if (!profileImage) return '';
   const t = String(profileImage).trim();
   if (t.startsWith('http://') || t.startsWith('https://')) return t;
-  return publicAssetUrl(t);
+  return resolveImageSrc(t);
 }
 
 function badgeToneClass(tone: 'green' | 'red' | 'amber') {

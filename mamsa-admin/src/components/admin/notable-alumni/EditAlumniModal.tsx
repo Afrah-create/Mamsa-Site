@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminRequest } from '@/lib/admin-api';
 import { optimizeImageForUpload } from '@/lib/image-client';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { pairsToProfileLinks, profileLinksToPairs, type LinkPair } from './profile-links-utils';
 
 type Props = {
@@ -41,7 +41,7 @@ export default function EditAlumniModal({ isOpen, item, onClose, onSuccess }: Pr
     setStatus(String(item.status ?? 'draft'));
     setLinkPairs(profileLinksToPairs(item.profile_links));
     setImageBase64(null);
-    const u = item.image_url != null ? publicAssetUrl(String(item.image_url)) : '';
+    const u = item.image_url != null ? resolveImageSrc(String(item.image_url)) : '';
     setImagePreview(u || null);
     setFormError('');
     setLoading(false);

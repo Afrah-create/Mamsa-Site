@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ImageIcon, X } from 'lucide-react';
 import { optimizeImageForUpload } from '@/lib/image-client';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import type { NewsArticle } from '@/types/news';
 
 type DraftPayload = Omit<NewsArticle, 'id' | 'created_at' | 'updated_at'>;
@@ -209,7 +209,7 @@ export default function NewsModal({ isOpen, onClose, onSave, editingItem }: Prop
               </label>
               {image ? (
                 <div className="mt-3 rounded-lg border border-gray-200 p-2">
-                  <Image src={publicAssetUrl(image)} alt={altText || title || 'Preview'} width={720} height={320} className="max-h-48 w-full rounded object-contain" unoptimized />
+                  <Image src={resolveImageSrc(image) ?? ''} alt={altText || title || 'Preview'} width={720} height={320} className="max-h-48 w-full rounded object-contain" unoptimized />
                   <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                     <span>{imageInfo ? `${imageInfo.width}x${imageInfo.height}` : ''}</span>
                     <span>{imageInfo?.sizeText ?? ''}</span>

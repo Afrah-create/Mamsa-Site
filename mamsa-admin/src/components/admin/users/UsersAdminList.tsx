@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Pencil, Search, Trash2, UserPlus, Users } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
@@ -9,8 +8,9 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import type { AdminUser } from '@/types/admin-user';
+import { AvatarImage } from '@/components/ui/AvatarImage';
 import CreateUserModal from './CreateUserModal';
 import EditUserModal from './EditUserModal';
 
@@ -34,7 +34,7 @@ function hashPick(s: string): number {
 function avatarSrc(u: AdminUser): string | null {
   const raw = u.avatar_url?.trim();
   if (!raw) return null;
-  return publicAssetUrl(raw);
+  return resolveImageSrc(raw);
 }
 
 function formatJoined(iso: string): string {
@@ -281,7 +281,7 @@ export default function UsersAdminList({ currentUserId, sessionUser }: Props) {
                         <div className="flex items-center gap-3">
                           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-gray-100">
                             {src ? (
-                              <Image src={src} alt="" width={40} height={40} unoptimized className="h-10 w-10 object-cover" />
+                              <AvatarImage src={src} name={r.full_name || r.email} size="md" />
                             ) : (
                               <span
                                 className={`flex h-10 w-10 items-center justify-center text-sm font-semibold ${bgClass}`}

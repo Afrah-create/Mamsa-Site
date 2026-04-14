@@ -2,6 +2,8 @@
 
 import { Leader } from '@/lib/public-content';
 import { useMemo } from 'react';
+import { AppImage } from '@/components/ui/AppImage';
+import { getInitials } from '@/lib/image-utils';
 
 interface OrgChartProps {
   leaders: Leader[];
@@ -146,25 +148,20 @@ export default function OrgChart({ leaders }: OrgChartProps) {
           level === 3 ? 'group-hover:ring-2 group-hover:ring-amber-500/20' : 
           'group-hover:ring-2 group-hover:ring-gray-500/20'
         }`}>
-          {leader.image_url ? (
-            <img
-              src={leader.image_url}
-              alt={leader.name}
-              className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-110"
-              loading="lazy"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold ${styles.text} ${
-              level === 0 ? 'text-base sm:text-lg md:text-xl' : 
-              level <= 2 ? 'text-sm sm:text-base md:text-lg' : 
-              'text-xs sm:text-sm md:text-base'
-            }`}>
-              {leader.name.slice(0, 2).toUpperCase()}
-            </div>
-          )}
+          <AppImage
+            src={leader.image_url}
+            alt={leader.name || 'Leader'}
+            className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-110"
+            fallback={
+              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 font-semibold ${styles.text} ${
+                level === 0 ? 'text-base sm:text-lg md:text-xl' :
+                level <= 2 ? 'text-sm sm:text-base md:text-lg' :
+                'text-xs sm:text-sm md:text-base'
+              }`}>
+                {getInitials(leader.name)}
+              </div>
+            }
+          />
         </div>
 
         {/* Name */}

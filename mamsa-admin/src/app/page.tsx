@@ -1,11 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Newspaper } from 'lucide-react';
 import PublicFooter from '@/components/PublicFooter';
 import PublicNavbar from '@/components/PublicNavbar';
 import NotableAlumniCard from '@/components/NotableAlumniCard';
 import { fetchHomeContent, fetchPublishedAlumni } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
 import EventCarousel from '@/components/EventCarousel';
+import { CardImage } from '@/components/ui/CardImage';
 
 export const revalidate = 180; // Increase to 3 minutes - home page content changes moderately
 
@@ -206,21 +208,16 @@ export default async function HomePage() {
                   key={article.id}
                   className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
-                  {article.featured_image ? (
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-                      <Image
-                        src={article.featured_image}
-                        alt={article.title}
-                        fill
-                        sizes="(min-width: 1024px) 320px, 100vw"
-                        className="object-cover object-center transition duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex aspect-[4/3] w-full items-center justify-center bg-emerald-50 text-emerald-500">
-                      <span className="text-sm font-semibold uppercase tracking-wide">MAMSA News</span>
-                    </div>
-                  )}
+                  <CardImage
+                    src={article.featured_image}
+                    alt={article.title || 'News'}
+                    aspect="video"
+                    position="center"
+                    overlay
+                    rounded="top"
+                    placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
+                    placeholderLabel="No image"
+                  />
                   <div className="flex flex-1 flex-col space-y-4 px-6 py-6">
                     <div className="space-y-2">
                       <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">

@@ -1,6 +1,6 @@
 import { cache } from 'react';
 import sql from '@/lib/db';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import type { GalleryItem } from '@/types/gallery';
 import { rowToGalleryItem, type GalleryRowRaw } from '@/types/gallery';
 
@@ -132,7 +132,7 @@ export type SkilledStudentPublic = {
 
 function publicImagePath(val: string | null): string | null {
   if (val == null || val === '') return null;
-  const u = publicAssetUrl(val);
+  const u = resolveImageSrc(val);
   return u || null;
 }
 

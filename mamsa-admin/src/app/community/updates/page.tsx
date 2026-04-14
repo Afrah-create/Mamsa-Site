@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { Newspaper } from 'lucide-react';
 import { fetchPublishedNews, type NewsArticle } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
+import { CardImage } from '@/components/ui/CardImage';
 
 export const revalidate = 120;
 
@@ -56,51 +58,46 @@ export default async function UpdatesPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-12 grid gap-8 md:grid-cols-2">
+        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {articles.map((article: NewsArticle) => (
             <article
               key={article.id}
-              className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+              className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
             >
-              {article.featured_image && (
-                <div className="relative w-full shrink-0 overflow-hidden bg-gray-100">
-                  {/* In-flow spacer: flex items ignore absolutely positioned children for sizing, so aspect-ratio alone can collapse to 0 height. */}
-                  <div className="w-full pb-[75%]" aria-hidden />
-                  <img
-                    src={article.featured_image}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover object-center transition duration-300 hover:scale-105"
-                    loading="lazy"
-                  />
-                  <Link
-                    href={`/community/updates/${article.id}`}
-                    className="absolute inset-0 z-10"
-                    aria-label={`Read article: ${article.title}`}
-                  />
-                </div>
-              )}
-              <div className="flex flex-1 flex-col space-y-4 px-6 py-6 sm:px-8">
-                <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
-                  {formatDate(article.published_at)}
-                </p>
-                <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+              <CardImage
+                src={article.featured_image}
+                alt={article.title || 'News'}
+                aspect="video"
+                position="center"
+                overlay
+                rounded="top"
+                placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
+                placeholderLabel="No image"
+              />
+              <div className="flex flex-1 flex-col p-4">
+                {article.tags?.[0] ? (
+                  <span className="inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                    {article.tags[0]}
+                  </span>
+                ) : null}
+                <h2 className="mt-1 line-clamp-2 text-sm font-semibold text-gray-900">
                   <Link href={`/community/updates/${article.id}`} className="transition hover:text-emerald-700">
                     {article.title}
                   </Link>
                 </h2>
-                <p className="flex-1 text-sm text-gray-600">
+                <p className="mt-1 line-clamp-2 flex-1 text-xs text-gray-500">
                   {article.excerpt ||
                     article.content?.slice(0, 220) ||
                     'Details for this story will be available soon.'}
                   {article.content && article.content.length > 220 ? '…' : ''}
                 </p>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>{article.author || 'MAMSA Editorial Team'}</span>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">{formatDate(article.published_at)}</span>
                   <Link
                     href={`/community/updates/${article.id}`}
-                    className="inline-flex items-center gap-1 font-medium text-emerald-600 transition hover:text-emerald-700"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
                   >
-                    Continue reading
+                    Read more
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
                       <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>

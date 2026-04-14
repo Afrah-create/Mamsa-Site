@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ImageIcon, Loader2, X } from 'lucide-react';
 import { adminRequest } from '@/lib/admin-api';
 import { optimizeImageForUpload } from '@/lib/image-client';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import type { GalleryItem } from '@/types/gallery';
 
 type Props = {
@@ -110,7 +110,7 @@ export default function EditGalleryModal({ isOpen, item, existingCategories, onC
           ? { width: item.dimensions.width, height: item.dimensions.height, size: item.file_size ?? 0 }
           : null,
     );
-    const base = item.image_url?.trim() ? publicAssetUrl(item.image_url) : '';
+    const base = item.image_url?.trim() ? resolveImageSrc(item.image_url) : '';
     setOriginalPreview(base || null);
     setDisplayPreview(base || null);
     setTitleError('');

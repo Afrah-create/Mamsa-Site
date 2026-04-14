@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 
 type AlumniStatus = 'draft' | 'published' | 'archived';
 
@@ -75,7 +75,7 @@ export default function AlumniModal({ isOpen, onClose, onSave, editingItem }: Pr
   const resolvePreviewUrl = (value?: string | null) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return publicAssetUrl(value) || value;
+    return resolveImageSrc(value) || value;
   };
 
   useEffect(() => {

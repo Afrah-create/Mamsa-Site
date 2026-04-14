@@ -6,7 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import Toast from '@/components/Toast';
 import { adminRequest } from '@/lib/admin-api';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { optimizeImageForUpload } from '@/lib/image-client';
 import { useAdminProfile, type AdminHeaderProfile } from '@/context/AdminProfileContext';
 
@@ -83,7 +83,7 @@ function AdminProfileFormBody({ user }: { user: SessionUser }) {
 
   const displayAvatarSrc =
     pendingAvatarBase64 ??
-    (profile?.avatar_url ? publicAssetUrl(profile.avatar_url) : '');
+    (profile?.avatar_url ? resolveImageSrc(profile.avatar_url) : '');
 
   const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -11,7 +11,7 @@ import EventModal from '@/components/EventModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 type EventItem = {
@@ -227,7 +227,7 @@ export default function EventsPage() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((event) => {
-              const src = event.featured_image ? publicAssetUrl(event.featured_image) : '';
+              const src = event.featured_image ? resolveImageSrc(event.featured_image) : '';
               return (
                 <article key={event.id} className="flex h-[300px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md">
                   <div className="relative aspect-video bg-gray-100">{src ? <Image src={src} alt={event.title} fill className="object-cover" unoptimized={/^https?:\/\//i.test(src)} /> : <div className="flex h-full items-center justify-center bg-gradient-to-br from-emerald-50 to-gray-100 text-gray-300"><Calendar className="h-8 w-8" /></div>}</div>
@@ -251,7 +251,7 @@ export default function EventsPage() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500"><tr><th className="px-3 py-2">Image</th><th className="px-3 py-2">Title</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Organizer</th><th className="px-3 py-2">Date</th><th className="px-3 py-2 text-right">Actions</th></tr></thead>
               <tbody className="divide-y divide-gray-100">
                 {filtered.map((event) => {
-                  const src = event.featured_image ? publicAssetUrl(event.featured_image) : '';
+                  const src = event.featured_image ? resolveImageSrc(event.featured_image) : '';
                   return (
                     <tr key={event.id}>
                       <td className="px-3 py-2">{src ? <Image src={src} alt={event.title} width={64} height={40} className="h-10 w-16 rounded-lg object-cover" /> : <div className="flex h-10 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-50 to-gray-100 text-gray-300"><Calendar className="h-4 w-4" /></div>}</td>

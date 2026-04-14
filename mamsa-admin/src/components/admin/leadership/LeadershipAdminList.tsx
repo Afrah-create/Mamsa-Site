@@ -8,7 +8,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import CreateLeadershipModal from './CreateLeadershipModal';
 import EditLeadershipModal from './EditLeadershipModal';
@@ -163,7 +163,7 @@ export default function LeadershipAdminList() {
                 ) : (
                   rows.map((r) => {
                     const id = Number(r.id);
-                    const src = publicAssetUrl(r.image_url != null ? String(r.image_url) : '');
+                    const src = resolveImageSrc(r.image_url != null ? String(r.image_url) : '');
                     const active = String(r.status ?? '') === 'active';
                     return (
                       <tr key={id} className="hover:bg-gray-50/80">

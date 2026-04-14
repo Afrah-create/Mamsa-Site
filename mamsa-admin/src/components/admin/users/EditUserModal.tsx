@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Camera, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import { adminRequest } from '@/lib/admin-api';
 import { optimizeImageForUpload } from '@/lib/image-client';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import type { AdminRole, AdminStatus, AdminUser } from '@/types/admin-user';
 
 type Props = {
@@ -98,7 +98,7 @@ export default function EditUserModal({ isOpen, item, onClose, onSuccess }: Prop
     setPhone(item.phone ?? '');
     setBio(item.bio ?? '');
     setImageBase64(null);
-    const u = item.avatar_url ? publicAssetUrl(item.avatar_url) : '';
+    const u = item.avatar_url ? resolveImageSrc(item.avatar_url) : '';
     setImagePreview(u || null);
     setFileMeta(null);
     setFieldErrors({});

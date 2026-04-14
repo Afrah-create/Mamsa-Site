@@ -9,7 +9,7 @@ import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import Image from 'next/image';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 
 interface LeadershipMember {
@@ -54,7 +54,7 @@ export default function LeadershipPage() {
   const resolveImageUrl = (value?: string | null) => {
     if (!value) return '';
     if (value.startsWith('http') || value.startsWith('data:') || value.startsWith('blob:')) return value;
-    return publicAssetUrl(value);
+    return resolveImageSrc(value) ?? '';
   };
 
   const normalizeMember = (row: LeadershipApiRow): LeadershipMember => ({

@@ -1,4 +1,4 @@
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 
 export type SkilledStudentRecord = {
   id: number;
@@ -21,7 +21,7 @@ export function resolveStudentImagePreview(profileImage: string | null | undefin
   if (!profileImage) return '';
   const t = String(profileImage).trim();
   if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('data:')) return t;
-  return publicAssetUrl(t);
+  return resolveImageSrc(t) ?? '';
 }
 
 export function socialLinksToText(raw: unknown): string {

@@ -24,7 +24,7 @@ import NewsModal from '@/components/NewsModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
 import type { NewsArticle, NewsListResponse } from '@/types/news';
 
@@ -281,7 +281,7 @@ export default function NewsPage() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sortedRows.map((item) => {
-              const src = item.featured_image ? publicAssetUrl(item.featured_image) : '';
+              const src = item.featured_image ? resolveImageSrc(item.featured_image) : '';
               const hasError = imageErrors[item.id];
               const tags = item.tags ?? [];
               return (
@@ -310,7 +310,7 @@ export default function NewsPage() {
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500"><tr><th className="px-3 py-2">Image</th><th className="px-3 py-2">Title</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Author</th><th className="px-3 py-2">Date</th><th className="px-3 py-2 text-right">Actions</th></tr></thead>
               <tbody className="divide-y divide-gray-100">
                 {sortedRows.map((item) => {
-                  const src = item.featured_image ? publicAssetUrl(item.featured_image) : '';
+                  const src = item.featured_image ? resolveImageSrc(item.featured_image) : '';
                   return (
                     <tr key={item.id}>
                       <td className="px-3 py-2">{src ? <Image src={src} alt={item.alt_text ?? item.title} width={64} height={40} className="h-10 w-16 rounded-lg object-cover" /> : <div className="flex h-10 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-50 to-gray-100 text-gray-300"><Newspaper className="h-4 w-4" /></div>}</td>

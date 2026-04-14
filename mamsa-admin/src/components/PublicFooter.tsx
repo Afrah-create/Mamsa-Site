@@ -73,6 +73,7 @@ const socialEntries = [
 
 export default function PublicFooter() {
   const [copyrightYear, setCopyrightYear] = useState<number | null>(null);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     setCopyrightYear(new Date().getFullYear());
@@ -84,12 +85,19 @@ export default function PublicFooter() {
         <div className="grid grid-cols-1 gap-10 text-center md:grid-cols-2 lg:grid-cols-4">
           <div className="md:col-span-2 md:text-center lg:col-span-1 lg:text-left">
             <span className="relative mx-auto mb-4 block h-16 w-16 overflow-hidden rounded-full border-2 border-emerald-700 bg-emerald-900/60 shadow-lg shadow-emerald-900/40 lg:mx-0">
-            <img
-              src="/images/mamsa-logo.JPG"
-              alt="MAMSA logo"
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
+            {!logoError ? (
+              <img
+                src="/images/mamsa-logo.JPG"
+                alt="MAMSA logo"
+                className="h-full w-full object-cover"
+                loading="lazy"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700">
+                <span className="text-xs font-bold text-white">M</span>
+              </div>
+            )}
             </span>
             <p className="text-xl font-bold tracking-widest text-white">MAMSA</p>
             <p className="mt-1 text-sm italic text-emerald-300">Olu Alu Vu Ozoni</p>

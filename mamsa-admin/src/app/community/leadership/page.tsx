@@ -1,6 +1,7 @@
 import Image from 'next/image';
+import { UserRound } from 'lucide-react';
 import { fetchLeadership, type Leader } from '@/lib/public-content';
-import OrgChart from '@/components/OrgChart';
+import { CardImage } from '@/components/ui/CardImage';
 
 export const revalidate = 600; // Increase to 10 minutes - leadership changes infrequently
 
@@ -64,9 +65,28 @@ export default async function LeadershipPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 sm:mt-10 md:mt-12">
-          {/* Hierarchical Organizational Chart */}
-          <OrgChart leaders={leaders} />
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {leaders.map((member: Leader) => (
+            <article
+              key={member.id}
+              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+            >
+              <CardImage
+                src={member.image_url}
+                alt={member.name || 'Leader'}
+                aspect="portrait"
+                position="top"
+                overlay
+                rounded="top"
+                placeholderIcon={<UserRound className="h-8 w-8 text-gray-300" />}
+                placeholderLabel="No photo"
+              />
+              <div className="p-3 text-center">
+                <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{member.name}</h3>
+                <p className="line-clamp-1 text-xs text-emerald-600">{member.position || 'Leadership Team'}</p>
+              </div>
+            </article>
+          ))}
         </div>
       )}
         </div>

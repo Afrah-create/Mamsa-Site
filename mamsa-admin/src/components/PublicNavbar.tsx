@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -66,6 +65,7 @@ export default function PublicNavbar() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
   const [communityAccordionOpen, setCommunityAccordionOpen] = useState(false);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,14 +171,18 @@ export default function PublicNavbar() {
           onClick={closeMobile}
         >
           <span className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border border-emerald-100 shadow-sm dark:border-emerald-800">
-            <Image
-              src="/images/mamsa-logo.JPG"
-              alt=""
-              fill
-              sizes="40px"
-              className="object-cover"
-              priority
-            />
+            {!logoError ? (
+              <img
+                src="/images/mamsa-logo.JPG"
+                alt="MAMSA logo"
+                className="h-10 w-10 rounded-full object-cover"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-700">
+                <span className="text-xs font-bold text-white">M</span>
+              </div>
+            )}
           </span>
           <span className="truncate tracking-wide">MAMSA</span>
         </Link>

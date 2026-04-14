@@ -10,14 +10,4 @@ export function isLocalUploadPath(value?: string | null): boolean {
   return t.startsWith('/uploads/');
 }
 
-/**
- * Normalize DB-stored paths for `<Image src>` / `<img src>`: absolute URL unchanged,
- * leading `/` kept, otherwise single leading slash added.
- */
-export function publicAssetUrl(value?: string | null): string {
-  if (value == null || value === '') return '';
-  const t = String(value).trim();
-  if (t.startsWith('http://') || t.startsWith('https://')) return t;
-  if (t.startsWith('/')) return t;
-  return `/${t.replace(/^\/+/, '')}`;
-}
+// Image URL resolution moved to `src/lib/image-utils.ts`.

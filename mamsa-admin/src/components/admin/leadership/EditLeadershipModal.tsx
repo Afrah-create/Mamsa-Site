@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminRequest } from '@/lib/admin-api';
 import { optimizeImageForUpload } from '@/lib/image-client';
-import { publicAssetUrl } from '@/lib/upload';
+import { resolveImageSrc } from '@/lib/image-utils';
 
 type Props = {
   isOpen: boolean;
@@ -38,7 +38,7 @@ export default function EditLeadershipModal({ isOpen, item, onClose, onSuccess }
     setDisplayOrder(Number(item.order_position ?? 0));
     setIsActive(String(item.status ?? 'active') === 'active');
     setImageBase64(null);
-    const u = item.image_url != null ? publicAssetUrl(String(item.image_url)) : '';
+    const u = item.image_url != null ? resolveImageSrc(String(item.image_url)) : '';
     setImagePreview(u || null);
     setFormError('');
     setLoading(false);

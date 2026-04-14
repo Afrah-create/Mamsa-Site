@@ -74,7 +74,7 @@ export default function StudentsDirectoryClient({ students, loadError }: Props) 
           {filtered.length === 0 ? (
             <p className="text-center text-sm text-gray-500">No listings in this category.</p>
           ) : (
-            <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {filtered.map((student) => (
                 <SkilledStudentCard key={student.id} student={student} />
               ))}
