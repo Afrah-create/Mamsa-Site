@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clearSessionData, type SessionUser } from '@/lib/session-manager';
 import { AdminProfileProvider, type AdminHeaderProfile } from '@/context/AdminProfileContext';
@@ -55,6 +55,7 @@ const formatRelativeTime = (input?: string | null) => {
 };
 
 export default function AdminLayout({ children, user }: AdminLayoutProps) {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(user ?? null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -399,8 +400,41 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality
-    console.log('Searching for:', searchQuery);
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+
+    const keywordRoutes: Array<{ keywords: string[]; href: string }> = [
+      { keywords: ['dashboard', 'home', 'overview', 'stats'], href: '/dashboard' },
+      { keywords: ['news', 'update', 'updates', 'articles', 'posts'], href: '/news' },
+      { keywords: ['event', 'events', 'calendar', 'schedule'], href: '/events' },
+      { keywords: ['leadership', 'leaders', 'team'], href: '/leadership' },
+      { keywords: ['gallery', 'photos', 'images', 'media'], href: '/gallery' },
+      { keywords: ['students', 'skilled', 'student'], href: '/admin/skilled-students' },
+      { keywords: ['contact', 'inbox', 'messages', 'mail'], href: '/contact-management' },
+      { keywords: ['about', 'mamsa', 'about mamsa'], href: '/about' },
+      { keywords: ['users', 'admins', 'accounts', 'members'], href: '/users' },
+      { keywords: ['profile', 'my profile', 'account'], href: '/admin/profile' },
+    ];
+
+    const directMatch = keywordRoutes.find((item) =>
+      item.keywords.some((keyword) => keyword.includes(query) || query.includes(keyword))
+    );
+
+    if (directMatch) {
+      router.push(directMatch.href);
+      setSearchQuery('');
+      return;
+    }
+
+    const navMatch = navigation.find((item) => item.name.toLowerCase().includes(query));
+    if (navMatch) {
+      router.push(navMatch.href);
+      setSearchQuery('');
+      return;
+    }
+
+    // Keep query so user can refine if no route matched.
   };
 
   const markNotificationAsRead = useCallback(
