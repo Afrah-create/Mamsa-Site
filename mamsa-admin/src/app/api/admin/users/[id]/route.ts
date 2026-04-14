@@ -4,7 +4,10 @@ import { hashPassword } from '@/lib/password';
 import { isBase64Image, isLocalUploadPath } from '@/lib/upload';
 import { deleteImage, saveImage } from '@/lib/upload-server';
 import { apiEnvelope } from '@/lib/api-envelope';
-import type { AdminUserPublic } from '../route';
+import { parseAdminRole, parseAdminStatus, rowToAdminUser, type AdminUserRow } from '@/types/admin-user';
+
+const ROLE_SET = new Set<string>(['super_admin', 'admin', 'moderator']);
+const STATUS_SET = new Set<string>(['active', 'inactive', 'suspended']);
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -16,18 +19,18 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       return apiEnvelope(false, { status: 400, error: 'Invalid id', message: 'Validation failed' });
     }
 
-    const rows = await sql<AdminUserPublic[]>`
+    const rows = await sql<AdminUserRow[]>`
       SELECT
         id,
-        email,
         full_name,
+        email,
         role,
         status,
-        avatar_url,
         phone,
         bio,
+        avatar_url,
         created_at,
-        updated_at
+        last_login
       FROM admin_users
       WHERE id = ${numericId}
       LIMIT 1
@@ -37,7 +40,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       return apiEnvelope(false, { status: 404, error: 'Not found', message: 'User not found' });
     }
 
-    return apiEnvelope(true, { data: rows[0], message: 'User loaded' });
+    return apiEnvelope(true, { data: rowToAdminUser(rows[0]), message: 'User loaded' });
   } catch (error) {
     console.error('[api/admin/users/[id]][GET]', error);
     return apiEnvelope(false, {
@@ -59,19 +62,19 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     }
 
     const existingRows = await sql<
-      (AdminUserPublic & { password_hash: string | null })[]
+      (AdminUserRow & { password_hash: string | null })[]
     >`
       SELECT
         id,
-        email,
         full_name,
+        email,
         role,
         status,
-        avatar_url,
         phone,
         bio,
+        avatar_url,
         created_at,
-        updated_at,
+        last_login,
         password_hash
       FROM admin_users
       WHERE id = ${numericId}
@@ -82,21 +85,39 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       return apiEnvelope(false, { status: 404, error: 'Not found', message: 'User not found' });
     }
 
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
     const fullName =
       body.full_name !== undefined || body.name !== undefined
         ? String(body.full_name ?? body.name).trim()
-        : (existing.full_name ?? '');
+        : (existing.full_name ?? '').trim();
     const email =
-      body.email !== undefined ? String(body.email).trim().toLowerCase() : existing.email;
-    const role = body.role !== undefined ? String(body.role).trim() : existing.role;
-    const status = body.status !== undefined ? String(body.status) : existing.status;
-    const phone = body.phone !== undefined ? String(body.phone) : existing.phone;
-    const bio = body.bio !== undefined ? String(body.bio) : existing.bio;
+      body.email !== undefined ? String(body.email).trim().toLowerCase() : String(existing.email).toLowerCase();
+
+    const roleRaw = body.role !== undefined ? String(body.role).trim() : existing.role;
+    const statusRaw = body.status !== undefined ? String(body.status).trim() : existing.status;
+    const role = ROLE_SET.has(roleRaw) ? parseAdminRole(roleRaw) : parseAdminRole(existing.role);
+    const status = STATUS_SET.has(statusRaw) ? parseAdminStatus(statusRaw) : parseAdminStatus(existing.status);
+
+    const phone = body.phone !== undefined ? String(body.phone) : existing.phone ?? '';
+    const bio = body.bio !== undefined ? String(body.bio) : existing.bio ?? '';
+
+    const dup = await sql<{ id: number }[]>`
+      SELECT id FROM admin_users
+      WHERE LOWER(email) = ${email}
+        AND id <> ${numericId}
+      LIMIT 1
+    `;
+    if (dup[0]) {
+      return apiEnvelope(false, {
+        status: 409,
+        error: 'Email already exists',
+        message: 'Conflict',
+      });
+    }
 
     const imageVal = body.avatar ?? body.avatar_url;
     let avatarUrl: string | null = existing.avatar_url;
-    if (isBase64Image(imageVal)) {
+    if (isBase64Image(imageVal as string)) {
       try {
         if (isLocalUploadPath(existing.avatar_url)) {
           await deleteImage(existing.avatar_url);
@@ -109,7 +130,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
           message: 'Image upload error',
         });
       }
-    } else if (imageVal !== undefined && imageVal !== null && !isBase64Image(imageVal)) {
+    } else if (imageVal !== undefined && imageVal !== null && !isBase64Image(imageVal as string)) {
       avatarUrl = String(imageVal);
     }
 
@@ -126,6 +147,8 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
       passwordHash = await hashPassword(newPassword);
     }
 
+    const updatedAt = new Date().toISOString();
+
     await sql`
       UPDATE admin_users
       SET
@@ -137,28 +160,33 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         phone = ${phone},
         bio = ${bio},
         password_hash = ${passwordHash},
-        updated_at = ${new Date().toISOString()}
+        updated_at = ${updatedAt}
       WHERE id = ${numericId}
     `;
 
-    const rows = await sql<AdminUserPublic[]>`
+    const rows = await sql<AdminUserRow[]>`
       SELECT
         id,
-        email,
         full_name,
+        email,
         role,
         status,
-        avatar_url,
         phone,
         bio,
+        avatar_url,
         created_at,
-        updated_at
+        last_login
       FROM admin_users
       WHERE id = ${numericId}
       LIMIT 1
     `;
 
-    return apiEnvelope(true, { data: rows[0], message: 'User updated' });
+    if (!rows[0]) {
+      return apiEnvelope(false, { status: 500, error: 'Update failed', message: 'User not found after update' });
+    }
+
+    const updatedUser = rowToAdminUser(rows[0]);
+    return apiEnvelope(true, { data: updatedUser, message: 'User updated' });
   } catch (error) {
     console.error('[api/admin/users/[id]][PUT]', error);
     return apiEnvelope(false, {
@@ -202,7 +230,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
 
     await sql`DELETE FROM admin_users WHERE id = ${numericId}`;
 
-    return apiEnvelope(true, { data: { id: numericId, deleted: true }, message: 'User deleted' });
+    return apiEnvelope(true, { message: 'User deleted' });
   } catch (error) {
     console.error('[api/admin/users/[id]][DELETE]', error);
     return apiEnvelope(false, {
