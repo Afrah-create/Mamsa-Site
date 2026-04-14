@@ -33,7 +33,20 @@ const splitIntoParagraphs = (value: string | undefined) =>
     : [];
 
 const FALLBACK_ABOUT_TEXT =
-  'Our story is still being written. Stay tuned as we publish more about the history, mission, vision, and values of MAMSA.';
+  'MAMSA traces its roots to student organizing efforts from the 1960s, evolving through Aulogo students forum, MOMSA, and MUMSA before becoming Ma’di Makerere University Students Association in 2005.';
+
+const FALLBACK_SECTION_CONTENT: Record<SectionKey, string> = {
+  history:
+    'MAMSA began as a unifying platform for Ma’di students and evolved across generations into a formal association focused on academic excellence, culture preservation, and community development.',
+  mission:
+    'To unite Ma’di students at Makerere, promote academic excellence, preserve Ma’di cultural heritage, and advance socio-economic development through service and leadership.',
+  vision:
+    'A strong, connected, and impactful Ma’di student community that leads in scholarship, culture, and development in the Ma’di sub-region and beyond.',
+  values:
+    'Unity, integrity, discipline, accountability, respect for cultural identity, and commitment to service, mentorship, and member welfare.',
+  objectives:
+    'Foster peace and unity, promote literacy and education, support members, defend cultural heritage, drive youth participation, and contribute to policy and development in the Ma’di sub-region.',
+};
 
 export default async function CommunityAboutPage() {
   const [{ data: about, error: aboutError }, { data: leaders, error: leadershipError }] = await Promise.all([
@@ -160,17 +173,9 @@ export default async function CommunityAboutPage() {
                     <p className="mt-3 text-xs uppercase tracking-wide text-emerald-500">
                       {SECTION_DESCRIPTIONS[key] ?? 'Guiding principle.'}
                     </p>
-                    {sectionParagraphs[key].length > 0 ? (
-                      <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-600">
-                        {sectionParagraphs[key].map((paragraph) => (
-                          <p key={paragraph.id}>{paragraph.text}</p>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="mt-4 text-sm leading-relaxed text-gray-600">
-                        Content coming soon. Check back for updates from the MAMSA executive.
-                      </p>
-                    )}
+                    <p className="mt-4 text-sm leading-relaxed text-gray-600">
+                      {FALLBACK_SECTION_CONTENT[key]}
+                    </p>
                   </article>
                 </ScrollReveal>
               ))}

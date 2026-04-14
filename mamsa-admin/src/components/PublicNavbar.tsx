@@ -15,6 +15,7 @@ import {
   Mail,
   Menu,
   Newspaper,
+  ShieldCheck,
   Target,
   Users,
   X,
@@ -61,14 +62,20 @@ const TICKER_ITEMS = [
   {
     key: 'mission',
     label: 'Mission',
-    text: 'Build unity, leadership, and academic excellence among Madi students at Makerere University.',
+    text: 'Unite Ma’di students, promote academic excellence, preserve culture, and support socio-economic development.',
     icon: Target,
   },
   {
     key: 'vision',
     label: 'Vision',
-    text: 'A strong, connected, and impactful Madi student community.',
+    text: 'A strong, connected, and impactful Ma’di student community at Makerere and beyond.',
     icon: Eye,
+  },
+  {
+    key: 'objectives',
+    label: 'Objectives',
+    text: 'Promote education, defend member interests, encourage youth participation, and advance community development.',
+    icon: ShieldCheck,
   },
 ] as const;
 

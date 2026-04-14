@@ -64,6 +64,18 @@ export default async function HomePage() {
       accent: 'border-emerald-200',
     },
   ];
+  const fallbackAbout: Record<'history' | 'mission' | 'vision' | 'values' | 'objectives', string> = {
+    history:
+      'MAMSA evolved from earlier Ma’di student platforms in the 1960s and 1970s, and has served as the united voice of Ma’di students at Makerere since 2005.',
+    mission:
+      'To unite Ma’di students, uphold academic excellence, preserve cultural heritage, and contribute to socio-economic transformation through collective action.',
+    vision:
+      'A connected and empowered Ma’di student community recognized for leadership, service, and positive impact in the Ma’di sub-region.',
+    values:
+      'Unity, integrity, respect, accountability, discipline, and commitment to cultural identity and community service.',
+    objectives:
+      'Promote education, protect member interests, support development initiatives, encourage youth participation, and advance cultural and civic awareness.',
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900">
@@ -141,7 +153,7 @@ export default async function HomePage() {
               <ScrollReveal className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm sm:p-7">
                 <h2 className="text-2xl font-semibold text-emerald-800 sm:text-[2.1rem]">Who We Are</h2>
                 <p className="text-pretty text-sm text-emerald-800/90 sm:text-base leading-relaxed">
-                  {about.history?.trim() || 'Our story is being crafted. Check back soon to learn more about MAMSA’s journey.'}
+                  {about.history?.trim() || fallbackAbout.history}
                 </p>
               </ScrollReveal>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -155,7 +167,7 @@ export default async function HomePage() {
                         <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
                       </div>
                       <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                        {about[card.key]?.trim() || 'Content coming soon.'}
+                        {fallbackAbout[card.key]}
                       </p>
                     </article>
                   </ScrollReveal>
