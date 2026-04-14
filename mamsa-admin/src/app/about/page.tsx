@@ -94,13 +94,16 @@ export default function AboutPage() {
   const loadContent = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await adminRequest<Array<AboutRow>>('/api/admin/about');
+      const data = await adminRequest<Array<AboutRow> | { rows?: AboutRow[]; sections?: Record<string, string> }>(
+        '/api/admin/about',
+      );
 
       if (data) {
         const draft: AboutFormState = { ...EMPTY_FORM };
         let latest: string | null = null;
 
-        (data as AboutRow[]).forEach((row) => {
+        const rows = Array.isArray(data) ? data : (data.rows ?? []);
+        rows.forEach((row) => {
           const key = row.section as AboutSectionKey;
           if (key in draft) {
             draft[key] = row.content;
@@ -127,8 +130,11 @@ export default function AboutPage() {
   const loadAlumni = useCallback(async () => {
     try {
       setAlumniLoading(true);
-      const data = await adminRequest<AlumniRecord[]>('/api/admin/notable-alumni');
-      setAlumni((data as AlumniRecord[]) ?? []);
+      const data = await adminRequest<AlumniRecord[] | { items?: AlumniRecord[] }>(
+        '/api/admin/notable-alumni',
+      );
+      const rows = Array.isArray(data) ? data : (data?.items ?? []);
+      setAlumni(rows);
     } catch (err) {
       console.error('Failed to load notable alumni:', err);
       showToast('error', 'Failed to load notable alumni.');
