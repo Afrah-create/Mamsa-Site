@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 
-const FacebookIcon = ({ className }: { className?: string }) => (
+const InstagramIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.08 5.66 21.24 10.44 22v-7.03H7.9v-2.91h2.54V9.85c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.25.2 2.25.2v2.45h-1.27c-1.25 0-1.64.78-1.64 1.57v1.88h2.79l-.45 2.91h-2.34V22C18.34 21.24 22 17.08 22 12.06z" />
+    <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.8A3.95 3.95 0 0 0 3.8 7.75v8.5a3.95 3.95 0 0 0 3.95 3.95h8.5a3.95 3.95 0 0 0 3.95-3.95v-8.5a3.95 3.95 0 0 0-3.95-3.95h-8.5Zm8.98 1.53a1.17 1.17 0 1 1 0 2.34 1.17 1.17 0 0 1 0-2.34ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.8A3.2 3.2 0 1 0 12 15.2 3.2 3.2 0 0 0 12 8.8Z" />
   </svg>
 );
 
@@ -41,30 +41,30 @@ const footerCommunityLinks = [
 ];
 
 const SOCIAL_LINKS = {
-  facebook: {
-    href: '#', // TODO: replace with real URL
-    label: 'Follow us on Facebook',
+  instagram: {
+    href: 'https://www.instagram.com/mamsa213?igsh=MTBpNHFlZHZrbmM3ZQ==',
+    label: 'Follow us on Instagram',
     enabled: true,
   },
   tiktok: {
-    href: '#', // TODO: replace with real URL
+    href: 'https://www.tiktok.com/@mamsa985?_r=1&_t=ZS-95Wpgj7K2K1',
     label: 'Follow us on TikTok',
     enabled: true,
   },
   whatsapp: {
-    href: '#', // TODO: replace with real URL
+    href: 'https://wa.me/256764922070',
     label: 'Chat with us on WhatsApp',
     enabled: true,
   },
   x: {
-    href: '#', // TODO: replace with real URL
+    href: 'https://x.com/mamsafraternity',
     label: 'Follow us on X',
     enabled: true,
   },
 } as const;
 
 const socialEntries = [
-  { key: 'facebook', icon: FacebookIcon, text: 'Facebook' },
+  { key: 'instagram', icon: InstagramIcon, text: 'Instagram' },
   { key: 'tiktok', icon: TikTokIcon, text: 'TikTok' },
   { key: 'whatsapp', icon: WhatsAppIcon, text: 'WhatsApp' },
   { key: 'x', icon: XIcon, text: 'X / Twitter' },
