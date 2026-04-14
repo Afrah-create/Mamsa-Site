@@ -1,801 +1,333 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import {
+  Archive,
+  CheckCircle,
+  Clock,
+  FileText,
+  LayoutGrid,
+  List,
+  Newspaper,
+  PenLine,
+  Pencil,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import AdminLoadingState from '@/components/AdminLoadingState';
-import NewsModal from '@/components/NewsModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import NewsModal from '@/components/NewsModal';
 import Toast from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
 import { adminRequest } from '@/lib/admin-api';
 import { publicAssetUrl } from '@/lib/upload';
 import { requireAuth, type SessionUser } from '@/lib/session-manager';
+import type { NewsArticle, NewsListResponse } from '@/types/news';
 
-interface NewsItem {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  category: 'general' | 'events' | 'announcements';
-  published_at: string;
-  created_at: string;
-  status: 'draft' | 'published' | 'archived';
-  featured_image?: string;
-  featured_image_file?: File | null;
-  excerpt?: string;
-  tags?: string[];
+type SortKey = 'newest' | 'oldest' | 'az' | 'za';
+
+const statusStyles: Record<NewsArticle['status'], string> = {
+  published: 'bg-emerald-100 text-emerald-700',
+  draft: 'bg-amber-100 text-amber-700',
+  archived: 'bg-gray-100 text-gray-500',
+};
+
+function toLabel(status: NewsArticle['status']): string {
+  if (status === 'published') return 'Published';
+  if (status === 'draft') return 'Draft';
+  return 'Archived';
 }
 
 export default function NewsPage() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<NewsItem | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published' | 'archived'>('all');
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
-  
+  const router = useRouter();
   const { toast, showToast, hideToast } = useToast();
-  const normalizeTags = (raw: unknown): string[] => {
-    if (Array.isArray(raw)) {
-      return raw.map((t) => String(t).trim()).filter(Boolean);
-    }
-    if (typeof raw === 'string') {
-      const trimmed = raw.trim();
-      if (!trimmed) return [];
-      try {
-        const parsed = JSON.parse(trimmed) as unknown;
-        if (Array.isArray(parsed)) {
-          return parsed.map((t) => String(t).trim()).filter(Boolean);
-        }
-      } catch {
-        return trimmed
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean);
-      }
-      return [];
-    }
-    return [];
-  };
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [rows, setRows] = useState<NewsArticle[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | NewsArticle['status']>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<NewsArticle | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<NewsArticle | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
-  // Function to seed initial news data
-  const seedInitialNews = useCallback(async () => {
+  useEffect(() => {
     try {
-      console.log('Seeding initial news data...');
-      
-      const initialNews = [
-        {
-          title: "Welcome to MAMSA News Portal",
-          content: "Welcome to the MAMSA News Portal! This is your central hub for all the latest updates, announcements, and news from the Madi Makerere University Students Association.\n\nHere you'll find information about upcoming events, leadership updates, community initiatives, and much more. We're committed to keeping you informed and engaged with all the exciting developments happening within our community.",
-          author: "MAMSA Editorial Team",
-          category: 'announcements',
-          status: "published",
-          featured_image: "/api/placeholder/400/200",
-          excerpt: "Welcome to the MAMSA News Portal - your central hub for all the latest updates and announcements.",
-          tags: ["welcome", "announcement", "portal"],
-          created_by: user?.id
-        },
-        {
-          title: "Getting Started with MAMSA",
-          content: "New to MAMSA? Here's everything you need to know to get started and make the most of your membership.\n\nMAMSA offers numerous opportunities for personal and professional development, networking, and community engagement. From academic support to leadership development programs, we're here to help you succeed throughout your university journey.\n\nMake sure to check out our upcoming events and consider joining one of our many committees or interest groups.",
-          author: "MAMSA Admin",
-          category: 'general',
-          status: "published",
-          featured_image: "/api/placeholder/400/200",
-          excerpt: "Everything you need to know to get started with MAMSA and make the most of your membership.",
-          tags: ["getting-started", "membership", "guide"],
-          created_by: user?.id
-        }
-      ];
+      const v = localStorage.getItem('news-view-mode');
+      if (v === 'grid' || v === 'list') setViewMode(v);
+    } catch {}
+  }, []);
 
-      const seeded = await Promise.all(
-        initialNews.map((item) =>
-          adminRequest<NewsItem>('/api/admin/news', {
-            method: 'POST',
-            body: JSON.stringify({ ...item, created_by: user?.id }),
-          })
-        )
-      );
+  useEffect(() => {
+    try {
+      localStorage.setItem('news-view-mode', viewMode);
+    } catch {}
+  }, [viewMode]);
 
-      console.log('Successfully seeded initial news data:', seeded);
-      setNews((prev) => (prev.length > 0 ? prev : seeded));
-    } catch (error) {
-      console.error('Failed to seed initial news:', error);
-    }
-  }, [user?.id]);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setAppliedSearch(searchInput.trim());
+      setPage(1);
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
 
   const checkAuth = useCallback(async () => {
     try {
       const session = await requireAuth();
       if (!session) return;
       setUser(session.user);
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    } catch {
       window.location.href = '/login';
+    } finally {
+      setLoadingUser(false);
     }
   }, []);
 
-  const loadNews = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Loading news from database...');
-
-      try {
-        const data = await adminRequest<NewsItem[]>('/api/admin/news');
-
-        if (data && data.length > 0) {
-          const normalized = data.map((item) => ({
-            ...item,
-            tags: normalizeTags(item.tags),
-            featured_image:
-              item.featured_image && !item.featured_image.startsWith('http')
-                ? publicAssetUrl(item.featured_image)
-                : item.featured_image,
-          }));
-          console.log('Loaded news from database:', data.length, 'articles');
-          setNews(normalized);
-        } else {
-          console.log('No news articles found in database');
-          setNews([]);
-          await seedInitialNews();
-        }
-        return;
-      } catch (loadError) {
-        console.error('Error loading news:', loadError);
-        console.log('Falling back to static data...');
-        const staticNews: NewsItem[] = [
-          {
-            id: 1,
-            title: "MAMSA Annual Conference 2024: A Resounding Success",
-            content: "The MAMSA Annual Conference 2024 was held last weekend at the Makerere University Main Hall, bringing together over 500 students from various departments. The conference featured keynote speeches from industry leaders, panel discussions on current issues, and networking opportunities for students.\n\nThe theme 'Building Tomorrow's Leaders Today' resonated throughout the event, with speakers emphasizing the importance of student leadership and community engagement. Highlights included a presentation on sustainable development goals and a workshop on digital literacy in education.",
-            author: "Dr. Sarah Johnson",
-            category: 'events',
-            published_at: "2024-03-15T10:00:00Z",
-            created_at: "2024-03-15T09:00:00Z",
-            status: "published",
-            featured_image: "/api/placeholder/400/200",
-            excerpt: "Over 500 students attended the successful MAMSA Annual Conference 2024, featuring leadership development and networking opportunities.",
-            tags: ["conference", "leadership", "networking", "2024"]
-          },
-          {
-            id: 2,
-            title: "New Student Support Services Launch",
-            content: "MAMSA is excited to announce the launch of new student support services designed to help members throughout their academic journey. These services include academic tutoring, career counseling, mental health support, and financial aid guidance.\n\nThe services are available to all registered MAMSA members and can be accessed through our online portal or by visiting the MAMSA office. We encourage all students to take advantage of these resources to enhance their university experience.",
-            author: "John Mwesigwa",
-            category: 'general',
-            published_at: "2024-03-10T14:30:00Z",
-            created_at: "2024-03-10T14:00:00Z",
-            status: "published",
-            featured_image: "/api/placeholder/400/200",
-            excerpt: "New comprehensive student support services are now available to all MAMSA members.",
-            tags: ["services", "support", "students", "announcement"]
-          }
-        ];
-        setNews(staticNews);
-        return;
-      }
+      const q = new URLSearchParams({ page: String(page), limit: '16' });
+      if (appliedSearch) q.set('search', appliedSearch);
+      if (statusFilter !== 'all') q.set('status', statusFilter);
+      const data = await adminRequest<NewsListResponse>(`/api/admin/news?${q.toString()}`);
+      setRows(data?.items ?? []);
+      setTotal(data?.total ?? 0);
+      setTotalPages(data?.totalPages ?? 0);
+      setImageErrors({});
     } catch (error) {
-      console.error('Failed to load news:', error);
-      setNews([]);
+      console.error(error);
+      setRows([]);
+      showToast('Failed to load news articles.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [seedInitialNews]);
+  }, [page, appliedSearch, statusFilter, showToast]);
 
   useEffect(() => {
-    checkAuth();
-    loadNews();
-  }, [checkAuth, loadNews]);
+    void checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     if (!user) return;
-    const interval = window.setInterval(() => {
-      loadNews();
-    }, 30000);
+    void load();
+  }, [user, load]);
 
-    return () => window.clearInterval(interval);
-  }, [loadNews, user]);
+  const afterMutation = useCallback(() => {
+    router.refresh();
+    void load();
+  }, [load, router]);
 
-  const handleCreateNews = () => {
-    setEditingItem(null);
-    setShowModal(true);
-  };
+  const sortedRows = useMemo(() => {
+    const items = [...rows];
+    if (sortBy === 'oldest') return items.sort((a, b) => +new Date(a.created_at) - +new Date(b.created_at));
+    if (sortBy === 'az') return items.sort((a, b) => a.title.localeCompare(b.title));
+    if (sortBy === 'za') return items.sort((a, b) => b.title.localeCompare(a.title));
+    return items.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+  }, [rows, sortBy]);
 
-  const handleEditNews = (item: NewsItem) => {
-    setEditingItem(item);
-    setShowModal(true);
-  };
+  const stats = useMemo(
+    () => ({
+      total,
+      published: rows.filter((r) => r.status === 'published').length,
+      drafts: rows.filter((r) => r.status === 'draft').length,
+      archived: rows.filter((r) => r.status === 'archived').length,
+    }),
+    [rows, total],
+  );
 
-  const handleDeleteNews = (item: NewsItem) => {
-    setItemToDelete(item);
-    setShowConfirm(true);
-  };
-
-  const handleSaveNews = async (newsData: Omit<NewsItem, 'id' | 'created_at'>) => {
-    try {
-      console.log('Saving news article:', newsData);
-      
-      if (editingItem) {
-        // Update existing item
-        console.log('Updating existing article with ID:', editingItem.id);
-        const payload = {
-          title: newsData.title,
-          content: newsData.content,
-          author: newsData.author,
-          category: newsData.category,
-          date: newsData.published_at,
-          excerpt: newsData.excerpt ?? '',
-          tags: newsData.tags ?? [],
-          image: newsData.featured_image ?? null,
-          featured: newsData.status === 'published',
-        };
-
-        const response = await fetch(`/api/admin/news/${editingItem.id}`, {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || 'Failed to update news article.');
-        }
-
-        const result = await response.json();
-        const data = result.data as NewsItem;
-
-        if (!data) {
-          showToast('Failed to update news article: No data returned', 'error');
-          return;
-        }
-
-        console.log('Successfully updated news article:', data);
-        
-        // Update local state
-        const normalized = {
-          ...data,
-          featured_image:
-            data.featured_image && !data.featured_image.startsWith('http')
-              ? publicAssetUrl(data.featured_image)
-              : data.featured_image,
-        };
-        setNews(prev => prev.map(item => item.id === editingItem.id ? normalized : item));
-        showToast('News article updated successfully', 'success');
-      } else {
-        // Create new item
-        console.log('Creating new article...');
-        const payload = {
-          title: newsData.title,
-          content: newsData.content,
-          author: newsData.author,
-          category: newsData.category,
-          date: newsData.published_at,
-          excerpt: newsData.excerpt ?? '',
-          tags: newsData.tags ?? [],
-          image: newsData.featured_image ?? null,
-          featured: newsData.status === 'published',
-        };
-
-        const response = await fetch('/api/admin/news', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text || 'Failed to create news article.');
-        }
-
-        const result = await response.json();
-        const data = result.data as NewsItem;
-
-        if (!data) {
-          showToast('Failed to create news article: No data returned', 'error');
-          return;
-        }
-
-        console.log('Successfully created news article:', data);
-        
-        // Update local state
-        const normalized = {
-          ...data,
-          featured_image:
-            data.featured_image && !data.featured_image.startsWith('http')
-              ? publicAssetUrl(data.featured_image)
-              : data.featured_image,
-        };
-        setNews(prev => [normalized, ...prev]);
-        showToast('News article created successfully', 'success');
-      }
-      
-      console.log('Closing modal after successful operation');
-      setShowModal(false);
-      
-      // Return success indicator
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to save news:', error);
-      // Only show generic error if we haven't already shown a specific error
-      if (error instanceof Error) {
-        showToast(`Failed to save news article: ${error.message}`, 'error');
-      } else {
-        showToast('Failed to save news article. Please try again.', 'error');
-      }
-      
-      // Return error indicator
-      return { success: false, error };
+  const onSave = async (payload: Omit<NewsArticle, 'id' | 'created_at' | 'updated_at'>) => {
+    const body = {
+      title: payload.title,
+      content: payload.content ?? '',
+      excerpt: payload.excerpt ?? '',
+      author: payload.author ?? 'Admin',
+      tags: payload.tags ?? [],
+      date: payload.published_at ?? new Date().toISOString(),
+      image: payload.featured_image,
+      featured: payload.status === 'published',
+    };
+    if (editing) {
+      await adminRequest(`/api/admin/news/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
+      showToast(`Article '${payload.title}' updated`, 'success');
+    } else {
+      await adminRequest('/api/admin/news', { method: 'POST', body: JSON.stringify(body) });
+      showToast(`Article '${payload.title}' published`, 'success');
     }
+    setShowModal(false);
+    setEditing(null);
+    afterMutation();
   };
 
   const confirmDelete = async () => {
-    if (itemToDelete) {
-      try {
-        console.log('Deleting news article with ID:', itemToDelete.id);
-        
-        await adminRequest(`/api/admin/news/${itemToDelete.id}`, { method: 'DELETE' });
-
-        console.log('Successfully deleted news article');
-        
-        // Update local state
-        setNews(prev => prev.filter(item => item.id !== itemToDelete.id));
-        setShowConfirm(false);
-        setItemToDelete(null);
-        showToast('News article deleted successfully', 'success');
-      } catch (error) {
-        console.error('Failed to delete news:', error);
-        showToast('Failed to delete news article. Please try again.', 'error');
-      }
-    }
-  };
-
-  const handleBulkDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      console.log('Bulk deleting news articles:', selectedItems);
-      
-      await Promise.all(selectedItems.map((id) => adminRequest(`/api/admin/news/${id}`, { method: 'DELETE' })));
-
-      console.log('Successfully bulk deleted news articles');
-      
-      // Update local state
-      setNews(prev => prev.filter(item => !selectedItems.includes(item.id)));
-      setSelectedItems([]);
-      showToast(`${selectedItems.length} article(s) deleted successfully`, 'success');
+      await adminRequest(`/api/admin/news/${deleteTarget.id}`, { method: 'DELETE' });
+      showToast('Article deleted', 'success');
+      setDeleteTarget(null);
+      afterMutation();
     } catch (error) {
-      console.error('Failed to delete selected items:', error);
-      showToast('Failed to delete selected articles. Please try again.', 'error');
+      console.error(error);
+      showToast('Failed to delete article', 'error');
     }
   };
 
-  const handleSelectAll = () => {
-    if (selectedItems.length === filteredNews.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(filteredNews.map(item => item.id));
-    }
-  };
-
-  const handleSelectItem = (id: number) => {
-    setSelectedItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(itemId => itemId !== id)
-        : [...prev, id]
-    );
-  };
-
-  // Remove duplicates and filter news based on search and status
-  const filteredNews = news
-    .filter((item, index, self) => 
-      // Remove duplicates based on id and title combination
-      index === self.findIndex(t => t.id === item.id && t.title === item.title)
-    )
-    .filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           item.author.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-
+  if (loadingUser || !user) return <AdminLoadingState />;
 
   return (
     <AdminLayout user={user}>
-      <div className="w-full">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-              <h2 className="text-lg font-medium text-gray-900">News Articles</h2>
-              <button 
-                onClick={handleCreateNews}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium w-full sm:w-auto"
-              >
-                Add New Article
+      <Toast message={toast.message} type={toast.type} isVisible={toast.isVisible} onClose={hideToast} />
+      <NewsModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditing(null);
+        }}
+        editingItem={editing}
+        onSave={onSave}
+      />
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Delete article"
+        message={deleteTarget ? `Delete '${deleteTarget.title}'? This cannot be undone.` : ''}
+        confirmText="Delete Article"
+      />
+
+      <div className="space-y-5 p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">News Articles</h1>
+            <p className="mt-1 text-sm text-gray-500">Manage and publish news for the site</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(null);
+                setShowModal(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              <PenLine className="h-4 w-4" />
+              Write Article
+            </button>
+            <div className="flex rounded-lg border border-gray-200 bg-white p-1">
+              <button type="button" className={`rounded-md p-2 ${viewMode === 'grid' ? 'bg-emerald-600 text-white' : 'text-gray-600'}`} onClick={() => setViewMode('grid')} aria-label="Grid view">
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button type="button" className={`rounded-md p-2 ${viewMode === 'list' ? 'bg-emerald-600 text-white' : 'text-gray-600'}`} onClick={() => setViewMode('list')} aria-label="List view">
+                <List className="h-4 w-4" />
               </button>
             </div>
-
-            {/* Search and Filter Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                />
-              </div>
-              <div className="sm:w-48">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'draft' | 'published' | 'archived')}
-                  className="block w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Bulk Actions */}
-            {selectedItems.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-700">
-                    {selectedItems.length} item(s) selected
-                  </span>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleBulkDelete}
-                      className="text-sm text-red-600 hover:text-red-700 font-medium"
-                    >
-                      Delete Selected
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {loading ? (
-              <AdminLoadingState 
-                message="Loading news articles..." 
-                subMessage="Fetching the latest news and updates from the database"
-              />
-            ) : news.length === 0 ? (
-              <div className="text-center py-12">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No news articles</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by creating a new article.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Select All */}
-                <div className="flex items-center space-x-3 pb-2 border-b border-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.length === filteredNews.length && filteredNews.length > 0}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-500">Select all ({filteredNews.length} items)</span>
-                </div>
-
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {filteredNews.map((item, index) => (
-                  <div key={`${item.id}-${index}`} className="group bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    {/* Article Header */}
-                    <div className="p-6 pb-4">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <input
-                              type="checkbox"
-                              checked={selectedItems.includes(item.id)}
-                              onChange={() => handleSelectItem(item.id)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <h3 className="text-xl font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
-                              {item.title}
-                            </h3>
-                          </div>
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                            item.status === 'published' ? 'bg-green-100 text-green-800 border-green-200' :
-                            item.status === 'draft' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
-                            'bg-gray-100 text-gray-800 border-gray-200'
-                          }`}>
-                            {item.status === 'published' && '📰 Published'}
-                            {item.status === 'draft' && '📝 Draft'}
-                            {item.status === 'archived' && '📁 Archived'}
-                          </span>
-                        </div>
-                        
-                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleEditNews(item)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit Article"
-                          >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteNews(item)}
-                            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Article"
-                          >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <p className="text-gray-600 mb-4 leading-relaxed line-clamp-3">
-                        {item.excerpt || item.content}
-                      </p>
-                    </div>
-
-                    {/* Featured Image Section */}
-                    <div className="px-6 pb-4">
-                      {item.featured_image ? (
-                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm">
-                          <img
-                            src={item.featured_image}
-                            alt={item.title}
-                            className="absolute inset-0 h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => {
-                              // Fallback for broken images
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = `
-                                  <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                    <div class="text-center">
-                                      <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                      <p class="text-xs text-gray-500">Image not available</p>
-                                    </div>
-                                  </div>
-                                `;
-                              }
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                          
-                          {/* Image overlay with article info */}
-                          <div className="absolute bottom-0 left-0 right-0 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-white text-xs font-medium bg-black/20 px-2 py-1 rounded backdrop-blur-sm">
-                                Featured Article
-                              </div>
-                              {item.status === 'published' && (
-                                <div className="text-white text-xs bg-green-500/80 px-2 py-1 rounded backdrop-blur-sm flex items-center">
-                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                  </svg>
-                                  Published
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Placeholder for articles without featured images */
-                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 shadow-sm">
-                          <div className="h-full w-full flex items-center justify-center">
-                            <div className="text-center">
-                              <svg className="mx-auto h-16 w-16 text-blue-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                              </svg>
-                              <p className="text-sm font-medium text-blue-600 mb-1">News Article</p>
-                              <p className="text-xs text-blue-500">No featured image</p>
-                            </div>
-                          </div>
-                          
-                          {/* Placeholder overlay */}
-                          <div className="absolute bottom-0 left-0 right-0 p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="text-blue-600 text-xs font-medium bg-white/80 px-2 py-1 rounded backdrop-blur-sm">
-                                {item.status === 'published' ? '📰 Published' : 
-                                 item.status === 'draft' ? '📝 Draft' : '📁 Archived'}
-                              </div>
-                              <div className="text-blue-600 text-xs bg-white/80 px-2 py-1 rounded backdrop-blur-sm flex items-center">
-                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                </svg>
-                                Article
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Article Meta Information */}
-                    <div className="px-6 pb-4">
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center mb-1">
-                            <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Author</span>
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900 truncate">{item.author}</p>
-                        </div>
-                        
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center mb-1">
-                            <svg className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Created</span>
-                          </div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {new Date(item.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Article Footer */}
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {item.published_at && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              Published
-                            </span>
-                          )}
-                          {!item.published_at && item.status === 'draft' && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-yellow-100 text-yellow-800">
-                              <svg className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Draft
-                            </span>
-                          )}
-                        </div>
-                        
-                        {item.tags && item.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {item.tags.slice(0, 3).map((tag, index) => (
-                              <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                                #{tag}
-                              </span>
-                            ))}
-                            {item.tags.length > 3 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-200 text-gray-700">
-                                +{item.tags.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                </div>
-
-                {/* News Statistics */}
-                {filteredNews.length > 0 && (
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">News Statistics</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-2xl font-bold text-blue-700">
-                              {filteredNews.filter(n => n.status === 'published').length}
-                            </div>
-                            <div className="text-sm font-medium text-blue-600">Published</div>
-                          </div>
-                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl border border-yellow-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-2xl font-bold text-yellow-700">
-                              {filteredNews.filter(n => n.status === 'draft').length}
-                            </div>
-                            <div className="text-sm font-medium text-yellow-600">Drafts</div>
-                          </div>
-                          <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-xl border border-gray-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-2xl font-bold text-gray-700">
-                              {filteredNews.filter(n => n.status === 'archived').length}
-                            </div>
-                            <div className="text-sm font-medium text-gray-600">Archived</div>
-                          </div>
-                          <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h1.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293h9.172a1 1 0 00.707-.293l1.414-1.414A1 1 0 0018.414 4H19a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-2xl font-bold text-green-700">
-                              {filteredNews.length}
-                            </div>
-                            <div className="text-sm font-medium text-green-600">Total</div>
-                          </div>
-                          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* News Modal */}
-        <NewsModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveNews}
-          editingItem={editingItem}
-        />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: 'Total', value: stats.total, icon: FileText, style: 'bg-gray-100 text-gray-600' },
+            { label: 'Published', value: stats.published, icon: CheckCircle, style: 'bg-emerald-100 text-emerald-700' },
+            { label: 'Drafts', value: stats.drafts, icon: Clock, style: 'bg-amber-100 text-amber-700' },
+            { label: 'Archived', value: stats.archived, icon: Archive, style: 'bg-gray-100 text-gray-500' },
+          ].map((c) => {
+            const Icon = c.icon;
+            return (
+              <div key={c.label} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <span className={`rounded-full p-2 ${c.style}`}><Icon className="h-4 w-4" /></span>
+                <div><p className="text-2xl font-bold text-gray-900">{c.value}</p><p className="text-xs uppercase tracking-wide text-gray-500">{c.label}</p></div>
+              </div>
+            );
+          })}
+        </div>
 
-        {/* Delete Confirmation Modal */}
-        <ConfirmModal
-          isOpen={showConfirm}
-          onClose={() => setShowConfirm(false)}
-          onConfirm={confirmDelete}
-          title="Delete Article"
-          message={`Are you sure you want to delete "${itemToDelete?.title}"? This action cannot be undone.`}
-          confirmText="Delete"
-          type="danger"
-        />
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          isVisible={toast.isVisible}
-          onClose={hideToast}
-        />
+        <div className="flex gap-2 overflow-x-auto">
+          <div className="relative min-w-[240px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input type="search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search articles..." className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-9 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+            {searchInput ? <button type="button" onClick={() => setSearchInput('')} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 hover:bg-gray-100" aria-label="Clear search"><X className="h-4 w-4" /></button> : null}
+          </div>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as 'all' | NewsArticle['status']); setPage(1); }} className="min-w-[150px] rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+            <option value="all">All</option><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option>
+          </select>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortKey)} className="min-w-[150px] rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">
+            <option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="az">A–Z</option><option value="za">Z–A</option>
+          </select>
+        </div>
+
+        {loading ? (
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"><div className="aspect-video animate-pulse bg-gray-200" /><div className="space-y-2 p-3"><div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" /><div className="h-3 w-1/2 animate-pulse rounded bg-gray-200" /><div className="h-2 w-1/3 animate-pulse rounded bg-gray-200" /></div></div>)}</div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="flex items-center gap-3 border-b border-gray-100 p-3 last:border-b-0"><div className="h-10 w-16 animate-pulse rounded-lg bg-gray-200" /><div className="flex-1 space-y-2"><div className="h-3 w-1/3 animate-pulse rounded bg-gray-200" /><div className="h-2 w-1/2 animate-pulse rounded bg-gray-200" /></div></div>)}</div>
+          )
+        ) : sortedRows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 py-16 text-center">
+            <Newspaper className="h-12 w-12 text-gray-300" />
+            <p className="mt-3 text-lg font-medium text-gray-500">No articles found</p>
+            {appliedSearch ? <p className="mt-1 text-sm text-gray-500">No results for '{appliedSearch}' <button type="button" className="text-emerald-600 hover:text-emerald-700" onClick={() => setSearchInput('')}>Clear search</button></p> : null}
+          </div>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {sortedRows.map((item) => {
+              const src = item.featured_image ? publicAssetUrl(item.featured_image) : '';
+              const hasError = imageErrors[item.id];
+              const tags = item.tags ?? [];
+              return (
+                <article key={item.id} className="flex h-[305px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+                  <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
+                    {src && !hasError ? <Image src={src} alt={item.alt_text ?? item.title} fill className="object-cover" sizes="(max-width:640px) 100vw,(max-width:1024px) 50vw,25vw" unoptimized={/^https?:\/\//i.test(src)} onError={() => setImageErrors((prev) => ({ ...prev, [item.id]: true }))} /> : <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-gray-100 text-gray-300"><Newspaper className="h-8 w-8" /></div>}
+                    <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[item.status]}`}>{toLabel(item.status)}</span>
+                  </div>
+                  <div className="flex min-h-0 flex-1 flex-col p-3">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-gray-900">{item.title}</h3>
+                    <p className="mt-1 text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} · {item.author ?? '—'}</p>
+                    <div className="mt-2 flex flex-wrap gap-1">{tags.slice(0, 2).map((tag) => <span key={tag} className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-600">#{tag}</span>)}{tags.length > 2 ? <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-600">+{tags.length - 2}</span> : null}</div>
+                    <div className="mt-auto flex items-center justify-end gap-2 text-xs">
+                      <button type="button" onClick={() => { setEditing(item); setShowModal(true); }} className="inline-flex items-center gap-1 text-emerald-600 opacity-60 hover:text-emerald-800 hover:opacity-100"><Pencil className="h-3 w-3" />Edit</button>
+                      <span className="text-gray-300">•</span>
+                      <button type="button" onClick={() => setDeleteTarget(item)} className="inline-flex items-center gap-1 text-red-500 opacity-60 hover:text-red-700 hover:opacity-100"><Trash2 className="h-3 w-3" />Delete</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+            <table className="min-w-full divide-y divide-gray-200 text-left">
+              <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500"><tr><th className="px-3 py-2">Image</th><th className="px-3 py-2">Title</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Author</th><th className="px-3 py-2">Date</th><th className="px-3 py-2 text-right">Actions</th></tr></thead>
+              <tbody className="divide-y divide-gray-100">
+                {sortedRows.map((item) => {
+                  const src = item.featured_image ? publicAssetUrl(item.featured_image) : '';
+                  return (
+                    <tr key={item.id}>
+                      <td className="px-3 py-2">{src ? <Image src={src} alt={item.alt_text ?? item.title} width={64} height={40} className="h-10 w-16 rounded-lg object-cover" /> : <div className="flex h-10 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-50 to-gray-100 text-gray-300"><Newspaper className="h-4 w-4" /></div>}</td>
+                      <td className="max-w-[320px] px-3 py-2"><p className="truncate text-sm font-medium text-gray-900">{item.title}</p><p className="line-clamp-1 text-xs text-gray-400">{item.excerpt ?? item.content ?? ''}</p></td>
+                      <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[item.status]}`}>{toLabel(item.status)}</span></td>
+                      <td className="px-3 py-2 text-xs text-gray-500">{item.author ?? '—'}</td>
+                      <td className="px-3 py-2 text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+                      <td className="px-3 py-2"><div className="flex justify-end gap-1"><button type="button" onClick={() => { setEditing(item); setShowModal(true); }} className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50"><Pencil className="h-4 w-4" /></button><button type="button" onClick={() => setDeleteTarget(item)} className="rounded p-1.5 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button></div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {totalPages > 1 ? <div className="flex items-center justify-center gap-3"><button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="cursor-pointer rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Previous</button><span className="text-sm text-gray-600">Page {page} of {totalPages}</span><button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="cursor-pointer rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40">Next</button></div> : null}
       </div>
     </AdminLayout>
   );
