@@ -173,7 +173,7 @@ export default function ContactPage() {
                       value={formState.name}
                       onChange={handleInputChange('name')}
                       className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      placeholder="Jane Doe"
+                      placeholder="Enter your full name"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -189,7 +189,7 @@ export default function ContactPage() {
                       value={formState.email}
                       onChange={handleInputChange('email')}
                       className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      placeholder="jane.doe@email.com"
+                      placeholder="Enter your email address"
                     />
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ContactPage() {
                       value={formState.phone}
                       onChange={handleInputChange('phone')}
                       className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      placeholder="+1 (555) 123-4567"
+                      placeholder="Enter your phone number"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -222,7 +222,7 @@ export default function ContactPage() {
                       value={formState.subject}
                       onChange={handleInputChange('subject')}
                       className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                      placeholder="Share your question or topic"
+                      placeholder="Enter message subject"
                     />
                   </div>
                 </div>
@@ -240,7 +240,7 @@ export default function ContactPage() {
                     value={formState.message}
                     onChange={handleInputChange('message')}
                     className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                    placeholder="How can we help you?"
+                    placeholder="Enter your message"
                   />
                 </div>
 
