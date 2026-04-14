@@ -202,11 +202,13 @@ export default function LeadershipPage() {
     try {
       setLoading(true);
       console.log('Loading leadership from database...');
-      
-      const data = await adminRequest<LeadershipApiRow[]>('/api/admin/leadership');
+      const data = await adminRequest<LeadershipApiRow[] | { items?: LeadershipApiRow[] }>(
+        '/api/admin/leadership',
+      );
 
       console.log('Successfully loaded leadership:', data);
-      setLeadership((data || []).map(normalizeMember));
+      const rows = Array.isArray(data) ? data : (data?.items ?? []);
+      setLeadership(rows.map(normalizeMember));
     } catch (error) {
       console.error('Failed to load leadership:', error);
       // Fallback to static data if database fails
