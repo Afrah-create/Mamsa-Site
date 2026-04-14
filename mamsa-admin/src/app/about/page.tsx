@@ -217,7 +217,7 @@ export default function AboutPage() {
     try {
       if (editingAlumnus) {
         await adminRequest(`/api/admin/notable-alumni/${editingAlumnus.id}`, {
-          method: 'PATCH',
+          method: 'PUT',
           body: JSON.stringify(payload),
         });
 
