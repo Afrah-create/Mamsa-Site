@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyJWT } from '@/lib/auth';
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+  response.headers.set('Surrogate-Control', 'no-store');
+  return response;
+}
+
 function isProtectedPath(pathname: string) {
   return (
     pathname.startsWith('/admin') ||
@@ -21,16 +29,18 @@ export default async function middleware(request: NextRequest) {
   const session = token ? await verifyJWT(token) : null;
 
   if (session) {
-    return NextResponse.next();
+    return applyNoStoreHeaders(NextResponse.next());
   }
 
   if (pathname.startsWith('/api/admin')) {
-    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 });
+    return applyNoStoreHeaders(
+      NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+    );
   }
 
   const loginUrl = new URL('/login', request.url);
   loginUrl.searchParams.set('next', pathname);
-  return NextResponse.redirect(loginUrl);
+  return applyNoStoreHeaders(NextResponse.redirect(loginUrl));
 }
 
 export const config = {

@@ -327,17 +327,18 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
         const response = await fetch('/api/auth/me', {
           method: 'GET',
           credentials: 'include',
+          cache: 'no-store',
         });
 
         if (!response.ok) {
           clearSessionData();
-          window.location.href = '/login';
+          window.location.replace('/login');
           return;
         }
       } catch {
         // Session invalid, redirect to login
         clearSessionData();
-        window.location.href = '/login';
+        window.location.replace('/login');
       }
     };
 
@@ -350,15 +351,30 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       if (e.key === null) {
         // Session was cleared, redirect to login
         clearSessionData();
-        window.location.href = '/login';
+        window.location.replace('/login');
       }
     };
 
+    // Prevent seeing stale admin pages when navigating back after logout.
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        checkSession();
+      }
+    };
+
+    const handlePopState = () => {
+      checkSession();
+    };
+
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, [currentUser]);
 
@@ -371,13 +387,13 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       // Clear all storage
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login';
+      window.location.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       // Force redirect even on error
       localStorage.clear();
       sessionStorage.clear();
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 
