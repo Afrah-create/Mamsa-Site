@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { BookOpen, Gem, History, Target, Telescope } from 'lucide-react';
 import OrgChart from '@/components/OrgChart';
 import { LazySection, ScrollReveal } from '@/components/ui/ScrollReveal';
 import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchLeadership } from '@/lib/public-content';
@@ -14,6 +15,14 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   vision: 'Our Vision',
   values: 'Core Values',
   objectives: 'Strategic Objectives',
+};
+
+const SECTION_ICONS: Record<SectionKey, React.ComponentType<{ className?: string }>> = {
+  history: History,
+  mission: Target,
+  vision: Telescope,
+  values: Gem,
+  objectives: BookOpen,
 };
 
 const SECTION_DESCRIPTIONS: Partial<Record<SectionKey, string>> = {
@@ -164,12 +173,17 @@ export default async function CommunityAboutPage() {
               {secondarySections.map((key, index) => (
                 <ScrollReveal key={key} delay={index * 90}>
                   <article className="flex flex-col rounded-3xl border border-gray-100 bg-white px-6 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                    {(() => {
+                      const SectionIcon = SECTION_ICONS[key];
+                      return (
                     <div className="flex items-center gap-3 text-emerald-600">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold uppercase tracking-wide">
-                        {SECTION_LABELS[key][0]}
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100">
+                        <SectionIcon className="h-4 w-4" />
                       </span>
                       <h3 className="text-lg font-semibold text-gray-900">{SECTION_LABELS[key]}</h3>
                     </div>
+                      );
+                    })()}
                     <p className="mt-3 text-xs uppercase tracking-wide text-emerald-500">
                       {SECTION_DESCRIPTIONS[key] ?? 'Guiding principle.'}
                     </p>
