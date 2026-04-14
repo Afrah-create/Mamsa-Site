@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { GalleryItem } from '@/types/gallery';
 import { AppImage } from '@/components/ui/AppImage';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 type Props = {
   items: GalleryItem[];
@@ -121,35 +122,36 @@ export default function CommunityGalleryExperience({ items }: Props) {
         </div>
       ) : (
         <div className="mx-auto max-w-7xl columns-1 gap-4 px-4 pb-16 sm:columns-2 sm:px-6 lg:columns-3 xl:columns-4">
-          {filtered.map((item) => {
+          {filtered.map((item, index) => {
             const src = item.image_url?.trim() ?? '';
             const alt = item.alt_text?.trim() || item.title;
             const featured = item.is_featured === 1;
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => openAt(item.id)}
-                className={`group relative mb-4 w-full cursor-pointer break-inside-avoid overflow-hidden rounded-xl bg-gray-100 text-left shadow-sm transition-shadow duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                  featured ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
-                }`}
-              >
-                <div className="relative overflow-hidden rounded-xl">
-                  <AppImage
-                    src={src}
-                    alt={alt}
-                    className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    fallback={
-                      <div className="flex min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400">
-                        <Camera className="h-10 w-10" aria-hidden />
-                      </div>
-                    }
-                  />
-                  <div className="absolute inset-0 flex items-end bg-black/0 p-3 opacity-0 transition-all duration-300 group-hover:bg-black/30 group-hover:opacity-100">
-                    <p className="line-clamp-2 text-xs font-medium text-white">{item.title}</p>
+              <ScrollReveal key={item.id} delay={index * 60} className="mb-4 break-inside-avoid">
+                <button
+                  type="button"
+                  onClick={() => openAt(item.id)}
+                  className={`group relative w-full cursor-pointer overflow-hidden rounded-xl bg-gray-100 text-left shadow-sm transition-shadow duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                    featured ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
+                  }`}
+                >
+                  <div className="relative overflow-hidden rounded-xl">
+                    <AppImage
+                      src={src}
+                      alt={alt}
+                      className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fallback={
+                        <div className="flex min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400">
+                          <Camera className="h-10 w-10" aria-hidden />
+                        </div>
+                      }
+                    />
+                    <div className="absolute inset-0 flex items-end bg-black/0 p-3 opacity-0 transition-all duration-300 group-hover:bg-black/30 group-hover:opacity-100">
+                      <p className="line-clamp-2 text-xs font-medium text-white">{item.title}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              </ScrollReveal>
             );
           })}
         </div>

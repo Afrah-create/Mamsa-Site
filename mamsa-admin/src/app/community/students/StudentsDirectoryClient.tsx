@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import SkilledStudentCard from '@/components/SkilledStudentCard';
 import type { SkilledStudentPublic } from '@/lib/public-content';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 type TabId = 'all' | 'skill' | 'business';
 
@@ -75,8 +76,10 @@ export default function StudentsDirectoryClient({ students, loadError }: Props) 
             <p className="text-center text-sm text-gray-500">No listings in this category.</p>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {filtered.map((student) => (
-                <SkilledStudentCard key={student.id} student={student} />
+              {filtered.map((student, index) => (
+                <ScrollReveal key={student.id} delay={index * 80}>
+                  <SkilledStudentCard student={student} />
+                </ScrollReveal>
               ))}
             </div>
           )}

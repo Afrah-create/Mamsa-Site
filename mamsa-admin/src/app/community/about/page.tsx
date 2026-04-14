@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import OrgChart from '@/components/OrgChart';
+import { LazySection, ScrollReveal } from '@/components/ui/ScrollReveal';
 import { ABOUT_SECTIONS, fetchAboutSnapshot, fetchLeadership } from '@/lib/public-content';
 
 export const revalidate = 180;
@@ -67,7 +68,7 @@ export default async function CommunityAboutPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
         </div>
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8 sm:gap-10 sm:px-10 sm:py-12 lg:flex-row lg:items-center lg:gap-16 lg:py-16">
-          <div className="space-y-4 text-center lg:text-left text-white sm:space-y-6">
+          <ScrollReveal className="space-y-4 text-center text-white sm:space-y-6 lg:text-left">
             <p className="inline-flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-sm sm:text-sm">
               About MAMSA
             </p>
@@ -91,8 +92,8 @@ export default async function CommunityAboutPage() {
                 Join an Event
               </Link>
             </div>
-          </div>
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl">
+          </ScrollReveal>
+          <ScrollReveal delay={80} className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl">
             <div className="relative h-64 sm:h-72">
               <Image
                 src="/images/About.jpg"
@@ -109,7 +110,7 @@ export default async function CommunityAboutPage() {
                 </p>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </header>
 
@@ -133,7 +134,7 @@ export default async function CommunityAboutPage() {
 
       <section className="mx-auto max-w-6xl px-6 py-14 sm:px-10 lg:py-16">
           <div className="grid gap-10 lg:grid-cols-[1.2fr,1fr] lg:gap-16">
-            <article className="space-y-6 rounded-3xl border border-emerald-100 bg-emerald-50/60 p-7 shadow-sm sm:p-9">
+            <ScrollReveal className="space-y-6 rounded-3xl border border-emerald-100 bg-emerald-50/60 p-7 shadow-sm sm:p-9">
               <h2 className="text-3xl font-semibold text-emerald-800 sm:text-[2.2rem]">History & Heritage</h2>
               {sectionParagraphs.history.length > 0 ? (
                 <div className="space-y-4 text-pretty text-sm leading-relaxed text-emerald-800/90 sm:text-base">
@@ -144,14 +145,12 @@ export default async function CommunityAboutPage() {
               ) : (
                 <p className="text-sm leading-relaxed text-emerald-800/80 sm:text-base">{FALLBACK_ABOUT_TEXT}</p>
               )}
-            </article>
+            </ScrollReveal>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              {secondarySections.map((key) => (
-                  <article
-                    key={key}
-                    className="flex flex-col rounded-3xl border border-gray-100 bg-white px-6 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-                  >
+              {secondarySections.map((key, index) => (
+                <ScrollReveal key={key} delay={index * 90}>
+                  <article className="flex flex-col rounded-3xl border border-gray-100 bg-white px-6 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
                     <div className="flex items-center gap-3 text-emerald-600">
                       <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold uppercase tracking-wide">
                         {SECTION_LABELS[key][0]}
@@ -173,13 +172,14 @@ export default async function CommunityAboutPage() {
                       </p>
                     )}
                   </article>
-                ))}
+                </ScrollReveal>
+              ))}
             </div>
           </div>
         </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 lg:pb-20">
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 sm:p-8">
+        <ScrollReveal className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 sm:p-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Leadership Hierarchy</h2>
             <p className="mt-2 text-sm text-gray-600 sm:text-base">
@@ -194,11 +194,13 @@ export default async function CommunityAboutPage() {
             </div>
           ) : (
             <div className="mt-4">
-              <OrgChart leaders={leaders} />
+              <LazySection minHeightClassName="min-h-[420px]" placeholderClassName="bg-emerald-50/70">
+                <OrgChart leaders={leaders} />
+              </LazySection>
             </div>
           )}
           
-        </div>
+        </ScrollReveal>
       </section>
     </>
   );

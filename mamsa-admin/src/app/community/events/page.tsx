@@ -4,6 +4,7 @@ import { Calendar, MapPin } from 'lucide-react';
 import { fetchActiveEvents, type Event } from '@/lib/public-content';
 import { formatDate, formatTime } from '@/lib/public-content-utils';
 import { CardImage } from '@/components/ui/CardImage';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export const revalidate = 300; // Increase to 5 minutes - events don't change frequently
 
@@ -35,13 +36,13 @@ export default async function EventsPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
         </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
+        <ScrollReveal className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Events</p>
           <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Upcoming Activities & Gatherings</h1>
           <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
             Join fellow Madi students at Makerere in workshops, outreach programs, and community celebrations hosted by MAMSA.
           </p>
-        </div>
+        </ScrollReveal>
       </header>
 
       <div className="mx-auto max-w-5xl px-6 py-12">
@@ -74,47 +75,46 @@ export default async function EventsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event: Event) => (
-            <article
-              key={event.id}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
-            >
-              <div className="relative">
-                <CardImage
-                  src={event.featured_image}
-                  alt={event.title || 'Event'}
-                  aspect="video"
-                  position="center"
-                  overlay
-                  rounded="top"
-                  placeholderIcon={<Calendar className="h-8 w-8 text-gray-300" />}
-                  placeholderLabel="No image"
-                />
-                <span className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 backdrop-blur-sm">
-                  {dateBadge(event.date)}
-                </span>
-              </div>
-
-              <div className="p-4">
-                <h2 className="line-clamp-2 text-sm font-semibold text-gray-900">{event.title}</h2>
-                <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400">
-                  <MapPin className="h-3 w-3" aria-hidden />
-                  {event.location || 'Venue to be announced'}
-                </p>
-                <p className="mt-1 text-xs text-emerald-600">{event.time ? formatTime(event.time) : 'Time to be announced'}</p>
-                <div className="mt-2">
-                  <Link
-                    href={`/community/events/${event.id}`}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
-                  >
-                    Read more
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
-                      <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </Link>
+          {events.map((event: Event, index) => (
+            <ScrollReveal key={event.id} delay={index * 80}>
+              <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+                <div className="relative">
+                  <CardImage
+                    src={event.featured_image}
+                    alt={event.title || 'Event'}
+                    aspect="video"
+                    position="center"
+                    overlay
+                    rounded="top"
+                    placeholderIcon={<Calendar className="h-8 w-8 text-gray-300" />}
+                    placeholderLabel="No image"
+                  />
+                  <span className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 backdrop-blur-sm">
+                    {dateBadge(event.date)}
+                  </span>
                 </div>
-              </div>
-            </article>
+
+                <div className="p-4">
+                  <h2 className="line-clamp-2 text-sm font-semibold text-gray-900">{event.title}</h2>
+                  <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400">
+                    <MapPin className="h-3 w-3" aria-hidden />
+                    {event.location || 'Venue to be announced'}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-600">{event.time ? formatTime(event.time) : 'Time to be announced'}</p>
+                  <div className="mt-2">
+                    <Link
+                      href={`/community/events/${event.id}`}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                    >
+                      Read more
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
+                        <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            </ScrollReveal>
           ))
           }
           </div>

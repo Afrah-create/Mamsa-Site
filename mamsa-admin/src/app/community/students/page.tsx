@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import StudentsDirectoryClient from './StudentsDirectoryClient';
 import { getActiveSkilledStudents, type SkilledStudentPublic } from '@/lib/public-content';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export const revalidate = 300;
 
@@ -28,7 +29,7 @@ export default async function SkilledStudentsPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
         </div>
-        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
+        <ScrollReveal className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Community</p>
           <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Skilled students &amp; business</h1>
           <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
@@ -43,7 +44,7 @@ export default async function SkilledStudentsPage() {
               About MAMSA
             </Link>
           </div>
-        </div>
+        </ScrollReveal>
       </header>
 
       <StudentsDirectoryClient students={students} loadError={loadError} />

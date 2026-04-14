@@ -8,6 +8,7 @@ import { fetchHomeContent, fetchPublishedAlumni } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
 import EventCarousel from '@/components/EventCarousel';
 import { CardImage } from '@/components/ui/CardImage';
+import { LazySection, ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export const revalidate = 180; // Increase to 3 minutes - home page content changes moderately
 
@@ -72,7 +73,7 @@ export default async function HomePage() {
           <span className="pointer-events-none absolute -left-20 top-[-5rem] h-56 w-56 rounded-full bg-white/15 blur-3xl mix-blend-screen md:-left-28 md:top-[-7rem] lg:h-72 lg:w-72" />
           <span className="pointer-events-none absolute -bottom-20 right-[-3rem] h-60 w-60 rounded-full bg-emerald-400/20 blur-3xl mix-blend-screen md:-bottom-28 md:right-[-5rem] lg:h-80 lg:w-80" />
           <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8 px-5 py-10 sm:px-8 sm:py-14 lg:flex-row lg:items-center lg:justify-between lg:gap-14 lg:px-10 lg:py-16">
-            <div className="space-y-5 text-center lg:max-w-lg lg:text-left xl:space-y-6">
+            <ScrollReveal className="space-y-5 text-center lg:max-w-lg lg:text-left xl:space-y-6">
               <p className="mx-auto inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-emerald-50 shadow-sm backdrop-blur-sm sm:px-5 sm:py-2 sm:text-xs lg:mx-0">
                 Madi Makerere University Students Association
               </p>
@@ -90,8 +91,8 @@ export default async function HomePage() {
                   Explore Latest Updates
                 </Link>
               </div>
-            </div>
-            <div className="relative flex w-full items-center justify-center lg:max-w-md">
+            </ScrollReveal>
+            <ScrollReveal delay={80} className="relative flex w-full items-center justify-center lg:max-w-md">
               <div className="relative w-full overflow-hidden rounded-[24px] border border-white/20 bg-white/10 shadow-2xl backdrop-blur">
                 <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/35 via-white/0 to-white/10" />
                 <div className="relative flex flex-col gap-4 p-4 sm:p-5 md:p-6">
@@ -130,35 +131,34 @@ export default async function HomePage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </header>
 
         {hasAboutContent && (
           <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-14">
             <div className="grid gap-8 lg:grid-cols-[1.2fr,1fr] lg:gap-10">
-              <div className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm sm:p-7">
+              <ScrollReveal className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm sm:p-7">
                 <h2 className="text-2xl font-semibold text-emerald-800 sm:text-[2.1rem]">Who We Are</h2>
                 <p className="text-pretty text-sm text-emerald-800/90 sm:text-base leading-relaxed">
                   {about.history?.trim() || 'Our story is being crafted. Check back soon to learn more about MAMSA’s journey.'}
                 </p>
-              </div>
+              </ScrollReveal>
               <div className="grid gap-4 sm:grid-cols-2">
-                {aboutCards.map((card) => (
-                  <article
-                    key={card.key}
-                    className={`rounded-3xl border bg-white px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${card.accent}`}
-                  >
-                    <div className="flex items-center gap-3 text-emerald-600">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                        {card.icon}
-                      </span>
-                      <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
-                    </div>
-                    <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-                      {about[card.key]?.trim() || 'Content coming soon.'}
-                    </p>
-                  </article>
+                {aboutCards.map((card, index) => (
+                  <ScrollReveal key={card.key} delay={index * 90}>
+                    <article className={`rounded-3xl border bg-white px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${card.accent}`}>
+                      <div className="flex items-center gap-3 text-emerald-600">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          {card.icon}
+                        </span>
+                        <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
+                      </div>
+                      <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                        {about[card.key]?.trim() || 'Content coming soon.'}
+                      </p>
+                    </article>
+                  </ScrollReveal>
                 ))}
               </div>
             </div>
@@ -203,11 +203,9 @@ export default async function HomePage() {
                 <p className="mt-2 text-sm text-gray-500">Once articles are published in the admin portal, they will appear here automatically.</p>
               </div>
             ) : (
-              news.map((article) => (
-                <article
-                  key={article.id}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-                >
+              news.map((article, index) => (
+                <ScrollReveal key={article.id} delay={index * 80}>
+                  <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                   <CardImage
                     src={article.featured_image}
                     alt={article.title || 'News'}
@@ -243,7 +241,8 @@ export default async function HomePage() {
                       </Link>
                     </div>
                   </div>
-                </article>
+                  </article>
+                </ScrollReveal>
               ))
             )}
           </div>
@@ -290,9 +289,9 @@ export default async function HomePage() {
                 View full calendar →
               </Link>
             </div>
-            <div className="mt-10">
+            <LazySection minHeightClassName="min-h-[280px]" className="mt-10">
               <EventCarousel events={events} />
-            </div>
+            </LazySection>
           </div>
         </section>
 

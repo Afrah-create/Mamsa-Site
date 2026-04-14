@@ -3,6 +3,7 @@ import { Newspaper } from 'lucide-react';
 import { fetchPublishedNews, type NewsArticle } from '@/lib/public-content';
 import { formatDate } from '@/lib/public-content-utils';
 import { CardImage } from '@/components/ui/CardImage';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export const revalidate = 120;
 
@@ -21,13 +22,13 @@ export default async function UpdatesPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/85 via-emerald-600/80 to-emerald-500/85" />
           </div>
-          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
+          <ScrollReveal className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-12 text-center sm:gap-6 sm:px-8 sm:py-16 md:px-10 md:py-20 lg:px-12">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100 sm:text-sm">Updates</p>
             <h1 className="text-2xl font-bold drop-shadow-lg sm:text-3xl md:text-4xl lg:text-5xl">Community News & Stories</h1>
             <p className="mx-auto max-w-2xl text-sm text-white/95 sm:text-base drop-shadow-md">
               Latest updates from the MAMSA community.
             </p>
-          </div>
+          </ScrollReveal>
         </header>
 
         <div className="mx-auto max-w-5xl px-6 py-12">
@@ -59,52 +60,51 @@ export default async function UpdatesPage() {
         </div>
       ) : (
         <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {articles.map((article: NewsArticle) => (
-            <article
-              key={article.id}
-              className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
-            >
-              <CardImage
-                src={article.featured_image}
-                alt={article.title || 'News'}
-                aspect="video"
-                position="center"
-                overlay
-                rounded="top"
-                placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
-                placeholderLabel="No image"
-              />
-              <div className="flex flex-1 flex-col p-4">
-                {article.tags?.[0] ? (
-                  <span className="inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-                    {article.tags[0]}
-                  </span>
-                ) : null}
-                <h2 className="mt-1 line-clamp-2 text-sm font-semibold text-gray-900">
-                  <Link href={`/community/updates/${article.id}`} className="transition hover:text-emerald-700">
-                    {article.title}
-                  </Link>
-                </h2>
-                <p className="mt-1 line-clamp-2 flex-1 text-xs text-gray-500">
-                  {article.excerpt ||
-                    article.content?.slice(0, 220) ||
-                    'Details for this story will be available soon.'}
-                  {article.content && article.content.length > 220 ? '…' : ''}
-                </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{formatDate(article.published_at)}</span>
-                  <Link
-                    href={`/community/updates/${article.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
-                  >
-                    Read more
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
-                      <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </Link>
+          {articles.map((article: NewsArticle, index) => (
+            <ScrollReveal key={article.id} delay={index * 80}>
+              <article className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+                <CardImage
+                  src={article.featured_image}
+                  alt={article.title || 'News'}
+                  aspect="video"
+                  position="center"
+                  overlay
+                  rounded="top"
+                  placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
+                  placeholderLabel="No image"
+                />
+                <div className="flex flex-1 flex-col p-4">
+                  {article.tags?.[0] ? (
+                    <span className="inline-flex w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                      {article.tags[0]}
+                    </span>
+                  ) : null}
+                  <h2 className="mt-1 line-clamp-2 text-sm font-semibold text-gray-900">
+                    <Link href={`/community/updates/${article.id}`} className="transition hover:text-emerald-700">
+                      {article.title}
+                    </Link>
+                  </h2>
+                  <p className="mt-1 line-clamp-2 flex-1 text-xs text-gray-500">
+                    {article.excerpt ||
+                      article.content?.slice(0, 220) ||
+                      'Details for this story will be available soon.'}
+                    {article.content && article.content.length > 220 ? '…' : ''}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{formatDate(article.published_at)}</span>
+                    <Link
+                      href={`/community/updates/${article.id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 transition hover:text-emerald-700"
+                    >
+                      Read more
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
+                        <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </ScrollReveal>
           ))}
         </div>
       )}

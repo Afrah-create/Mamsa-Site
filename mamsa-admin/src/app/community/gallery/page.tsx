@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { fetchPublishedGallery } from '@/lib/public-content';
 import CommunityGalleryExperience from '@/components/community/CommunityGalleryExperience';
 import CommunityGallerySkeleton from '@/components/community/CommunityGallerySkeleton';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 export const revalidate = 300;
 
@@ -25,13 +26,13 @@ export default function CommunityGalleryPage() {
   return (
     <div className="bg-white">
       <header className="border-b border-emerald-100/60 bg-gradient-to-br from-emerald-50 via-white to-gray-50 px-4 py-10 sm:px-8 sm:py-14">
-        <div className="mx-auto max-w-4xl text-center">
+        <ScrollReveal className="mx-auto max-w-4xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-700">Community</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Our Gallery</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600 sm:text-base">
             Photos from events and community activities.
           </p>
-        </div>
+        </ScrollReveal>
       </header>
 
       <Suspense fallback={<CommunityGallerySkeleton />}>
