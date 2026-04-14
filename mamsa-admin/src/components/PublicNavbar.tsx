@@ -6,6 +6,8 @@ import {
   BookOpen,
   CalendarDays,
   ChevronDown,
+  CircleDot,
+  Eye,
   GraduationCap,
   Home,
   Images,
@@ -13,6 +15,7 @@ import {
   Mail,
   Menu,
   Newspaper,
+  Target,
   Users,
   X,
 } from 'lucide-react';
@@ -48,6 +51,26 @@ const COMMUNITY_ITEMS = [
 ] as const;
 
 const ALUMNI_HREF = '/community/alumni';
+const TICKER_ITEMS = [
+  {
+    key: 'name',
+    label: 'Association',
+    text: 'Madi Makerere University Students Association (MAMSA)',
+    icon: CircleDot,
+  },
+  {
+    key: 'mission',
+    label: 'Mission',
+    text: 'Build unity, leadership, and academic excellence among Madi students at Makerere University.',
+    icon: Target,
+  },
+  {
+    key: 'vision',
+    label: 'Vision',
+    text: 'A strong, connected, and impactful Madi student community.',
+    icon: Eye,
+  },
+] as const;
 
 function pathMatches(href: string, pathname: string | null) {
   if (!pathname) return false;
@@ -138,7 +161,6 @@ export default function PublicNavbar() {
   }, [clearLeaveTimer]);
 
   const communityChildActive = COMMUNITY_ITEMS.some((item) => pathMatches(item.href, pathname));
-
   const desktopNavLinkClass = (href: string, extra?: string) => {
     const active = pathMatches(href, pathname);
     return [
@@ -153,8 +175,30 @@ export default function PublicNavbar() {
   };
 
   return (
+    <>
+    <div className="fixed inset-x-0 top-0 z-[60] h-8 overflow-hidden border-b border-emerald-700/60 bg-emerald-900 text-emerald-50">
+      <div className="ticker-track flex min-w-max items-center whitespace-nowrap">
+        {[0, 1].map((loop) => (
+          <div key={loop} className="flex items-center gap-6 px-6" aria-hidden={loop === 1}>
+            {TICKER_ITEMS.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <div key={`${loop}-${item.key}`} className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-100">
+                    <Icon className="h-3 w-3" aria-hidden />
+                    {item.label}
+                  </span>
+                  <span className="text-[11px] font-medium tracking-wide text-emerald-50/95">{item.text}</span>
+                  {index < TICKER_ITEMS.length - 1 ? <span className="ml-1 text-emerald-300/80">•</span> : null}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
     <header
-      className="fixed inset-x-0 top-0 z-50 bg-white/90 shadow-sm shadow-emerald-900/5 backdrop-blur-md dark:bg-emerald-950/90 dark:shadow-black/20"
+      className="fixed inset-x-0 top-8 z-50 bg-white/90 shadow-sm shadow-emerald-900/5 backdrop-blur-md dark:bg-emerald-950/90 dark:shadow-black/20"
       suppressHydrationWarning
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
@@ -306,7 +350,7 @@ export default function PublicNavbar() {
         <div
           id={menuId}
           className={[
-            'fixed left-4 right-4 top-[4.5rem] z-50 flex max-h-[calc(100vh-5.25rem)] flex-col overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/95 shadow-2xl shadow-emerald-900/15 backdrop-blur dark:border-emerald-800 dark:bg-emerald-950/95 lg:hidden',
+            'fixed left-4 right-4 top-[6rem] z-50 flex max-h-[calc(100vh-6.75rem)] flex-col overflow-hidden rounded-2xl border border-emerald-100/80 bg-white/95 shadow-2xl shadow-emerald-900/15 backdrop-blur dark:border-emerald-800 dark:bg-emerald-950/95 lg:hidden',
             'origin-top-right transition-all duration-300 ease-out',
             mobileOpen ? 'pointer-events-auto translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-[0.985] opacity-0',
           ].join(' ')}
@@ -417,5 +461,6 @@ export default function PublicNavbar() {
         </div>
       </>
     </header>
+    </>
   );
 }
