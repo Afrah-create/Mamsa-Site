@@ -70,9 +70,6 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     }
 
     const body = await request.json();
-    // #region agent log
-    fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'edit-student-put-1',hypothesisId:'H2',location:'api/admin/skilled-students/[id]/route.ts:74',message:'PUT body received',data:{id:numericId,keys:typeof body==='object'&&body?Object.keys(body):[],hasProfileImage:Boolean(body?.profile_image??body?.profileImage),hasWebsiteUrlField:Object.prototype.hasOwnProperty.call(body ?? {},'website_url'),hasWebsiteUrlCamel:Object.prototype.hasOwnProperty.call(body ?? {},'websiteUrl'),hasPhoneField:Object.prototype.hasOwnProperty.call(body ?? {},'phone'),hasBioField:Object.prototype.hasOwnProperty.call(body ?? {},'bio')},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     const existingRows = await sql<StudentRow[]>`
       SELECT * FROM skilled_students WHERE id = ${numericId} LIMIT 1
     `;
@@ -137,33 +134,6 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         ? Number(body.is_featured ?? body.isFeatured)
         : existing.is_featured;
 
-    const debugValues = {
-      fullName,
-      email,
-      phone,
-      profileImage,
-      bio,
-      category,
-      title,
-      description,
-      location,
-      websiteUrl,
-      socialLinksJson,
-      isActive,
-      isFeatured,
-    } as const;
-    const undefinedKeys = Object.entries(debugValues)
-      .filter(([, value]) => value === undefined)
-      .map(([key]) => key);
-    // #region agent log
-    fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'edit-student-put-1',hypothesisId:'H3',location:'api/admin/skilled-students/[id]/route.ts:160',message:'Computed SQL update values',data:{id:numericId,undefinedKeys,types:{phone:typeof phone,bio:typeof bio,description:typeof description,location:typeof location,websiteUrl:typeof websiteUrl,socialLinksJson:typeof socialLinksJson,isActive:typeof isActive,isFeatured:typeof isFeatured}},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-    if (undefinedKeys.length > 0) {
-      // #region agent log
-      fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'edit-student-put-1',hypothesisId:'H4',location:'api/admin/skilled-students/[id]/route.ts:165',message:'Undefined bind values detected before SQL update',data:{id:numericId,undefinedKeys},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-    }
-
     await sql`
       UPDATE skilled_students
       SET
@@ -183,9 +153,6 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
         updated_at = ${new Date().toISOString()}
       WHERE id = ${numericId}
     `;
-    // #region agent log
-    fetch('http://127.0.0.1:7262/ingest/8887a3ef-1dfa-497f-b0b0-7e7ce64cd4bc',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c67584'},body:JSON.stringify({sessionId:'c67584',runId:'edit-student-put-1',hypothesisId:'H5',location:'api/admin/skilled-students/[id]/route.ts:187',message:'SQL update completed',data:{id:numericId},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     const rows = await sql<StudentRow[]>`
       SELECT * FROM skilled_students WHERE id = ${numericId} LIMIT 1

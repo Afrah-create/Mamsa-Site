@@ -791,7 +791,7 @@ type ActiveSkilledStudentRow = {
   is_featured: number;
   created_at: string;
   updated_at: string | null;
-  latest_payment_id: number;
+  latest_payment_id: number | null;
   latest_payment_amount: string | number | null;
   latest_payment_currency: string | null;
   latest_payment_date: string | null;
@@ -835,7 +835,41 @@ export const getActiveSkilledStudents = cache(async (category?: string): Promise
       ${catOk ? sql`AND category = ${catOk}` : sql``}
     ORDER BY is_featured DESC, created_at DESC
   `;
-  return rows.map(mapActiveSkilledStudentRow);
+
+  // Fallback for environments where the SQL view is missing/stale:
+  // still show active listings from base table.
+  if (rows.length > 0) {
+    return rows.map(mapActiveSkilledStudentRow);
+  }
+
+  const fallbackRows = await sql<ActiveSkilledStudentRow[]>`
+    SELECT
+      s.*,
+      lp.id AS latest_payment_id,
+      lp.amount AS latest_payment_amount,
+      lp.currency AS latest_payment_currency,
+      lp.payment_date AS latest_payment_date,
+      lp.expiry_date AS latest_payment_expiry,
+      lp.status AS latest_payment_status,
+      lp.payment_method AS latest_payment_method,
+      lp.transaction_ref AS latest_payment_ref
+    FROM skilled_students s
+    LEFT JOIN (
+      SELECT p1.*
+      FROM student_payments p1
+      INNER JOIN (
+        SELECT student_id, MAX(payment_date) AS max_date
+        FROM student_payments
+        GROUP BY student_id
+      ) p2
+        ON p1.student_id = p2.student_id AND p1.payment_date = p2.max_date
+    ) lp ON lp.student_id = s.id
+    WHERE s.is_active = 1
+      ${catOk ? sql`AND s.category = ${catOk}` : sql``}
+    ORDER BY s.is_featured DESC, s.created_at DESC
+  `;
+
+  return fallbackRows.map(mapActiveSkilledStudentRow);
 });
 
 /** Single public profile if the student appears on the active view. */
@@ -844,7 +878,35 @@ export const getSkilledStudentById = cache(async (id: number): Promise<SkilledSt
     SELECT * FROM active_skilled_students WHERE id = ${id} LIMIT 1
   `;
   const row = rows[0];
-  return row ? mapActiveSkilledStudentRow(row) : null;
+  if (row) return mapActiveSkilledStudentRow(row);
+
+  const fallbackRows = await sql<ActiveSkilledStudentRow[]>`
+    SELECT
+      s.*,
+      lp.id AS latest_payment_id,
+      lp.amount AS latest_payment_amount,
+      lp.currency AS latest_payment_currency,
+      lp.payment_date AS latest_payment_date,
+      lp.expiry_date AS latest_payment_expiry,
+      lp.status AS latest_payment_status,
+      lp.payment_method AS latest_payment_method,
+      lp.transaction_ref AS latest_payment_ref
+    FROM skilled_students s
+    LEFT JOIN (
+      SELECT p1.*
+      FROM student_payments p1
+      INNER JOIN (
+        SELECT student_id, MAX(payment_date) AS max_date
+        FROM student_payments
+        GROUP BY student_id
+      ) p2
+        ON p1.student_id = p2.student_id AND p1.payment_date = p2.max_date
+    ) lp ON lp.student_id = s.id
+    WHERE s.id = ${id} AND s.is_active = 1
+    LIMIT 1
+  `;
+  const fallback = fallbackRows[0];
+  return fallback ? mapActiveSkilledStudentRow(fallback) : null;
 });
 
 export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
