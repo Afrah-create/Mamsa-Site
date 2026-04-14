@@ -10,6 +10,8 @@ export function resolveImageSrc(value: string | null | undefined): string | null
   if (!value || value.trim() === '') return null;
   if (value.startsWith('/')) return value;
   if (value.startsWith('http')) return value;
+  if (value.startsWith('data:image/')) return value;
+  if (value.startsWith('blob:')) return value;
   return `/uploads/${value}`;
 }
 

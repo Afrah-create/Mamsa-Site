@@ -496,22 +496,42 @@ export async function getSettings() {
 export async function fetchPublishedNews(limit?: number) {
   try {
     const rows = await getNewsArticles();
-    const data: NewsArticle[] = rows.map((row) => ({
+    if (rows.length > 0) {
+      const data: NewsArticle[] = rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        content: row.content,
+        excerpt: row.excerpt,
+        category: 'general',
+        date: row.published_at,
+        author: row.author,
+        image: null,
+        featured_image: publicImagePath(row.featured_image),
+        status: row.status,
+        published_at: row.published_at,
+        tags: row.tags,
+      }));
+      return { data: limit ? data.slice(0, limit) : data, error: null };
+    }
+
+    // Fallback for environments that still use the legacy `news` table directly.
+    const legacyRows = await getNews();
+    const legacyData: NewsArticle[] = legacyRows.map((row) => ({
       id: row.id,
       title: row.title,
       content: row.content,
       excerpt: row.excerpt,
-      category: 'general',
-      date: row.published_at,
+      category: row.category,
+      date: row.date,
       author: row.author,
-      image: null,
-      featured_image: publicImagePath(row.featured_image),
-      status: row.status,
-      published_at: row.published_at,
+      image: row.image,
+      featured_image: row.image,
+      status: 'published',
+      published_at: row.date,
       tags: row.tags,
     }));
 
-    return { data: limit ? data.slice(0, limit) : data, error: null };
+    return { data: limit ? legacyData.slice(0, limit) : legacyData, error: null };
   } catch (error) {
     return { data: [] as NewsArticle[], error: error as Error };
   }
