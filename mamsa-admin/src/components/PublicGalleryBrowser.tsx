@@ -109,7 +109,7 @@ export default function PublicGalleryBrowser({ images }: Props) {
             return (
               <figure
                 key={item.id}
-                className="group flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                className="surface-interactive motion-reveal group flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl"
               >
                 <div className="relative aspect-square sm:aspect-[4/3] overflow-hidden bg-gray-100">
                   {item.image_url ? (

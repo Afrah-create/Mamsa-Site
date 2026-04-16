@@ -14,7 +14,7 @@ export default function NotableAlumniCard({ alumnus }: Props) {
     'Community leader';
 
   return (
-    <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <article className="surface-interactive motion-reveal overflow-hidden rounded-xl">
       <CardImage
         src={alumnus.image_url}
         alt={alumnus.full_name || 'Alumni'}
@@ -25,7 +25,7 @@ export default function NotableAlumniCard({ alumnus }: Props) {
         placeholderIcon={<UserRound className="h-8 w-8 text-gray-300" />}
         placeholderLabel="No photo"
       />
-      <div className="p-3">
+      <div className="p-3.5">
         <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">
           <Link href={`/community/alumni/${alumnus.id}`}>{alumnus.full_name}</Link>
         </h3>

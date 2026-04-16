@@ -136,7 +136,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
             />
           </div>
 
-          <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:p-6">
+          <section className="surface-base motion-reveal rounded-2xl p-5 lg:p-6">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Contact</h2>
             <ul className="mt-4 space-y-3 text-sm">
               <li>
@@ -177,7 +177,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
           </section>
 
           {social.length > 0 && (
-            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm lg:p-6">
+            <section className="surface-base motion-reveal rounded-2xl p-5 lg:p-6">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Social links</h2>
               <ul className="mt-4 flex flex-wrap gap-2">
                 {social.map((item) => (
@@ -200,7 +200,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
 
         <div className="min-w-0 space-y-7 2xl:space-y-8">
           {bioParagraphs.length > 0 && (
-            <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-7">
+            <section className="surface-base motion-reveal rounded-2xl p-6 lg:p-7">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">About</h2>
               <div className="mt-3 max-w-[70ch] space-y-3">
                 {bioParagraphs.map((p, i) => (
@@ -213,7 +213,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
           )}
 
           {descParagraphs.length > 0 && (
-            <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:p-7">
+            <section className="surface-base motion-reveal rounded-2xl p-6 lg:p-7">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Services &amp; details</h2>
               <div className="mt-3 max-w-[70ch] space-y-3">
                 {descParagraphs.map((p, i) => (
@@ -233,7 +233,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
         </div>
       </div>
 
-      <section className="mt-12 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 lg:p-7">
+      <section className="surface-base motion-reveal mt-12 rounded-2xl p-5 sm:p-6 lg:p-7">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">Products & services</h2>
           {products.length > 0 ? (
@@ -250,7 +250,7 @@ export default async function SkilledStudentProfilePage({ params }: PageProps) {
             {products.map((product) => (
               <article
                 key={product.id}
-                className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="surface-interactive motion-reveal group overflow-hidden rounded-xl"
               >
                 <div className="relative">
                   <CardImage

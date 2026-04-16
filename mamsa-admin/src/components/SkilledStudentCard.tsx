@@ -16,7 +16,7 @@ export default function SkilledStudentCard({ student }: Props) {
     student.category === 'business' ? 'bg-blue-500 text-white' : 'bg-emerald-500 text-white';
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <article className="surface-interactive motion-reveal group flex h-full flex-col overflow-hidden rounded-xl">
       <div className="relative">
         <CardImage
           src={student.profile_image}
@@ -32,7 +32,7 @@ export default function SkilledStudentCard({ student }: Props) {
           {categoryLabel(student.category)}
         </span>
       </div>
-      <div className="flex flex-1 flex-col p-3">
+      <div className="flex flex-1 flex-col p-3.5">
         <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{student.full_name}</h3>
         <p className="mt-1 line-clamp-1 text-xs text-emerald-600">{student.title}</p>
         {student.location ? (
@@ -42,7 +42,7 @@ export default function SkilledStudentCard({ student }: Props) {
           </p>
         ) : null}
         <div className="mt-auto">
-          <Link href={`/community/students/${student.id}`} className="mt-2 inline-block text-xs text-emerald-600 hover:underline">
+          <Link href={`/community/students/${student.id}`} className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">
             View Profile
           </Link>
         </div>
