@@ -195,74 +195,80 @@ export default async function HomePage() {
           </div>
         )}
 
-        <section id="news" className="mx-auto max-w-6xl px-6 py-20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">News & Stories</p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900">Latest updates from MAMSA</h2>
-            </div>
-            <Link
-              href="/community/updates"
-              className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
-            >
-              View all updates →
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {news.length === 0 ? (
-              <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center">
-                <p className="text-lg font-semibold text-gray-700">No published news articles yet.</p>
-                <p className="mt-2 text-sm text-gray-500">Once articles are published in the admin portal, they will appear here automatically.</p>
+        <section id="news" className="relative overflow-hidden py-20">
+          <span className="pointer-events-none absolute -left-20 top-10 h-56 w-56 rounded-full bg-emerald-100/70 blur-3xl" />
+          <span className="pointer-events-none absolute right-0 top-24 h-48 w-48 rounded-full bg-emerald-50 blur-3xl" />
+          <div className="relative mx-auto max-w-6xl px-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">News & Stories</p>
+                <h2 className="mt-2 text-3xl font-bold text-gray-900">Latest updates from MAMSA</h2>
               </div>
-            ) : (
-              news.map((article, index) => (
-                <ScrollReveal key={article.id} delay={index * 80}>
-                  <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <CardImage
-                    src={article.featured_image}
-                    alt={article.title || 'News'}
-                    aspect="video"
-                    position="center"
-                    overlay
-                    rounded="top"
-                    placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
-                    placeholderLabel="No image"
-                  />
-                  <div className="flex flex-1 flex-col space-y-4 px-6 py-6">
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
-                        {formatDate(article.published_at)}
-                      </p>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-700">
-                        {article.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {article.excerpt || 'No summary available for this story yet.'}
-                      </p>
+              <Link
+                href="/community/updates"
+                className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+              >
+                View all updates →
+              </Link>
+            </div>
+            <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {news.length === 0 ? (
+                <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+                  <p className="text-lg font-semibold text-gray-700">No published news articles yet.</p>
+                  <p className="mt-2 text-sm text-gray-500">Once articles are published in the admin portal, they will appear here automatically.</p>
+                </div>
+              ) : (
+                news.map((article, index) => (
+                  <ScrollReveal key={article.id} delay={index * 80}>
+                    <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                    <CardImage
+                      src={article.featured_image}
+                      alt={article.title || 'News'}
+                      aspect="video"
+                      position="center"
+                      overlay
+                      rounded="top"
+                      placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
+                      placeholderLabel="No image"
+                    />
+                    <div className="flex flex-1 flex-col space-y-4 px-6 py-6">
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
+                          {formatDate(article.published_at)}
+                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-700">
+                          {article.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {article.excerpt || 'No summary available for this story yet.'}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span>{article.author || 'MAMSA Editorial Team'}</span>
+                        <Link
+                          href={`/community/updates/${article.id}`}
+                          className="inline-flex items-center gap-1 text-emerald-600 transition hover:text-emerald-700"
+                        >
+                          Read more
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
+                            <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </Link>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{article.author || 'MAMSA Editorial Team'}</span>
-                      <Link
-                        href={`/community/updates/${article.id}`}
-                        className="inline-flex items-center gap-1 text-emerald-600 transition hover:text-emerald-700"
-                      >
-                        Read more
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
-                          <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </Link>
-                    </div>
-                  </div>
-                  </article>
-                </ScrollReveal>
-              ))
-            )}
+                    </article>
+                  </ScrollReveal>
+                ))
+              )}
+            </div>
           </div>
         </section>
 
         {alumniSpotlight.length > 0 && (
-          <section className="border-y border-emerald-100/80 bg-emerald-50/35">
-            <div className="mx-auto max-w-6xl px-6 py-20">
+          <section className="relative overflow-hidden border-y border-emerald-100/80 bg-gradient-to-b from-emerald-50/45 via-emerald-50/20 to-white">
+            <span className="pointer-events-none absolute left-[8%] top-10 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl" />
+            <span className="pointer-events-none absolute right-[6%] bottom-8 h-44 w-44 rounded-full bg-emerald-100/70 blur-3xl" />
+            <div className="relative mx-auto max-w-6xl px-6 py-20">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Notable alumni</p>
@@ -287,8 +293,9 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section id="events" className="bg-gray-50">
-          <div className="mx-auto max-w-6xl px-6 py-20">
+        <section id="events" className="relative overflow-hidden bg-gray-50/80 py-20">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.08),transparent_40%)]" />
+          <div className="relative mx-auto max-w-6xl px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Events</p>
