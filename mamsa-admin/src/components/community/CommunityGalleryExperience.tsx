@@ -78,8 +78,8 @@ export default function CommunityGalleryExperience({ items }: Props) {
   if (items.length === 0) {
     return (
       <div className="mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-24 text-center">
-        <Camera className="h-14 w-14 text-gray-300" aria-hidden />
-        <p className="text-lg font-medium text-gray-800">No photos yet. Check back soon.</p>
+        <Camera className="h-14 w-14 text-gray-300 dark:text-emerald-700/70" aria-hidden />
+        <p className="text-lg font-medium text-gray-800 dark:text-emerald-100">No photos yet. Check back soon.</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function CommunityGalleryExperience({ items }: Props) {
             className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
               activeCategory === 'all'
                 ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-emerald-900/60 dark:text-emerald-200 dark:hover:bg-emerald-800/70'
             }`}
           >
             All
@@ -107,7 +107,7 @@ export default function CommunityGalleryExperience({ items }: Props) {
               className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
                 activeCategory === c
                   ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-emerald-900/60 dark:text-emerald-200 dark:hover:bg-emerald-800/70'
               }`}
             >
               {c}
@@ -117,7 +117,7 @@ export default function CommunityGalleryExperience({ items }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="mx-auto max-w-lg px-6 py-16 text-center text-gray-600">
+        <div className="mx-auto max-w-lg px-6 py-16 text-center text-gray-600 dark:text-emerald-300/80">
           No photos in this category yet.
         </div>
       ) : (
@@ -131,8 +131,8 @@ export default function CommunityGalleryExperience({ items }: Props) {
                 <button
                   type="button"
                   onClick={() => openAt(item.id)}
-                  className={`group relative w-full cursor-pointer overflow-hidden rounded-xl bg-gray-100 text-left shadow-sm transition-shadow duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                    featured ? 'ring-2 ring-yellow-400 ring-offset-2' : ''
+                  className={`group relative w-full cursor-pointer overflow-hidden rounded-xl bg-gray-100 text-left shadow-sm transition-shadow duration-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:bg-emerald-900/45 dark:focus:ring-offset-emerald-950 ${
+                    featured ? 'ring-2 ring-yellow-400 ring-offset-2 dark:ring-yellow-500/80 dark:ring-offset-emerald-950' : ''
                   }`}
                 >
                   <div className="relative overflow-hidden rounded-xl">
@@ -141,7 +141,7 @@ export default function CommunityGalleryExperience({ items }: Props) {
                       alt={alt}
                       className="block h-auto w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       fallback={
-                        <div className="flex min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400">
+                        <div className="flex min-h-[12rem] w-full items-center justify-center bg-gray-200 text-gray-400 dark:bg-emerald-900/50 dark:text-emerald-600/80">
                           <Camera className="h-10 w-10" aria-hidden />
                         </div>
                       }

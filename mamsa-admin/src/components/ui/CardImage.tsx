@@ -56,15 +56,15 @@ export function CardImage({
 }: CardImageProps) {
   const icon = placeholderIcon ?? <ImageOff className="h-8 w-8 text-gray-300" aria-hidden />;
   const fallback = (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+    <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-emerald-900/50 dark:to-emerald-950/80">
       {icon}
-      {placeholderLabel ? <span className="mt-2 text-xs text-gray-400">{placeholderLabel}</span> : null}
+      {placeholderLabel ? <span className="mt-2 text-xs text-gray-400 dark:text-emerald-500/90">{placeholderLabel}</span> : null}
     </div>
   );
 
   return (
     <div
-      className={`relative overflow-hidden bg-gray-100 ${aspectMap[aspect]} ${roundedMap[rounded]} ${className ?? ''}`.trim()}
+      className={`relative overflow-hidden bg-gray-100 dark:bg-emerald-900/40 ${aspectMap[aspect]} ${roundedMap[rounded]} ${className ?? ''}`.trim()}
     >
       <div className="absolute inset-0">
         <AppImage

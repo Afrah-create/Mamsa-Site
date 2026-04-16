@@ -25,7 +25,7 @@ export default function SkilledStudentCard({ student }: Props) {
           position="top"
           overlay
           rounded="top"
-          placeholderIcon={<Briefcase className="h-8 w-8 text-gray-300" />}
+          placeholderIcon={<Briefcase className="h-8 w-8 text-gray-300 dark:text-emerald-700/80" />}
           placeholderLabel="No photo"
         />
         <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${categoryBadgeClass}`}>
@@ -33,16 +33,16 @@ export default function SkilledStudentCard({ student }: Props) {
         </span>
       </div>
       <div className="flex flex-1 flex-col p-3.5">
-        <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{student.full_name}</h3>
-        <p className="mt-1 line-clamp-1 text-xs text-emerald-600">{student.title}</p>
+        <h3 className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-emerald-50">{student.full_name}</h3>
+        <p className="mt-1 line-clamp-1 text-xs text-emerald-600 dark:text-emerald-400">{student.title}</p>
         {student.location ? (
-          <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400">
+          <p className="mt-1 inline-flex items-center gap-1 text-xs text-gray-400 dark:text-emerald-400/70">
             <MapPin className="h-3 w-3" aria-hidden />
             {student.location}
           </p>
         ) : null}
         <div className="mt-auto">
-          <Link href={`/community/students/${student.id}`} className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline">
+          <Link href={`/community/students/${student.id}`} className="mt-2 inline-block text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400 dark:hover:text-emerald-300">
             View Profile
           </Link>
         </div>

@@ -22,17 +22,19 @@ export default function NotableAlumniCard({ alumnus }: Props) {
         position="top"
         overlay={false}
         rounded="top"
-        placeholderIcon={<UserRound className="h-8 w-8 text-gray-300" />}
+        placeholderIcon={<UserRound className="h-8 w-8 text-gray-300 dark:text-emerald-700/80" />}
         placeholderLabel="No photo"
       />
       <div className="p-3.5">
-        <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">
-          <Link href={`/community/alumni/${alumnus.id}`}>{alumnus.full_name}</Link>
+        <h3 className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-emerald-50">
+          <Link href={`/community/alumni/${alumnus.id}`} className="hover:text-emerald-700 dark:hover:text-emerald-300">
+            {alumnus.full_name}
+          </Link>
         </h3>
-        <p className="mt-1 text-xs font-medium text-emerald-600">
+        <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
           {alumnus.graduation_year != null ? `Class of ${alumnus.graduation_year}` : 'MAMSA Alumni'}
         </p>
-        <p className="mt-1 line-clamp-1 text-xs text-gray-500">{profession}</p>
+        <p className="mt-1 line-clamp-1 text-xs text-gray-500 dark:text-emerald-300/70">{profession}</p>
       </div>
     </article>
   );

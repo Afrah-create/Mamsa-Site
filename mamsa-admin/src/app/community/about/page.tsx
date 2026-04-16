@@ -76,7 +76,7 @@ export default async function CommunityAboutPage() {
 
   return (
     <>
-      <header className="relative overflow-hidden border-b border-emerald-100 pb-12 pt-20 -mt-16 sm:pt-24">
+      <header className="relative -mt-16 overflow-hidden border-b border-emerald-100 pb-12 pt-20 dark:border-emerald-900/50 sm:pt-24">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]">
           <Image
@@ -115,7 +115,7 @@ export default async function CommunityAboutPage() {
               </Link>
             </div>
           </ScrollReveal>
-          <ScrollReveal delay={80} className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl">
+          <ScrollReveal delay={80} className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl dark:bg-emerald-950 dark:shadow-black/40">
             <div className="relative h-64 sm:h-72">
               <Image
                 src="/images/About.jpg"
@@ -125,9 +125,9 @@ export default async function CommunityAboutPage() {
                 sizes="(min-width: 1024px) 380px, 100vw"
                 priority
               />
-              <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/90 p-4 text-sm text-emerald-800 shadow-lg backdrop-blur">
+              <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/90 p-4 text-sm text-emerald-800 shadow-lg backdrop-blur dark:bg-emerald-950/92 dark:text-emerald-100 dark:shadow-black/40">
                 <p className="font-semibold">Celebrating Madi students at Makerere</p>
-                <p className="mt-1 text-xs text-emerald-700/70">
+                <p className="mt-1 text-xs text-emerald-700/70 dark:text-emerald-300/80">
                   MAMSA connects students from the Madi region in West Nile, mentors, and alumni to support each other&apos;s academic journey and community development.
                 </p>
               </div>
@@ -137,16 +137,16 @@ export default async function CommunityAboutPage() {
       </header>
 
       {hasError && (
-        <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+        <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:shadow-black/20">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-900">Some Content May Be Temporarily Unavailable</h3>
-              <p className="mt-1 text-sm text-amber-800">
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Some Content May Be Temporarily Unavailable</h3>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200/90">
                 We&apos;re experiencing a brief issue loading some sections of this page. We&apos;ve displayed all the information we could load. Please refresh the page in a moment to see the complete content, or check back shortly.
               </p>
             </div>
@@ -156,38 +156,38 @@ export default async function CommunityAboutPage() {
 
       <section className="mx-auto max-w-6xl px-6 py-14 sm:px-10 lg:py-16">
           <div className="grid gap-10 lg:grid-cols-[1.2fr,1fr] lg:gap-16">
-            <ScrollReveal className="space-y-6 rounded-3xl border border-emerald-100 bg-emerald-50/60 p-7 shadow-sm sm:p-9">
-              <h2 className="text-3xl font-semibold text-emerald-800 sm:text-[2.2rem]">History & Heritage</h2>
+            <ScrollReveal className="space-y-6 rounded-3xl border border-emerald-100 bg-emerald-50/60 p-7 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-950/45 dark:shadow-black/15 sm:p-9">
+              <h2 className="text-3xl font-semibold text-emerald-800 dark:text-emerald-100 sm:text-[2.2rem]">History & Heritage</h2>
               {sectionParagraphs.history.length > 0 ? (
-                <div className="space-y-4 text-pretty text-sm leading-relaxed text-emerald-800/90 sm:text-base">
+                <div className="space-y-4 text-pretty text-sm leading-relaxed text-emerald-800/90 dark:text-emerald-200/85 sm:text-base">
                   {sectionParagraphs.history.map((paragraph) => (
                     <p key={paragraph.id}>{paragraph.text}</p>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm leading-relaxed text-emerald-800/80 sm:text-base">{FALLBACK_ABOUT_TEXT}</p>
+                <p className="text-sm leading-relaxed text-emerald-800/80 dark:text-emerald-200/80 sm:text-base">{FALLBACK_ABOUT_TEXT}</p>
               )}
             </ScrollReveal>
 
             <div className="grid gap-5 sm:grid-cols-2">
               {secondarySections.map((key, index) => (
                 <ScrollReveal key={key} delay={index * 90}>
-                  <article className="flex flex-col rounded-3xl border border-gray-100 bg-white px-6 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
+                  <article className="flex flex-col rounded-3xl border border-gray-100 bg-white px-6 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-emerald-800/55 dark:bg-emerald-950/85 dark:shadow-black/20">
                     {(() => {
                       const SectionIcon = SECTION_ICONS[key];
                       return (
-                    <div className="flex items-center gap-3 text-emerald-600">
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100">
+                    <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-800/70">
                         <SectionIcon className="h-4 w-4" />
                       </span>
-                      <h3 className="text-lg font-semibold text-gray-900">{SECTION_LABELS[key]}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-emerald-50">{SECTION_LABELS[key]}</h3>
                     </div>
                       );
                     })()}
-                    <p className="mt-3 text-xs uppercase tracking-wide text-emerald-500">
+                    <p className="mt-3 text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-500/90">
                       {SECTION_DESCRIPTIONS[key] ?? 'Guiding principle.'}
                     </p>
-                    <p className="mt-4 text-sm leading-relaxed text-gray-600">
+                    <p className="mt-4 text-sm leading-relaxed text-gray-600 dark:text-emerald-200/80">
                       {FALLBACK_SECTION_CONTENT[key]}
                     </p>
                   </article>
@@ -198,22 +198,22 @@ export default async function CommunityAboutPage() {
         </section>
 
       <section className="mx-auto max-w-6xl px-6 pb-16 sm:px-10 lg:pb-20">
-        <ScrollReveal className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 sm:p-8">
+        <ScrollReveal className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-6 dark:border-emerald-800/50 dark:bg-emerald-950/40 sm:p-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Leadership Hierarchy</h2>
-            <p className="mt-2 text-sm text-gray-600 sm:text-base">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-emerald-50 sm:text-3xl">Leadership Hierarchy</h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-emerald-200/80 sm:text-base">
               Explore the MAMSA leadership structure from top roles to team representatives.
             </p>
           </div>
 
           {leadershipError ? (
-            <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm">
-              <p className="text-sm font-semibold text-amber-900">Leadership chart is temporarily unavailable.</p>
-              <p className="mt-1 text-sm text-amber-800">Please refresh this page in a moment.</p>
+            <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:shadow-black/20">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Leadership chart is temporarily unavailable.</p>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200/90">Please refresh this page in a moment.</p>
             </div>
           ) : (
             <div className="mt-4">
-              <LazySection minHeightClassName="min-h-[420px]" placeholderClassName="bg-emerald-50/70">
+              <LazySection minHeightClassName="min-h-[420px]" placeholderClassName="bg-emerald-50/70 dark:bg-emerald-950/50">
                 <OrgChart leaders={leaders} />
               </LazySection>
             </div>

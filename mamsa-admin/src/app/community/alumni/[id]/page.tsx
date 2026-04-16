@@ -61,40 +61,40 @@ export default async function AlumniProfilePage({ params }: PageProps) {
         <Link href="/" className="hover:text-emerald-700">
           Home
         </Link>
-        <span className="mx-2 text-gray-400">/</span>
+        <span className="mx-2 text-gray-400 dark:text-emerald-600">/</span>
         <Link href="/community/alumni" className="hover:text-emerald-700">
           Alumni
         </Link>
-        <span className="mx-2 text-gray-400">/</span>
-        <span className="text-gray-500">{alumnus.full_name}</span>
+        <span className="mx-2 text-gray-400 dark:text-emerald-600">/</span>
+        <span className="text-gray-500 dark:text-emerald-300/80">{alumnus.full_name}</span>
       </nav>
 
       <header className="mt-8 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           {alumnus.featured && (
-            <span className="inline-flex rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            <span className="inline-flex rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-900/55 dark:text-emerald-300">
               Featured
             </span>
           )}
           {alumnus.graduation_year != null && (
-            <span className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-emerald-400/75">
               Class of {alumnus.graduation_year}
             </span>
           )}
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{alumnus.full_name}</h1>
-        <p className="text-lg font-medium text-emerald-700">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-emerald-50 sm:text-4xl">{alumnus.full_name}</h1>
+        <p className="text-lg font-medium text-emerald-700 dark:text-emerald-400">
           {[alumnus.current_position, alumnus.organization].filter(Boolean).join(' • ') ||
             alumnus.specialty ||
             'MAMSA alum'}
         </p>
         {alumnus.specialty && (alumnus.current_position || alumnus.organization) && (
-          <p className="text-sm text-gray-600">{alumnus.specialty}</p>
+          <p className="text-sm text-gray-600 dark:text-emerald-200/80">{alumnus.specialty}</p>
         )}
       </header>
 
       {alumnus.image_url && (
-        <div className="relative mt-10 w-full shrink-0 overflow-hidden rounded-3xl border border-gray-100 bg-gray-100">
+        <div className="relative mt-10 w-full shrink-0 overflow-hidden rounded-3xl border border-gray-100 bg-gray-100 dark:border-emerald-800/50 dark:bg-emerald-900/40">
           <div className="w-full pb-[56.25%] sm:pb-[45%]" aria-hidden />
           <Image
             src={alumnus.image_url}
@@ -115,7 +115,7 @@ export default async function AlumniProfilePage({ params }: PageProps) {
               href={item.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-700/60 dark:bg-emerald-900/50 dark:text-emerald-200 dark:hover:bg-emerald-800/55"
             >
               {item.label}
               <svg className="h-3.5 w-3.5" viewBox="0 0 12 12" fill="none">
@@ -134,8 +134,8 @@ export default async function AlumniProfilePage({ params }: PageProps) {
 
       {bioParagraphs.length > 0 && (
         <section className="prose prose-emerald mt-10 max-w-none">
-          <h2 className="text-xl font-semibold text-gray-900">Biography</h2>
-          <div className="mt-4 space-y-4 text-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-emerald-50">Biography</h2>
+          <div className="mt-4 space-y-4 text-gray-700 dark:text-emerald-200/88">
             {bioParagraphs.map((paragraph, i) => (
               <p key={i} className="leading-relaxed">
                 {paragraph}
@@ -147,8 +147,8 @@ export default async function AlumniProfilePage({ params }: PageProps) {
 
       {achievementParagraphs.length > 0 && (
         <section className="prose prose-emerald mt-10 max-w-none">
-          <h2 className="text-xl font-semibold text-gray-900">Achievements</h2>
-          <div className="mt-4 space-y-4 text-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-emerald-50">Achievements</h2>
+          <div className="mt-4 space-y-4 text-gray-700 dark:text-emerald-200/88">
             {achievementParagraphs.map((paragraph, i) => (
               <p key={i} className="leading-relaxed">
                 {paragraph}
@@ -159,13 +159,13 @@ export default async function AlumniProfilePage({ params }: PageProps) {
       )}
 
       {bioParagraphs.length === 0 && achievementParagraphs.length === 0 && (
-        <p className="mt-10 text-gray-600">More about this alum will be added soon.</p>
+        <p className="mt-10 text-gray-600 dark:text-emerald-300/80">More about this alum will be added soon.</p>
       )}
 
-      <div className="mt-14 border-t border-gray-100 pt-8">
+      <div className="mt-14 border-t border-gray-100 pt-8 dark:border-emerald-800/50">
         <Link
           href="/community/alumni"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
         >
           ← Back to all alumni
         </Link>

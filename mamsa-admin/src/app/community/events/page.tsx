@@ -48,16 +48,16 @@ export default async function EventsPage() {
       <div className="mx-auto max-w-5xl px-6 py-12">
 
       {error && (
-        <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+        <div className="mt-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:shadow-black/20">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-amber-900">Events Calendar Temporarily Unavailable</h3>
-              <p className="mt-1 text-sm text-amber-800">
+              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Events Calendar Temporarily Unavailable</h3>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-200/90">
                 We could not load events right now. Please refresh and try again.
               </p>
             </div>
@@ -67,9 +67,9 @@ export default async function EventsPage() {
 
       <div className="mt-12">
         {events.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
-            <p className="text-lg font-semibold text-gray-700">No upcoming events</p>
-            <p className="mt-2 text-sm text-gray-500">
+          <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center dark:border-emerald-800/60 dark:bg-emerald-950/30">
+            <p className="text-lg font-semibold text-gray-700 dark:text-emerald-100">No upcoming events</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-emerald-300/75">
               New events will be shown here.
             </p>
           </div>
@@ -77,7 +77,7 @@ export default async function EventsPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((event: Event, index) => (
             <ScrollReveal key={event.id} delay={index * 80}>
-              <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+              <article className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md dark:border-emerald-800/55 dark:bg-emerald-950/85 dark:shadow-black/20">
                 <div className="relative">
                   <CardImage
                     src={event.featured_image}
@@ -86,25 +86,25 @@ export default async function EventsPage() {
                     position="center"
                     overlay
                     rounded="top"
-                    placeholderIcon={<Calendar className="h-8 w-8 text-gray-300" />}
+                    placeholderIcon={<Calendar className="h-8 w-8 text-gray-300 dark:text-emerald-700/80" />}
                     placeholderLabel="No image"
                   />
-                  <span className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 backdrop-blur-sm">
+                  <span className="absolute bottom-2 left-2 rounded-md bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 backdrop-blur-sm dark:bg-emerald-950/90 dark:text-emerald-50">
                     {dateBadge(event.date)}
                   </span>
                 </div>
 
                 <div className="p-4">
-                  <h2 className="line-clamp-2 text-sm font-semibold text-gray-900">{event.title}</h2>
-                  <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400">
+                  <h2 className="line-clamp-2 text-sm font-semibold text-gray-900 dark:text-emerald-50">{event.title}</h2>
+                  <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400 dark:text-emerald-400/70">
                     <MapPin className="h-3 w-3" aria-hidden />
                     {event.location || 'Venue to be announced'}
                   </p>
-                  <p className="mt-1 text-xs text-emerald-600">{event.time ? formatTime(event.time) : 'Time to be announced'}</p>
+                  <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">{event.time ? formatTime(event.time) : 'Time to be announced'}</p>
                   <div className="mt-2">
                     <Link
                       href={`/community/events/${event.id}`}
-                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                     >
                       Read more
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">

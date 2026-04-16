@@ -56,9 +56,9 @@ export default function EventCarousel({ events }: Props) {
 
   if (slides.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
-        <p className="text-lg font-semibold text-gray-700">No upcoming events right now.</p>
-        <p className="mt-2 text-sm text-gray-500">Check back soon for new opportunities to engage with the community.</p>
+      <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center dark:border-emerald-800/60 dark:bg-emerald-950/40">
+        <p className="text-lg font-semibold text-gray-700 dark:text-emerald-100">No upcoming events right now.</p>
+        <p className="mt-2 text-sm text-gray-500 dark:text-emerald-300/75">Check back soon for new opportunities to engage with the community.</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function EventCarousel({ events }: Props) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white/60 shadow-lg"
+      className="relative overflow-hidden rounded-3xl border border-emerald-100 bg-white/60 shadow-lg dark:border-emerald-800/60 dark:bg-emerald-950/70 dark:shadow-black/30"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
