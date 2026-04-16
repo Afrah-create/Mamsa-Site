@@ -14,6 +14,7 @@ import {
   Info,
   Mail,
   Menu,
+  MessageCircle,
   Newspaper,
   ShieldCheck,
   Target,
@@ -96,6 +97,8 @@ export default function PublicNavbar() {
   const [logoError, setLogoError] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
   const [communityAccordionOpen, setCommunityAccordionOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearLeaveTimer = useCallback(() => {
@@ -167,13 +170,28 @@ export default function PublicNavbar() {
     return () => clearLeaveTimer();
   }, [clearLeaveTimer]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.scrollY;
+      const doc = document.documentElement;
+      const max = Math.max(1, doc.scrollHeight - window.innerHeight);
+      const progress = Math.min(100, Math.max(0, (scrollTop / max) * 100));
+      setScrollProgress(progress);
+      setIsScrolled(scrollTop > 12);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const communityChildActive = COMMUNITY_ITEMS.some((item) => pathMatches(item.href, pathname));
   const desktopNavLinkClass = (href: string, extra?: string) => {
     const active = pathMatches(href, pathname);
     return [
       'relative rounded-md px-2 py-2 text-sm font-medium tracking-wide text-gray-600 transition-colors duration-150 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-100/85 dark:hover:text-white',
       active
-        ? 'font-semibold text-emerald-700 after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-600 dark:text-white'
+        ? 'font-semibold text-emerald-700 bg-emerald-50/80 after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-emerald-600 dark:bg-emerald-900/45 dark:text-white'
         : '',
       extra ?? '',
     ]
@@ -205,7 +223,11 @@ export default function PublicNavbar() {
       </div>
     </div>
     <header
-      className="fixed inset-x-0 top-8 z-50 bg-white/90 shadow-sm shadow-emerald-900/5 backdrop-blur-md dark:bg-emerald-950/90 dark:shadow-black/20"
+      className={`fixed inset-x-0 top-8 z-50 border-b backdrop-blur-md transition-all duration-300 ${
+        isScrolled
+          ? 'border-emerald-100/90 bg-white/92 shadow-md shadow-emerald-900/10 dark:border-emerald-800/80 dark:bg-emerald-950/92 dark:shadow-black/30'
+          : 'border-transparent bg-white/88 shadow-sm shadow-emerald-900/5 dark:bg-emerald-950/88 dark:shadow-black/20'
+      }`}
       suppressHydrationWarning
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
@@ -468,6 +490,18 @@ export default function PublicNavbar() {
         </div>
       </>
     </header>
+    <div className="fixed bottom-4 left-4 z-40 rounded-full border border-emerald-200/80 bg-white/95 px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm backdrop-blur dark:border-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-200">
+      {Math.round(scrollProgress)}%
+    </div>
+    <a
+      href="https://wa.me/256764922070?text=Hello%20MAMSA%2C%20I%20would%20like%20to%20connect."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Chat with MAMSA on WhatsApp"
+      className="fixed bottom-4 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-emerald-900/25 transition-all duration-200 hover:scale-105 hover:bg-[#1fbd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
+    >
+      <MessageCircle className="h-7 w-7" />
+    </a>
     </>
   );
 }
