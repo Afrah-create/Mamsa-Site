@@ -13,7 +13,30 @@ if (!databaseUrl) {
   throw new Error('Missing DATABASE_URL. Set DATABASE_URL in your environment before starting the app.');
 }
 
-const pool = mysql.createPool(databaseUrl);
+// Serverless-safe singleton pool.
+// In development, Next.js hot-reloads modules which would create a new pool
+// on every reload — quickly exhausting filess.io's 5-connection limit.
+// We store the pool on the global object so it survives hot-reloads.
+declare global {
+  // eslint-disable-next-line no-var
+  var _mysqlPool: mysql.Pool | undefined;
+}
+
+const pool: mysql.Pool =
+  global._mysqlPool ??
+  mysql.createPool({
+    uri: databaseUrl,
+    waitForConnections: true,
+    connectionLimit: 2,   // filess.io free plan allows max 5 total; keep low so
+                          // multiple Vercel serverless instances don't exceed it.
+    queueLimit: 10,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  global._mysqlPool = pool;
+}
 
 type SqlTaggedValue = unknown;
 
