@@ -38,9 +38,6 @@ yarn-error.log*
 .vercel
 
 # local user uploads (keep tree via public/uploads/.gitkeep)
-/public/uploads/*
-!/public/uploads/.gitkeep
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
