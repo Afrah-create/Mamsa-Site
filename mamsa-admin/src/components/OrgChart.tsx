@@ -65,9 +65,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     switch (levelRank) {
       case 0: // President
         return {
-          card: 'bg-white border-2 border-emerald-500 shadow-md',
-          text: 'text-emerald-700',
-          name: 'text-emerald-900',
+          card: 'bg-white border-2 border-emerald-500 shadow-md dark:bg-emerald-950 dark:border-emerald-400/90 dark:shadow-black/40',
+          text: 'text-emerald-700 dark:text-emerald-300',
+          name: 'text-emerald-900 dark:text-emerald-50',
           imageSize: 'h-16 w-16 sm:h-16 sm:w-16 md:h-20 md:w-20',
           nameSize: 'text-xs sm:text-sm md:text-base',
           positionSize: 'text-[10px] sm:text-xs',
@@ -76,9 +76,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         };
       case 1: // Vice President, Secretary General
         return {
-          card: 'bg-white border-2 border-blue-400 shadow-md',
-          text: 'text-blue-700',
-          name: 'text-blue-900',
+          card: 'bg-white border-2 border-blue-400 shadow-md dark:bg-emerald-950 dark:border-blue-400/80 dark:shadow-black/40',
+          text: 'text-blue-700 dark:text-blue-300',
+          name: 'text-blue-900 dark:text-blue-100',
           imageSize: 'h-14 w-14 sm:h-16 sm:w-16 md:h-16 md:w-16',
           nameSize: 'text-xs sm:text-sm',
           positionSize: 'text-[10px] sm:text-xs',
@@ -87,9 +87,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         };
       case 2: // Ministers, Directors
         return {
-          card: 'bg-white border-2 border-purple-400 shadow-sm',
-          text: 'text-purple-700',
-          name: 'text-purple-900',
+          card: 'bg-white border-2 border-purple-400 shadow-sm dark:bg-emerald-950 dark:border-purple-400/80 dark:shadow-black/35',
+          text: 'text-purple-700 dark:text-purple-300',
+          name: 'text-purple-900 dark:text-purple-100',
           imageSize: 'h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16',
           nameSize: 'text-[11px] sm:text-xs',
           positionSize: 'text-[10px]',
@@ -98,9 +98,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         };
       case 3: // Representatives, Officers
         return {
-          card: 'bg-white border-2 border-amber-400 shadow-sm',
-          text: 'text-amber-700',
-          name: 'text-amber-900',
+          card: 'bg-white border-2 border-amber-400 shadow-sm dark:bg-emerald-950 dark:border-amber-400/80 dark:shadow-black/35',
+          text: 'text-amber-700 dark:text-amber-300',
+          name: 'text-amber-900 dark:text-amber-100',
           imageSize: 'h-12 w-12 sm:h-12 sm:w-12 md:h-14 md:w-14',
           nameSize: 'text-[11px] sm:text-xs',
           positionSize: 'text-[10px]',
@@ -109,9 +109,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         };
       default: // Others
         return {
-          card: 'bg-white border-2 border-gray-400 shadow-sm',
-          text: 'text-gray-700',
-          name: 'text-gray-900',
+          card: 'bg-white border-2 border-gray-400 shadow-sm dark:bg-emerald-950 dark:border-emerald-700/80 dark:shadow-black/35',
+          text: 'text-gray-700 dark:text-emerald-200',
+          name: 'text-gray-900 dark:text-emerald-50',
           imageSize: 'h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14',
           nameSize: 'text-[11px]',
           positionSize: 'text-[10px]',
@@ -129,10 +129,10 @@ export default function OrgChart({ leaders }: OrgChartProps) {
         key={leader.id}
         type="button"
         onClick={() => setActiveLeaderId(leader.id)}
-        className={`${styles.card} rounded-lg ${styles.padding} transition-all duration-300 hover:scale-105 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center ${styles.cardWidth} flex-shrink-0 group text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
+        className={`${styles.card} rounded-lg ${styles.padding} transition-all duration-300 hover:scale-105 hover:shadow-xl hover:-translate-y-1 flex flex-col items-center ${styles.cardWidth} flex-shrink-0 group text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-emerald-950`}
       >
         {/* Circular Profile Image */}
-        <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full bg-gray-100 border-2 border-white shadow-md group-hover:shadow-lg transition-all duration-300 ${styles.imageSize} ${
+        <div className={`relative mx-auto mb-1.5 sm:mb-2 overflow-hidden rounded-full border-2 border-white bg-gray-100 shadow-md transition-all duration-300 group-hover:shadow-lg dark:border-emerald-800 dark:bg-emerald-900/50 ${styles.imageSize} ${
           levelRank === 0 ? 'group-hover:ring-2 group-hover:ring-emerald-500/20' : 
           levelRank === 1 ? 'group-hover:ring-2 group-hover:ring-blue-500/20' : 
           levelRank === 2 ? 'group-hover:ring-2 group-hover:ring-purple-500/20' : 
@@ -196,9 +196,9 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             {/* Decorative connector */}
             <div className="relative flex flex-col items-center">
               {/* Main vertical line */}
-              <div className="w-0.5 h-5 sm:h-6 md:h-7 bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 rounded-full"></div>
+              <div className="h-5 w-0.5 rounded-full bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 dark:from-emerald-800 dark:via-emerald-700 dark:to-emerald-800 sm:h-6 md:h-7"></div>
               {/* Small decorative circle */}
-              <div className="absolute -bottom-1 w-2 h-2 rounded-full bg-gray-300 border-2 border-white shadow-sm"></div>
+              <div className="absolute -bottom-1 h-2 w-2 rounded-full border-2 border-white bg-gray-300 shadow-sm dark:border-emerald-950 dark:bg-emerald-700"></div>
             </div>
           </div>
         )}
@@ -209,7 +209,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
   if (leaders.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">No leadership members to display</p>
+        <p className="text-gray-500 dark:text-emerald-400/80">No leadership members to display</p>
       </div>
     );
   }
@@ -221,7 +221,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
     <>
       <div className="w-full py-6 sm:py-8 md:py-10">
         {/* Subtle background with pattern */}
-        <div className="relative bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 rounded-2xl sm:rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="relative overflow-hidden rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 via-white to-emerald-50/30 shadow-sm dark:border-emerald-800/50 dark:from-emerald-950 dark:via-emerald-950 dark:to-emerald-900/40 sm:rounded-3xl">
           {/* Decorative pattern overlay */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none" 
             style={{
@@ -248,7 +248,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             aria-modal="true"
             aria-label={activeLeader.name}
             onClick={(event) => event.stopPropagation()}
-            className="relative max-h-[84vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl"
+            className="relative max-h-[84vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl dark:bg-emerald-950 dark:shadow-black/50"
           >
             <button
               type="button"
@@ -260,14 +260,14 @@ export default function OrgChart({ leaders }: OrgChartProps) {
             </button>
 
             <div className="grid gap-4 p-4 sm:grid-cols-[180px,1fr] sm:gap-5 sm:p-5">
-              <div className="overflow-hidden rounded-xl border border-gray-200">
-                <div className="relative h-[220px] w-full bg-gray-100 sm:h-[250px]">
+              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-emerald-800/70">
+                <div className="relative h-[220px] w-full bg-gray-100 dark:bg-emerald-900/40 sm:h-[250px]">
                   <AppImage
                     src={activeLeader.image_url}
                     alt={activeLeader.name}
                     className="h-full w-full object-cover object-top"
                     fallback={
-                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400">
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-400 dark:bg-emerald-900/40 dark:text-emerald-600/80">
                         <UserRound className="h-12 w-12" />
                       </div>
                     }
@@ -277,28 +277,28 @@ export default function OrgChart({ leaders }: OrgChartProps) {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">{activeLeader.name}</h3>
-                  <p className="mt-1 text-sm font-medium text-emerald-700">{activeLeader.position || 'Leadership Team'}</p>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-emerald-50">{activeLeader.name}</h3>
+                  <p className="mt-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">{activeLeader.position || 'Leadership Team'}</p>
                   {activeLeader.department ? (
-                    <p className="mt-1 text-xs text-gray-500">Department: {activeLeader.department}</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-emerald-400/75">Department: {activeLeader.department}</p>
                   ) : null}
                 </div>
 
                 {activeLeader.bio ? (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Profile</p>
-                    <p className="mt-1 text-sm leading-relaxed text-gray-700">{activeLeader.bio}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-emerald-400/80">Profile</p>
+                    <p className="mt-1 text-sm leading-relaxed text-gray-700 dark:text-emerald-200/85">{activeLeader.bio}</p>
                   </div>
                 ) : null}
 
                 {(activeLeader.email || activeLeader.phone) ? (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Available links</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-emerald-400/80">Available links</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {activeLeader.email ? (
                         <a
                           href={`mailto:${activeLeader.email}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700/70 dark:bg-emerald-900/50 dark:text-emerald-200 dark:hover:bg-emerald-800/60"
                         >
                           <Mail className="h-3.5 w-3.5" />
                           Email
@@ -307,7 +307,7 @@ export default function OrgChart({ leaders }: OrgChartProps) {
                       {activeLeader.phone ? (
                         <a
                           href={`tel:${activeLeader.phone}`}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700/70 dark:bg-emerald-900/50 dark:text-emerald-200 dark:hover:bg-emerald-800/60"
                         >
                           <Phone className="h-3.5 w-3.5" />
                           Phone

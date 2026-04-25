@@ -92,6 +92,22 @@ export type PaymentRecord = {
   notes: string | null;
 };
 
+export type StudentProductRecord = {
+  id: number;
+  student_id: number;
+  name: string;
+  description: string | null;
+  price: number | null;
+  currency: string;
+  image_url: string | null;
+  category: string | null;
+  is_available: number;
+  is_featured: number;
+  display_order: number;
+  created_at: string;
+  updated_at: string | null;
+};
+
 export type ListingBadge = { label: string; tone: 'green' | 'red' | 'amber' };
 
 /** Latest payment = highest payment_date, then id (matches API ordering). */
@@ -135,5 +151,23 @@ export function rowToPaymentRecord(row: Record<string, unknown>): PaymentRecord 
     transaction_ref: row.transaction_ref != null ? String(row.transaction_ref) : null,
     status,
     notes: row.notes != null ? String(row.notes) : null,
+  };
+}
+
+export function rowToStudentProductRecord(row: Record<string, unknown>): StudentProductRecord {
+  return {
+    id: Number(row.id),
+    student_id: Number(row.student_id),
+    name: String(row.name ?? ''),
+    description: row.description != null ? String(row.description) : null,
+    price: row.price == null || String(row.price).trim() === '' ? null : Number(row.price),
+    currency: String(row.currency ?? 'UGX'),
+    image_url: row.image_url != null ? String(row.image_url) : null,
+    category: row.category != null ? String(row.category) : null,
+    is_available: Number(row.is_available ?? 1) ? 1 : 0,
+    is_featured: Number(row.is_featured ?? 0) ? 1 : 0,
+    display_order: Number(row.display_order ?? 0),
+    created_at: String(row.created_at ?? ''),
+    updated_at: row.updated_at != null ? String(row.updated_at) : null,
   };
 }

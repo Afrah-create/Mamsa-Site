@@ -14,12 +14,15 @@ import { resolveImageSrc } from '@/lib/image-utils';
 import AddPaymentModal from './AddPaymentModal';
 import EditPaymentModal from './EditPaymentModal';
 import EditStudentModal from './EditStudentModal';
+import ProductModal from './ProductModal';
 import {
   listingBadgeFromPayments,
   rowToPaymentRecord,
+  rowToStudentProductRecord,
   rowToStudentRecord,
   type PaymentRecord,
   type SkilledStudentRecord,
+  type StudentProductRecord,
 } from './student-form-utils';
 import { CardImage } from '@/components/ui/CardImage';
 import { UserRound } from 'lucide-react';
@@ -27,6 +30,7 @@ import { UserRound } from 'lucide-react';
 type DetailPayload = {
   student: SkilledStudentRecord;
   payments: Record<string, unknown>[];
+  products: Record<string, unknown>[];
 };
 
 function imageSrc(profileImage: string | null): string | null {
@@ -65,6 +69,10 @@ export default function SkilledStudentDetailAdmin() {
   const [editingPayment, setEditingPayment] = useState<PaymentRecord | null>(null);
   const [deletePaymentTarget, setDeletePaymentTarget] = useState<PaymentRecord | null>(null);
   const [deletePaymentLoading, setDeletePaymentLoading] = useState(false);
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<StudentProductRecord | null>(null);
+  const [deleteProductTarget, setDeleteProductTarget] = useState<StudentProductRecord | null>(null);
+  const [deleteProductLoading, setDeleteProductLoading] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -83,12 +91,15 @@ export default function SkilledStudentDetailAdmin() {
     try {
       setLoading(true);
       setError(null);
-      const data = await adminRequest<{ student: Record<string, unknown>; payments: Record<string, unknown>[] }>(
-        `/api/admin/skilled-students/${id}`,
-      );
+      const data = await adminRequest<{
+        student: Record<string, unknown>;
+        payments: Record<string, unknown>[];
+        products: Record<string, unknown>[];
+      }>(`/api/admin/skilled-students/${id}`);
       setPayload({
         student: rowToStudentRecord(data.student),
         payments: data.payments ?? [],
+        products: data.products ?? [],
       });
     } catch (e) {
       setPayload(null);
@@ -134,6 +145,61 @@ export default function SkilledStudentDetailAdmin() {
       showToast('Failed to delete payment.', 'error');
     } finally {
       setDeletePaymentLoading(false);
+    }
+  };
+
+  const upsertProduct = async (
+    values: {
+      name: string;
+      description: string;
+      price: string;
+      currency: string;
+      category: string;
+      display_order: string;
+      is_available: boolean;
+      is_featured: boolean;
+      image_url: string | null;
+    },
+    productId?: number,
+  ) => {
+    if (!studentNumericId) return;
+
+    const body: Record<string, unknown> = {
+      name: values.name.trim(),
+      description: values.description.trim() || null,
+      price: values.price.trim() === '' ? null : Number(values.price),
+      currency: values.currency.trim() || 'UGX',
+      category: values.category.trim() || null,
+      display_order: Number(values.display_order || '0'),
+      is_available: values.is_available ? 1 : 0,
+      is_featured: values.is_featured ? 1 : 0,
+    };
+    if (values.image_url) body.image_url = values.image_url;
+
+    const endpoint = productId
+      ? `/api/admin/skilled-students/${studentNumericId}/products/${productId}`
+      : `/api/admin/skilled-students/${studentNumericId}/products`;
+    const method = productId ? 'PUT' : 'POST';
+    await adminRequest(endpoint, { method, body: JSON.stringify(body) });
+    showToast(productId ? 'Product updated.' : 'Product created.', 'success');
+    afterMutation();
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deleteProductTarget || !studentNumericId) return;
+    setDeleteProductLoading(true);
+    try {
+      await adminRequest(`/api/admin/skilled-students/${studentNumericId}/products/${deleteProductTarget.id}`, {
+        method: 'DELETE',
+      });
+      showToast('Product deleted.', 'success');
+      setDeleteProductTarget(null);
+      afterMutation();
+    } catch (e) {
+      console.error(e);
+      showToast('Failed to delete product.', 'error');
+    } finally {
+      setDeleteProductLoading(false);
     }
   };
 
@@ -196,6 +262,34 @@ export default function SkilledStudentDetailAdmin() {
         message="Remove this payment record? This cannot be undone."
         confirmText="Delete"
         loading={deletePaymentLoading}
+      />
+      <ConfirmModal
+        isOpen={Boolean(deleteProductTarget)}
+        onClose={() => !deleteProductLoading && setDeleteProductTarget(null)}
+        onConfirm={confirmDeleteProduct}
+        title="Delete product"
+        message="Remove this product from the listing? This cannot be undone."
+        confirmText="Delete"
+        loading={deleteProductLoading}
+      />
+
+      <ProductModal
+        isOpen={showCreateProduct}
+        onClose={() => setShowCreateProduct(false)}
+        onSubmit={async (values) => {
+          await upsertProduct(values);
+          setShowCreateProduct(false);
+        }}
+      />
+      <ProductModal
+        isOpen={Boolean(editingProduct)}
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSubmit={async (values) => {
+          if (!editingProduct) return;
+          await upsertProduct(values, editingProduct.id);
+          setEditingProduct(null);
+        }}
       />
 
       <div className="space-y-6 p-6">
@@ -289,6 +383,103 @@ export default function SkilledStudentDetailAdmin() {
                     <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">{s.description}</p>
                   </section>
                 ) : null}
+
+                <section>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Products & services</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateProduct(true)}
+                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                    >
+                      Add product
+                    </button>
+                  </div>
+
+                  {!payload.products || payload.products.length === 0 ? (
+                    <p className="text-sm text-gray-500">No products listed for this student.</p>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {payload.products.map((raw) => {
+                        const p = rowToStudentProductRecord(raw);
+                        const imgSrc = imageSrc(p.image_url);
+                        return (
+                          <article key={p.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                            <div className="relative">
+                              <CardImage
+                                src={imgSrc}
+                                alt={p.name || 'Product'}
+                                aspect="video"
+                                rounded="top"
+                                position="center"
+                                placeholderIcon={<UserRound className="h-6 w-6 text-gray-300" />}
+                                placeholderLabel="No product image"
+                              />
+                              <div className="absolute left-2 top-2 flex gap-1">
+                                {p.is_featured ? (
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                                    Featured
+                                  </span>
+                                ) : null}
+                                {!p.is_available ? (
+                                  <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-700">
+                                    Hidden
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="space-y-2 p-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{p.name}</h3>
+                                {p.price != null ? (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                                    {p.currency} {p.price}
+                                  </span>
+                                ) : null}
+                              </div>
+                              {p.category ? <p className="text-xs uppercase tracking-wide text-gray-500">{p.category}</p> : null}
+                              {p.description ? <p className="line-clamp-2 text-sm text-gray-600">{p.description}</p> : null}
+                              <div className="flex justify-end gap-1 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingProduct(p)}
+                                  className="rounded p-1.5 text-emerald-600 hover:bg-emerald-50"
+                                  title="Edit product"
+                                  aria-label="Edit product"
+                                >
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                    />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeleteProductTarget(p)}
+                                  className="rounded p-1.5 text-red-600 hover:bg-red-50"
+                                  title="Delete product"
+                                  aria-label="Delete product"
+                                >
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
 
                 <section>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

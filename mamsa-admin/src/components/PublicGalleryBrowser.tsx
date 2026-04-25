@@ -53,9 +53,9 @@ export default function PublicGalleryBrowser({ images }: Props) {
     <div className="space-y-6 sm:space-y-8 md:space-y-10">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-[2fr,1fr] md:items-center">
         <label className="flex w-full flex-col">
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Search gallery</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-emerald-200/90">Search gallery</span>
           <div className="relative mt-2">
-            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 dark:text-emerald-500/80">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m1.1-4.4a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
               </svg>
@@ -65,16 +65,16 @@ export default function PublicGalleryBrowser({ images }: Props) {
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Search by title, theme, or description..."
-              className="w-full rounded-lg border border-gray-300 bg-white py-2 sm:py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-500/70 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/50 sm:py-2.5"
             />
           </div>
         </label>
         <label className="flex flex-col">
-          <span className="text-xs sm:text-sm font-medium text-gray-700">Filter by category</span>
+          <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-emerald-200/90">Filter by category</span>
           <select
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
-            className="mt-2 rounded-lg border border-gray-300 bg-white py-2 sm:py-2.5 px-3 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60"
+            className="mt-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200/60 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/50 sm:py-2.5"
           >
             <option value="all">All categories</option>
             {categories.map((category) => (
@@ -87,16 +87,16 @@ export default function PublicGalleryBrowser({ images }: Props) {
       </div>
 
       {nothingToShow ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800">Gallery will be available soon</h2>
-          <p className="mt-2 text-sm text-gray-500">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm dark:border-emerald-800/60 dark:bg-emerald-950/40">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-emerald-100">Gallery will be available soon</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-emerald-300/75">
             Publish gallery items in the admin portal to showcase memories here.
           </p>
         </div>
       ) : nothingMatches ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800">No images match your search</h2>
-          <p className="mt-2 text-sm text-gray-500">Try a different keyword or choose another category.</p>
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center shadow-sm dark:border-emerald-800/60 dark:bg-emerald-950/40">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-emerald-100">No images match your search</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-emerald-300/75">Try a different keyword or choose another category.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -109,9 +109,9 @@ export default function PublicGalleryBrowser({ images }: Props) {
             return (
               <figure
                 key={item.id}
-                className="group flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                className="surface-interactive motion-reveal group flex h-full flex-col overflow-hidden rounded-xl sm:rounded-2xl"
               >
-                <div className="relative aspect-square sm:aspect-[4/3] overflow-hidden bg-gray-100">
+                <div className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-emerald-900/40 sm:aspect-[4/3]">
                   {item.image_url ? (
                     <img
                       src={item.image_url}
@@ -123,21 +123,23 @@ export default function PublicGalleryBrowser({ images }: Props) {
                       }}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500">
+                    <div className="flex h-full w-full items-center justify-center bg-gray-200 text-gray-500 dark:bg-emerald-900/60 dark:text-emerald-400/80">
                       <span className="text-xs sm:text-sm font-medium uppercase tracking-wide">Image pending</span>
                     </div>
                   )}
                 </div>
                 <figcaption className="flex flex-1 flex-col gap-2 sm:gap-3 px-4 py-3 sm:px-5 sm:py-4 text-left">
                   <div className="space-y-1">
-                    <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 sm:text-xs">
                       {item.category || 'MAMSA Community'}
                     </p>
-                    <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 leading-tight">{item.title}</h2>
+                    <h2 className="text-sm font-semibold leading-tight text-gray-900 dark:text-emerald-50 sm:text-base md:text-lg">
+                      {item.title}
+                    </h2>
                   </div>
                   {hasDescription && (
                     <div className="space-y-2">
-                      <p className={`text-xs sm:text-sm text-gray-600 leading-relaxed transition-all duration-200 ${
+                      <p className={`text-xs leading-relaxed text-gray-600 transition-all duration-200 dark:text-emerald-200/80 sm:text-sm ${
                         isExpanded ? '' : 'line-clamp-2'
                       }`}>
                         {item.description}
@@ -155,7 +157,7 @@ export default function PublicGalleryBrowser({ images }: Props) {
                               return next;
                             });
                           }}
-                          className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-1"
+                          className="flex items-center gap-1 text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
                         >
                           <span>{isExpanded ? 'Show less' : 'Read more'}</span>
                           <svg

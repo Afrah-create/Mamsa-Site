@@ -78,7 +78,7 @@ export default async function HomePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-emerald-950 dark:text-emerald-50">
       <PublicNavbar />
       <main className="flex-1 pt-24">
         <header className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white">
@@ -121,22 +121,22 @@ export default async function HomePage() {
                       />
                     </div>
                   </div>
-                  <div className="grid gap-4 rounded-2xl border border-white/60 bg-white/95 p-5 text-green-900 shadow-inner sm:gap-5">
-                    <h2 className="text-left text-lg font-semibold text-emerald-700 sm:text-xl">This Week at MAMSA</h2>
-                    <p className="text-left text-sm text-emerald-800/80 sm:text-base">
+                  <div className="grid gap-4 rounded-2xl border border-white/60 bg-white/95 p-5 text-green-900 shadow-inner dark:border-emerald-700/45 dark:bg-emerald-950/92 dark:text-emerald-50 sm:gap-5">
+                    <h2 className="text-left text-lg font-semibold text-emerald-700 dark:text-emerald-200 sm:text-xl">This Week at MAMSA</h2>
+                    <p className="text-left text-sm text-emerald-800/80 dark:text-emerald-200/85 sm:text-base">
                       Latest stories, upcoming events, and leadership updates.
                     </p>
-                    <dl className="grid grid-cols-3 gap-3 text-center text-sm font-medium text-emerald-900">
-                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
-                        <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Stories</dt>
+                    <dl className="grid grid-cols-3 gap-3 text-center text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 dark:bg-emerald-900/55 sm:px-4 sm:py-3">
+                        <dt className="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-400 sm:text-[0.7rem]">Stories</dt>
                         <dd className="text-xl font-bold sm:text-2xl">{stats.storiesCount}</dd>
                       </div>
-                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
-                        <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Events</dt>
+                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 dark:bg-emerald-900/55 sm:px-4 sm:py-3">
+                        <dt className="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-400 sm:text-[0.7rem]">Events</dt>
                         <dd className="text-xl font-bold sm:text-2xl">{stats.eventsCount}</dd>
                       </div>
-                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 sm:px-4 sm:py-3">
-                        <dt className="text-xs uppercase tracking-wide text-emerald-500 sm:text-[0.7rem]">Leaders</dt>
+                      <div className="rounded-xl bg-emerald-50/80 px-3 py-2 dark:bg-emerald-900/55 sm:px-4 sm:py-3">
+                        <dt className="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-400 sm:text-[0.7rem]">Leaders</dt>
                         <dd className="text-xl font-bold sm:text-2xl">{stats.leadersCount}</dd>
                       </div>
                     </dl>
@@ -150,23 +150,23 @@ export default async function HomePage() {
         {hasAboutContent && (
           <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-14">
             <div className="grid gap-8 lg:grid-cols-[1.2fr,1fr] lg:gap-10">
-              <ScrollReveal className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm sm:p-7">
-                <h2 className="text-2xl font-semibold text-emerald-800 sm:text-[2.1rem]">Who We Are</h2>
-                <p className="text-pretty text-sm text-emerald-800/90 sm:text-base leading-relaxed">
+              <ScrollReveal className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-900/35 sm:p-7">
+                <h2 className="text-2xl font-semibold text-emerald-800 dark:text-emerald-100 sm:text-[2.1rem]">Who We Are</h2>
+                <p className="text-pretty text-sm text-emerald-800/90 dark:text-emerald-200/90 sm:text-base leading-relaxed">
                   {about.history?.trim() || fallbackAbout.history}
                 </p>
               </ScrollReveal>
               <div className="grid gap-4 sm:grid-cols-2">
                 {aboutCards.map((card, index) => (
                   <ScrollReveal key={card.key} delay={index * 90}>
-                    <article className={`rounded-3xl border bg-white px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${card.accent}`}>
-                      <div className="flex items-center gap-3 text-emerald-600">
-                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <article className={`rounded-3xl border bg-white px-5 py-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-emerald-700/55 dark:bg-emerald-950/85 dark:shadow-black/25 ${card.accent}`}>
+                      <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-300">
+                        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-800/80 dark:text-emerald-200">
                           {card.icon}
                         </span>
-                        <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-emerald-50">{card.title}</h3>
                       </div>
-                      <p className="mt-3 text-sm text-gray-600 leading-relaxed">
+                      <p className="mt-3 text-sm text-gray-600 leading-relaxed dark:text-emerald-200/85">
                         {fallbackAbout[card.key]}
                       </p>
                     </article>
@@ -178,16 +178,16 @@ export default async function HomePage() {
         )}
 
         {hasError && (
-          <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm">
+          <div className="mx-auto mt-6 max-w-4xl rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/40 dark:shadow-black/20">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-amber-900">Some Content Temporarily Unavailable</h3>
-                <p className="mt-1 text-sm text-amber-800">
+                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">Some Content Temporarily Unavailable</h3>
+                <p className="mt-1 text-sm text-amber-800 dark:text-amber-200/90">
                   We&apos;re experiencing a brief issue loading some content on this page. We&apos;ve displayed everything we could load. Please refresh the page in a moment to see the complete updates, or check back shortly.
                 </p>
               </div>
@@ -195,85 +195,91 @@ export default async function HomePage() {
           </div>
         )}
 
-        <section id="news" className="mx-auto max-w-6xl px-6 py-20">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">News & Stories</p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900">Latest updates from MAMSA</h2>
-            </div>
-            <Link
-              href="/community/updates"
-              className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
-            >
-              View all updates →
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {news.length === 0 ? (
-              <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center">
-                <p className="text-lg font-semibold text-gray-700">No published news articles yet.</p>
-                <p className="mt-2 text-sm text-gray-500">Once articles are published in the admin portal, they will appear here automatically.</p>
+        <section id="news" className="relative overflow-hidden py-20">
+          <span className="pointer-events-none absolute -left-20 top-10 h-56 w-56 rounded-full bg-emerald-100/70 blur-3xl" />
+          <span className="pointer-events-none absolute right-0 top-24 h-48 w-48 rounded-full bg-emerald-50 blur-3xl" />
+          <div className="relative mx-auto max-w-6xl px-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">News & Stories</p>
+                <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-emerald-50">Latest updates from MAMSA</h2>
               </div>
-            ) : (
-              news.map((article, index) => (
-                <ScrollReveal key={article.id} delay={index * 80}>
-                  <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                  <CardImage
-                    src={article.featured_image}
-                    alt={article.title || 'News'}
-                    aspect="video"
-                    position="center"
-                    overlay
-                    rounded="top"
-                    placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300" />}
-                    placeholderLabel="No image"
-                  />
-                  <div className="flex flex-1 flex-col space-y-4 px-6 py-6">
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
-                        {formatDate(article.published_at)}
-                      </p>
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-700">
-                        {article.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {article.excerpt || 'No summary available for this story yet.'}
-                      </p>
+              <Link
+                href="/community/updates"
+                className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200"
+              >
+                View all updates →
+              </Link>
+            </div>
+            <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {news.length === 0 ? (
+                <div className="md:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center dark:border-emerald-800/60 dark:bg-emerald-950/30">
+                  <p className="text-lg font-semibold text-gray-700 dark:text-emerald-100">No published news articles yet.</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-emerald-300/75">Once articles are published in the admin portal, they will appear here automatically.</p>
+                </div>
+              ) : (
+                news.map((article, index) => (
+                  <ScrollReveal key={article.id} delay={index * 80}>
+                    <article className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-emerald-800/55 dark:bg-emerald-950/85 dark:shadow-black/20">
+                    <CardImage
+                      src={article.featured_image}
+                      alt={article.title || 'News'}
+                      aspect="video"
+                      position="center"
+                      overlay
+                      rounded="top"
+                      placeholderIcon={<Newspaper className="h-8 w-8 text-gray-300 dark:text-emerald-700/80" />}
+                      placeholderLabel="No image"
+                    />
+                    <div className="flex flex-1 flex-col space-y-4 px-6 py-6">
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium uppercase tracking-wide text-emerald-600">
+                          {formatDate(article.published_at)}
+                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-700 dark:text-emerald-50 dark:group-hover:text-emerald-300">
+                          {article.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-emerald-200/80">
+                          {article.excerpt || 'No summary available for this story yet.'}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-emerald-300/70">
+                        <span>{article.author || 'MAMSA Editorial Team'}</span>
+                        <Link
+                          href={`/community/updates/${article.id}`}
+                          className="inline-flex items-center gap-1 text-emerald-600 transition hover:text-emerald-700"
+                        >
+                          Read more
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
+                            <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </Link>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{article.author || 'MAMSA Editorial Team'}</span>
-                      <Link
-                        href={`/community/updates/${article.id}`}
-                        className="inline-flex items-center gap-1 text-emerald-600 transition hover:text-emerald-700"
-                      >
-                        Read more
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 8 8">
-                          <path d="M1 4h5M4 1l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </Link>
-                    </div>
-                  </div>
-                  </article>
-                </ScrollReveal>
-              ))
-            )}
+                    </article>
+                  </ScrollReveal>
+                ))
+              )}
+            </div>
           </div>
         </section>
 
         {alumniSpotlight.length > 0 && (
-          <section className="border-y border-emerald-100/80 bg-emerald-50/35">
-            <div className="mx-auto max-w-6xl px-6 py-20">
+          <section className="relative overflow-hidden border-y border-emerald-100/80 bg-gradient-to-b from-emerald-50/45 via-emerald-50/20 to-white dark:border-emerald-900/50 dark:from-emerald-950 dark:via-emerald-950/90 dark:to-emerald-950">
+            <span className="pointer-events-none absolute left-[8%] top-10 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl" />
+            <span className="pointer-events-none absolute right-[6%] bottom-8 h-44 w-44 rounded-full bg-emerald-100/70 blur-3xl" />
+            <div className="relative mx-auto max-w-6xl px-6 py-20">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Featured alumni</p>
-                  <h2 className="mt-2 text-3xl font-bold text-gray-900">Leaders from our community</h2>
-                    <p className="mt-2 max-w-2xl text-sm text-gray-600 sm:text-base">
-                    Featured alumni profiles from our community.
+                  <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Notable alumni</p>
+                  <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-emerald-50">Leaders from our community</h2>
+                    <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-emerald-200/80 sm:text-base">
+                    Alumni profiles from our community.
                   </p>
                 </div>
                 <Link
                   href="/community/alumni"
-                  className="inline-flex shrink-0 items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                  className="inline-flex shrink-0 items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200"
                 >
                   View featured alumni →
                 </Link>
@@ -287,16 +293,17 @@ export default async function HomePage() {
           </section>
         )}
 
-        <section id="events" className="bg-gray-50">
-          <div className="mx-auto max-w-6xl px-6 py-20">
+        <section id="events" className="relative overflow-hidden bg-gray-50/80 py-20 dark:bg-emerald-950/50">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.08),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.12),transparent_45%)]" />
+          <div className="relative mx-auto max-w-6xl px-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">Events</p>
-                <h2 className="mt-2 text-3xl font-bold text-gray-900">What&apos;s happening next</h2>
+                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Events</p>
+                <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-emerald-50">What&apos;s happening next</h2>
               </div>
               <Link
                 href="/community/events"
-                className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
+                className="inline-flex items-center text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-300 dark:hover:text-emerald-200"
               >
                 View full calendar →
               </Link>

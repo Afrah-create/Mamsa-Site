@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -6,12 +7,10 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+.dark {
+  --foreground-rgb: 234, 244, 239;
+  --background-start-rgb: 7, 22, 17;
+  --background-end-rgb: 4, 12, 10;
 }
 
 body {
@@ -22,6 +21,7 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
 @layer utilities {
@@ -32,6 +32,66 @@ body {
 
 /* Button Click Effects */
 @layer components {
+  /* Unified surface elevations */
+  .surface-base {
+    border: 1px solid rgb(243 244 246);
+    background-color: rgb(255 255 255);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  .dark .surface-base {
+    border-color: rgb(30 58 49 / 0.9);
+    background-color: rgb(6 24 18 / 0.88);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  }
+
+  .surface-raised {
+    border: 1px solid rgb(243 244 246);
+    background-color: rgb(255 255 255);
+    box-shadow:
+      0 4px 8px -6px rgb(0 0 0 / 0.16),
+      0 2px 4px -3px rgb(0 0 0 / 0.08);
+  }
+  .dark .surface-raised {
+    border-color: rgb(30 58 49 / 0.9);
+    background-color: rgb(6 24 18 / 0.88);
+    box-shadow:
+      0 4px 8px -6px rgb(0 0 0 / 0.45),
+      0 2px 4px -3px rgb(0 0 0 / 0.35);
+  }
+
+  .surface-interactive {
+    border: 1px solid rgb(243 244 246);
+    background-color: rgb(255 255 255);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: all 300ms ease-out;
+  }
+  .dark .surface-interactive {
+    border-color: rgb(30 58 49 / 0.9);
+    background-color: rgb(6 24 18 / 0.88);
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.35);
+  }
+
+  .surface-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 20px -12px rgb(0 0 0 / 0.22),
+      0 4px 10px -8px rgb(0 0 0 / 0.18);
+  }
+  .dark .surface-interactive:hover {
+    box-shadow:
+      0 10px 20px -12px rgb(0 0 0 / 0.55),
+      0 4px 10px -8px rgb(0 0 0 / 0.42);
+  }
+
+  /* Shared reveal-on-load motion */
+  .motion-reveal {
+    animation: revealUp 420ms ease-out both;
+  }
+
+  .motion-safe-transition {
+    transition: all 300ms ease-out;
+  }
+
   /* Ripple effect for buttons */
   .btn-ripple {
     position: relative;
@@ -148,6 +208,17 @@ body {
   }
 }
 
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Top advert ticker */
 @keyframes tickerSlide {
   from {
@@ -163,6 +234,25 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .motion-reveal {
+    animation: none !important;
+  }
+
+  .surface-interactive,
+  .motion-safe-transition,
+  .btn-ripple,
+  button:not(:disabled),
+  a[role="button"],
+  .btn-clickable,
+  a {
+    transition: none !important;
+  }
+
+  .surface-interactive:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
   .ticker-track {
     animation: none;
   }

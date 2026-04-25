@@ -131,6 +131,19 @@ export type SkilledStudentPublic = {
   latest_payment_expiry: string | null;
 };
 
+export type SkilledStudentProductPublic = {
+  id: number;
+  student_id: number;
+  name: string;
+  description: string | null;
+  price: string | null;
+  currency: string;
+  image_url: string | null;
+  category: string | null;
+  is_featured: boolean;
+  display_order: number;
+};
+
 function publicImagePath(val: string | null): string | null {
   if (val == null || val === '') return null;
   const u = resolveImageSrc(val);
@@ -822,6 +835,20 @@ type ActiveSkilledStudentRow = {
   latest_payment_ref: string | null;
 };
 
+type SkilledStudentProductRow = {
+  id: number;
+  student_id: number;
+  name: string;
+  description: string | null;
+  price: string | number | null;
+  currency: string | null;
+  image_url: string | null;
+  category: string | null;
+  is_available: number;
+  is_featured: number;
+  display_order: number;
+};
+
 function mapActiveSkilledStudentRow(row: ActiveSkilledStudentRow): SkilledStudentPublic {
   const profileImage = publicImagePath(row.profile_image);
 
@@ -843,6 +870,21 @@ function mapActiveSkilledStudentRow(row: ActiveSkilledStudentRow): SkilledStuden
     latest_payment_currency: row.latest_payment_currency ?? null,
     latest_payment_date: row.latest_payment_date ?? null,
     latest_payment_expiry: row.latest_payment_expiry ?? null,
+  };
+}
+
+function mapSkilledStudentProductRow(row: SkilledStudentProductRow): SkilledStudentProductPublic {
+  return {
+    id: row.id,
+    student_id: row.student_id,
+    name: row.name,
+    description: row.description,
+    price: row.price == null ? null : String(row.price),
+    currency: row.currency ?? 'UGX',
+    image_url: publicImagePath(row.image_url),
+    category: row.category,
+    is_featured: Boolean(row.is_featured),
+    display_order: Number(row.display_order ?? 0),
   };
 }
 
@@ -929,6 +971,23 @@ export const getSkilledStudentById = cache(async (id: number): Promise<SkilledSt
   const fallback = fallbackRows[0];
   return fallback ? mapActiveSkilledStudentRow(fallback) : null;
 });
+
+export const getActiveStudentProductsByStudentId = cache(
+  async (studentId: number): Promise<SkilledStudentProductPublic[]> => {
+    try {
+      const rows = await sql<SkilledStudentProductRow[]>`
+        SELECT *
+        FROM student_products
+        WHERE student_id = ${studentId}
+          AND is_available = 1
+        ORDER BY is_featured DESC, display_order ASC, created_at DESC
+      `;
+      return rows.map(mapSkilledStudentProductRow);
+    } catch {
+      return [];
+    }
+  },
+);
 
 export const fetchHomeContent = cache(async (): Promise<HomeContent> => {
   const [newsResult, eventsResult, aboutResult, stats] = await Promise.all([

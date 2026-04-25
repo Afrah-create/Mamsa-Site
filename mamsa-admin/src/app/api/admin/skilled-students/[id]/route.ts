@@ -45,8 +45,20 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       ORDER BY payment_date DESC, id DESC
     `;
 
+    let products: Record<string, unknown>[] = [];
+    try {
+      products = await sql<Record<string, unknown>[]>`
+        SELECT *
+        FROM student_products
+        WHERE student_id = ${numericId}
+        ORDER BY display_order ASC, created_at DESC
+      `;
+    } catch {
+      products = [];
+    }
+
     return apiEnvelope(true, {
-      data: { student: rows[0], payments },
+      data: { student: rows[0], payments, products },
       message: 'Skilled student loaded',
     });
   } catch (error) {

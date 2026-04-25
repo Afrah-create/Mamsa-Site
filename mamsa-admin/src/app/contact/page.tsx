@@ -113,7 +113,7 @@ export default function ContactPage() {
 
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-emerald-950 dark:text-emerald-50">
       <PublicNavbar />
       <main className="flex-1 pt-24">
         <section className="relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-500 text-white">
@@ -140,8 +140,8 @@ export default function ContactPage() {
           <div
             className={`mx-auto mt-6 max-w-3xl rounded-xl border px-4 py-3 text-sm ${
               toast.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-red-200 bg-red-50 text-red-700'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/50 dark:text-emerald-200'
+                : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200'
             }`}
           >
             {toast.message}
@@ -150,10 +150,10 @@ export default function ContactPage() {
 
         <section className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[1fr,1fr] lg:gap-12">
           <div className="space-y-6">
-            <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm">
-              <div className="border-b border-emerald-50 px-6 py-5">
-                <h2 className="text-xl font-semibold text-gray-900">Send a Message</h2>
-                <p className="mt-1 text-sm text-gray-600">
+            <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm dark:border-emerald-800/60 dark:bg-emerald-950/85 dark:shadow-black/20">
+              <div className="border-b border-emerald-50 px-6 py-5 dark:border-emerald-800/50">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-emerald-50">Send a Message</h2>
+                <p className="mt-1 text-sm text-gray-600 dark:text-emerald-200/80">
                   Fill out the form and our administrators will reach out as soon as possible.
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="name" className="text-sm font-medium text-gray-700 dark:text-emerald-200/90">
                       Full name *
                     </label>
                     <input
@@ -172,12 +172,12 @@ export default function ContactPage() {
                       maxLength={200}
                       value={formState.name}
                       onChange={handleInputChange('name')}
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-600/60 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/40"
                       placeholder="Enter your full name"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="email" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-emerald-200/90">
                       Email *
                     </label>
                     <input
@@ -188,7 +188,7 @@ export default function ContactPage() {
                       maxLength={200}
                       value={formState.email}
                       onChange={handleInputChange('email')}
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-600/60 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/40"
                       placeholder="Enter your email address"
                     />
                   </div>
@@ -196,7 +196,7 @@ export default function ContactPage() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-emerald-200/90">
                       Phone (optional)
                     </label>
                     <input
@@ -205,12 +205,12 @@ export default function ContactPage() {
                       type="tel"
                       value={formState.phone}
                       onChange={handleInputChange('phone')}
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-600/60 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/40"
                       placeholder="Enter your phone number"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor="subject" className="text-sm font-medium text-gray-700">
+                    <label htmlFor="subject" className="text-sm font-medium text-gray-700 dark:text-emerald-200/90">
                       Subject *
                     </label>
                     <input
@@ -221,14 +221,14 @@ export default function ContactPage() {
                       maxLength={200}
                       value={formState.subject}
                       onChange={handleInputChange('subject')}
-                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-600/60 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/40"
                       placeholder="Enter message subject"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="message" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="message" className="text-sm font-medium text-gray-700 dark:text-emerald-200/90">
                     Message *
                   </label>
                   <textarea
@@ -239,7 +239,7 @@ export default function ContactPage() {
                     rows={6}
                     value={formState.message}
                     onChange={handleInputChange('message')}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-50 dark:placeholder:text-emerald-600/60 dark:focus:border-emerald-400 dark:focus:ring-emerald-700/40"
                     placeholder="Enter your message"
                   />
                 </div>
@@ -251,33 +251,33 @@ export default function ContactPage() {
                 >
                   {submitting ? 'Sending…' : 'Send Message'}
                 </button>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-emerald-400/75">
                   We will only use your information to respond to your enquiry.
                 </p>
               </form>
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-emerald-800">Visit Us</h2>
-                <p className="mt-2 text-sm text-emerald-900/80 leading-relaxed">
+              <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm dark:border-emerald-800/50 dark:bg-emerald-950/45 dark:shadow-black/15">
+                <h2 className="text-xl font-semibold text-emerald-800 dark:text-emerald-100">Visit Us</h2>
+                <p className="mt-2 text-sm leading-relaxed text-emerald-900/80 dark:text-emerald-200/85">
                   {loadingSettings
                     ? 'Loading office details…'
                     : settings?.address || 'Our office details will be available soon.'}
                 </p>
 
-                <dl className="mt-4 space-y-3 text-sm text-emerald-900/80">
+                <dl className="mt-4 space-y-3 text-sm text-emerald-900/80 dark:text-emerald-200/85">
                   {settings?.office_name && (
                     <div>
-                      <dt className="font-semibold text-emerald-700">Office</dt>
+                      <dt className="font-semibold text-emerald-700 dark:text-emerald-300">Office</dt>
                       <dd>{settings.office_name}</dd>
                     </div>
                   )}
                   {settings?.email && (
                     <div>
-                      <dt className="font-semibold text-emerald-700">Email</dt>
+                      <dt className="font-semibold text-emerald-700 dark:text-emerald-300">Email</dt>
                       <dd>
-                        <a href={`mailto:${settings.email}`} className="text-emerald-700 hover:text-emerald-800">
+                        <a href={`mailto:${settings.email}`} className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200">
                           {settings.email}
                         </a>
                       </dd>
@@ -285,9 +285,9 @@ export default function ContactPage() {
                   )}
                   {settings?.phone && (
                     <div>
-                      <dt className="font-semibold text-emerald-700">Phone</dt>
+                      <dt className="font-semibold text-emerald-700 dark:text-emerald-300">Phone</dt>
                       <dd>
-                        <a href={`tel:${settings.phone}`} className="text-emerald-700 hover:text-emerald-800">
+                        <a href={`tel:${settings.phone}`} className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200">
                           {settings.phone}
                         </a>
                       </dd>
