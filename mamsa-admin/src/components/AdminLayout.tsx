@@ -7,6 +7,7 @@ import { clearSessionData, type SessionUser } from '@/lib/session-manager';
 import { AdminProfileProvider, type AdminHeaderProfile } from '@/context/AdminProfileContext';
 import { resolveImageSrc } from '@/lib/image-utils';
 import { AvatarImage } from '@/components/ui/AvatarImage';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -486,7 +487,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
 
   return (
     <AdminProfileProvider value={profileContextValue}>
-    <div className="h-screen bg-gray-50 flex overflow-hidden">
+    <div className="h-screen bg-gray-50 text-gray-900 dark:bg-emerald-950 dark:text-emerald-50 flex overflow-hidden">
       {/* Click outside to close dropdowns */}
       {showNotifications && (
         <div 
@@ -510,7 +511,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-green-600 shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col h-screen ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-green-600 dark:bg-emerald-900 shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col h-screen ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         {/* Sidebar header - Fixed */}
@@ -634,7 +635,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col h-screen lg:ml-64">
         {/* Top header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 fixed top-0 right-0 left-0 lg:left-64 z-30">
+        <header className="bg-white dark:bg-emerald-950/95 shadow-sm border-b border-gray-200 dark:border-emerald-800 fixed top-0 right-0 left-0 lg:left-64 z-30">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center">
               <button
@@ -645,7 +646,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <h1 className="ml-4 text-xl font-semibold text-gray-900 lg:ml-0">
+              <h1 className="ml-4 text-xl font-semibold text-gray-900 dark:text-emerald-50 lg:ml-0">
                 {pathname === '/admin/profile'
                   ? 'My Profile'
                   : navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
@@ -672,6 +673,7 @@ export default function AdminLayout({ children, user }: AdminLayoutProps) {
             
             {/* Header Actions */}
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               {/* Search Button for Mobile */}
               <button className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

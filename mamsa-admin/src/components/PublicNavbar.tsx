@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const PRIMARY_NAV = [
   { label: 'Home', href: '/', icon: Home },
@@ -342,6 +343,7 @@ export default function PublicNavbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
+          <ThemeToggle />
           <Link
             href={ALUMNI_HREF}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-150 hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
@@ -390,14 +392,17 @@ export default function PublicNavbar() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">Navigation</p>
                 <p className="text-sm font-semibold tracking-wide text-emerald-900 dark:text-emerald-100">MAMSA Menu</p>
               </div>
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={closeMobile}
-                className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <ThemeToggle compact />
+                <button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={closeMobile}
+                  className="rounded-lg p-2 text-emerald-700 transition-colors hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 scrollbar-hide" aria-label="Mobile primary">
